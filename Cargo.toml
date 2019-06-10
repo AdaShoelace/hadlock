@@ -11,3 +11,4 @@ libc = "0.2.58"
 simplelog = "0.5.3"
 
 x11 = {version = "2.18.1", features = ["xlib"]}
+x11-dl = "2.18.3"
