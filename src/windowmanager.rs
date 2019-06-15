@@ -1,29 +1,18 @@
 
 use std::ptr;
 use x11_dl::xlib;
-use x11_dl::xlib::{Display, Window};
+// use x11_dl::xlib::{Display, Window};
 use libc::{c_char, c_uchar, c_int, c_uint, c_long, c_ulong};
 use std::ffi::{CString, CStr};
 use std::mem;
 use std::collections::HashMap;
 
-unsafe extern "C" fn error_handler(_: *mut xlib::Display, _: *mut xlib::XErrorEvent) -> c_int {
-    println!("Unknown error occured!");
-    return 0;
-}
-
-unsafe extern "C" fn on_wm_detected(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> c_int {
-    if (*e).error_code == xlib::BadAccess {
-        panic!("Other wm registered!")
-    }
-    return 0;
-}
-
+use crate::xlibwrapper::*;
+use crate::xlibwrapper::util::{Color, Position, Size};
 
 pub struct WindowManager {
-    display: *mut Display,
-    root : Window,
-    clients: HashMap<u64, xlib::Window>,
+    lib:  XlibWrapper,
+    clients: HashMap<u64, Window>,
     drag_start_pos: (c_int, c_int),
     drag_start_frame_pos: (c_int, c_int),
     drag_start_frame_size: (c_uint, c_uint)
@@ -37,99 +26,64 @@ impl WindowManager {
      * return WindowManager
      */
     pub fn new () -> Self {
-        unsafe {
-            let xlib: xlib::Xlib = xlib::Xlib::open().unwrap();
-            let display = (xlib.XOpenDisplay)(ptr::null_mut());
-
-            if display == std::ptr::null_mut() {
-                // Log with simplelog in the future
-                let disp_name = CString::from_raw((xlib.XDisplayName)(display as *const c_char));
-                println!("Failed to open display: {}", disp_name.to_str().unwrap());
-            }
-
-            // let screen = (xlib.XDefaultScreenOfDisplay)(display);
-            // let root = (xlib.XRootWindowOfScreen)(screen);
-            let root = (xlib.XDefaultRootWindow)(display);
-            Self {
-                display: display,
-                root: root,
-                clients: HashMap::new(),
-                drag_start_pos: (0, 0),
-                drag_start_frame_pos: (0, 0),
-                drag_start_frame_size: (0, 0)
-            }
+        Self {
+            lib: XlibWrapper::new(),
+            clients: HashMap::new(),
+            drag_start_pos: (0, 0),
+            drag_start_frame_pos: (0, 0),
+            drag_start_frame_size: (0, 0)
         }
     }
 
     pub fn run(&mut self) {
-        unsafe {
-            let lib: xlib::Xlib = xlib::Xlib::open().unwrap();
+        loop {
+            let event = self.lib.next_event();
+            println!("{:?}", event);
+            match event {
+                Event::ConfigurationRequest(window, window_changes, value_mask) => self.on_configure_request(window, window_changes, value_mask),
+                Event::WindowCreated(window) => self.on_map_request(window),
+                // xlib::ButtonPress => self.on_button_pressed(event.button),
+                // xlib::MotionNotify => self.on_motion_notify(event.motion),
+                _ => println!("Unknown event")
+            }
+        }
+    }
 
-            let cstring = CString::from_raw((lib.XDisplayName)(self.display as *const c_char));
-            // println!("Display name: {}\nroot: {}", cstring.to_str().unwrap(), self.root);
+    fn on_map_request(&mut self, w: Window) {
+        println!("on_map_request");
+        self.frame(w);
+        self.lib.map_window(w);
+    }
 
-            (lib.XSetErrorHandler)(Some(on_wm_detected));
+    fn on_configure_request(&mut self, w: Window, window_changes: WindowChanges, value_mask: u64) {
+        println!("on_configure_request");
+        let changes = WindowChanges {
+            x: window_changes.x,
+            y: window_changes.y,
+            width: window_changes.width,
+            height: window_changes.height,
+            border_width: window_changes.border_width,
+            sibling: window_changes.sibling,
+            stack_mode: window_changes.stack_mode,
+        };
 
-            (lib.XSelectInput)(
-                self.display,
-                self.root,
-                xlib::SubstructureRedirectMask | xlib::SubstructureNotifyMask
+        if self.clients.contains_key(&w) {
+            let frame = self.clients.get(&w);
+            self.lib.configure_window(
+                *frame.unwrap(),
+                value_mask as i64,
+                changes.clone()
             );
-
-            (lib.XSync)(self.display, 0);
-            (lib.XSetErrorHandler)(Some(error_handler));
-
-            loop {
-                let mut event = xlib::XEvent { pad: [0;24] };
-                (lib.XNextEvent)(self.display, &mut event);
-
-                match event.get_type() {
-                    xlib::CreateNotify => Self::on_create_notify(event.create_window),
-                    xlib::ConfigureRequest => self.on_configure_request(event.configure_request),
-                    xlib::MapRequest => self.on_map_request(event.map_request),
-                    xlib::ButtonPress => self.on_button_pressed(event.button),
-                    xlib::MotionNotify => self.on_motion_notify(event.motion),
-                    _ => println!("Unknown event")
-                }
-            }
-
         }
+        self.lib.configure_window(
+            w,
+            value_mask as i64,
+            window_changes
+        );
     }
 
-    unsafe fn on_map_request(&mut self, event: xlib::XMapRequestEvent) {
-        let xlib: xlib::Xlib = xlib::Xlib::open().unwrap();
-        self.frame(event.window);
-        (xlib.XMapWindow)(self.display, event.window);
-    }
 
-    unsafe fn on_configure_request(&mut self, event: xlib::XConfigureRequestEvent) {
-        let lib: xlib::Xlib = xlib::Xlib::open().unwrap();
-
-        unsafe {
-            let mut changes: xlib::XWindowChanges = mem::uninitialized();
-
-            changes.x = event.x;
-            changes.y = event.y;
-            changes.width = event.width;
-            changes.height = event.height;
-            changes.border_width = event.border_width;
-            changes.sibling = event.above;
-            changes.stack_mode = event.detail;
-
-            if self.clients.contains_key(&event.window) {
-                let frame = self.clients.get(&event.window);
-                (lib.XConfigureWindow)(self.display, *frame.unwrap(), event.value_mask as u32, &mut changes);
-            }
-
-            (lib.XConfigureWindow)(self.display, event.window, event.value_mask as u32, &mut changes);
-        }
-    }
-
-    unsafe fn on_create_notify(event: xlib::XCreateWindowEvent) {
-        println!("on_create_notify: called");
-    }
-
-    unsafe fn on_button_pressed(&mut self, event: xlib::XButtonPressedEvent) {
+    /*unsafe fn on_button_pressed(&mut self, event: xlib::XButtonPressedEvent) {
         let lib: xlib::Xlib = xlib::Xlib::open().unwrap();
         println!("On button pressed");
         if !self.clients.contains_key(&event.window) {
@@ -161,57 +115,48 @@ impl WindowManager {
             self.drag_start_frame_size = (width, height);
             (lib.XRaiseWindow)(self.display, *frame);
         }
-    }
-    
+    }*/
+
     unsafe fn on_motion_notify(&mut self, event: xlib::XMotionEvent) {
         unimplemented!()
     }
 
     fn frame(&mut self, w: xlib::Window) {
-        let lib: xlib::Xlib = xlib::Xlib::open().unwrap();
         const BORDER_WIDTH: c_uint = 3;
-        const BORDER_COLOR: c_ulong = 0xff0000;
-        const BG_COLOR: c_ulong = 0x0000ff;
+        const BORDER_COLOR: Color = Color::RED;
+        const BG_COLOR: Color = Color::BLUE;
 
-        unsafe {
-            let mut attributes: xlib::XWindowAttributes = std::mem::uninitialized();
-            (lib.XGetWindowAttributes)(self.display, w, &mut attributes);
-            let frame: xlib::Window = (lib.XCreateSimpleWindow)(
-                self.display,
-                self.root,
-                attributes.x,
-                attributes.y,
-                attributes.width as u32,
-                attributes.height as u32,
+            let attributes = self.lib.get_window_attributes(w);
+            let parent = self.lib.get_root();
+            let frame = self.lib.create_simple_window(
+                parent,
+                Position { x: attributes.x, y: attributes.y },
+                Size { width: attributes.width as u32, height: attributes.height as u32 },
                 BORDER_WIDTH,
                 BORDER_COLOR,
                 BG_COLOR);
-
-            (lib.XSelectInput)(
-                self.display,
+            let mask = (SubstructureRedirectMask | SubstructureNotifyMask) as Mask;
+            self.lib.select_input(
                 frame,
-                xlib::SubstructureRedirectMask | xlib::SubstructureNotifyMask);
-            (lib.XAddToSaveSet)(self.display, w);
-            (lib.XReparentWindow)(
-                self.display,
-                w,
-                frame,
-                0,0);
-
-            (lib.XMapWindow)(self.display, frame);
+                mask
+            );
+            self.lib.add_to_save_set(w);
+            self.lib.reparent_window(w, frame);
+            self.lib.map_window(frame);
             self.clients.insert(w, frame);
 
+        unsafe {
             // move window with alt + right button
-            (lib.XGrabButton)(
-                self.display,
-                xlib::Button3,
-                xlib::Mod1Mask,
-                w,
-                0,
-                (xlib::ButtonPressMask | xlib::ButtonReleaseMask | xlib::ButtonMotionMask) as u32,
-                xlib::GrabModeAsync,
-                xlib::GrabModeAsync,
-                0,0);
+            /*(lib.XGrabButton)(
+              self.display,
+              xlib::Button3,
+              xlib::Mod1Mask,
+              w,
+              0,
+              (xlib::ButtonPressMask | xlib::ButtonReleaseMask | xlib::ButtonMotionMask) as u32,
+              xlib::GrabModeAsync,
+              xlib::GrabModeAsync,
+              0,0);*/
             //(lib.XGrabButton)(...)
             //(lib.XGrabKey)(...)
             //(lib.XGrabKey)(...)
