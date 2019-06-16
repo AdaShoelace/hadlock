@@ -1,14 +1,9 @@
 
-use std::ptr;
-use x11_dl::xlib;
-// use x11_dl::xlib::{Display, Window};
 use libc::{c_char, c_uchar, c_int, c_uint, c_long, c_ulong};
-use std::ffi::{CString, CStr};
-use std::mem;
 use std::collections::HashMap;
-
-use crate::xlibwrapper::*;
-use crate::xlibwrapper::util::{Color, Position, Size};
+use crate::xlibwrapper::masks::*;
+use crate::xlibwrapper::core::*;
+use crate::xlibwrapper::core::util::{Color, Position, Size};
 
 pub struct WindowManager {
     lib:  XlibWrapper,
@@ -38,13 +33,24 @@ impl WindowManager {
     pub fn run(&mut self) {
         loop {
             let event = self.lib.next_event();
-            println!("{:?}", event);
+            println!("{:?}", &event);
             match event {
                 Event::ConfigurationRequest(window, window_changes, value_mask) => self.on_configure_request(window, window_changes, value_mask),
                 Event::WindowCreated(window) => self.on_map_request(window),
-                // xlib::ButtonPress => self.on_button_pressed(event.button),
-                // xlib::MotionNotify => self.on_motion_notify(event.motion),
-                _ => println!("Unknown event")
+                Event::ButtonPressed(window, sub_window, button, x_root, y_root) => {
+                    println!("Button pressed");
+                    self.on_button_pressed(window, sub_window, button, x_root, y_root);
+                },
+                Event::MotionNotify(window, x_root, y_root, state) => {
+                    println!("On motion notify");
+                    self.on_motion_notify(
+                        window,
+                        x_root,
+                        y_root,
+                        state
+                    )
+                },
+                _ => {}//println!("Unknown event")
             }
         }
     }
@@ -82,86 +88,83 @@ impl WindowManager {
         );
     }
 
-
-    /*unsafe fn on_button_pressed(&mut self, event: xlib::XButtonPressedEvent) {
-        let lib: xlib::Xlib = xlib::Xlib::open().unwrap();
+    fn on_button_pressed(&mut self, window: Window, sub_window: Window, button: u32, x_root: u32, y_root: u32) {
         println!("On button pressed");
-        if !self.clients.contains_key(&event.window) {
+        if !self.clients.contains_key(&window) {
             return
         }
 
-        unsafe {
-            let frame = self.clients.get(&event.window).unwrap();
-            self.drag_start_pos = (event.x_root, event.y_root);
+        let frame = self.clients.get(&window).unwrap();
+        let geometry = match self.lib.get_geometry(*frame) {
+            Ok(g) => g,
+            //Err(err) => panic!(err)
+            Err(err) => panic!("Shit went south")
+        };
 
-            let mut returned_root: xlib::Window = mem::uninitialized();
-            let mut x: c_int = 0;
-            let mut y: c_int = 0;
-            let (mut width, mut height, mut border_width, mut depth) = (0 as c_uint, 0 as c_uint, 0 as c_uint, 0 as c_uint);
+        self.drag_start_pos = (x_root as i32 , y_root as i32);
+        self.drag_start_frame_pos = (geometry.x,geometry.y);
+        self.drag_start_frame_size = (geometry.width, geometry.height);
 
-            let check = (lib.XGetGeometry)(
-                self.display,
-                *frame,
-                &mut returned_root,
-                &mut x, &mut y,
-                &mut width, &mut height,
-                &mut border_width,
-                &mut depth);
-
-            if check == 0 {
-                panic!("XGetGeometry");
-            }
-            self.drag_start_frame_pos = (x,y);
-            self.drag_start_frame_size = (width, height);
-            (lib.XRaiseWindow)(self.display, *frame);
+        if let Err(e) = self.lib.raise_window(*frame) {
+            println!("Ole dole doff");
+            println!("{}", e);
         }
-    }*/
-
-    unsafe fn on_motion_notify(&mut self, event: xlib::XMotionEvent) {
-        unimplemented!()
     }
 
-    fn frame(&mut self, w: xlib::Window) {
+    fn on_motion_notify(&mut self, w: Window, x_root: i32, y_root: i32, state: u32) {
+        let frame = self.clients.get(&w).unwrap();
+
+        let drag_pos = Position { x: x_root, y: y_root };
+        let (delta_x, delta_y) =  (drag_pos.x - self.drag_start_pos.0,
+                                   drag_pos.y - self.drag_start_pos.1);
+        let dest_pos = Position{ x: self.drag_start_frame_pos.0 + delta_x,
+        y: self.drag_start_frame_pos.1 + delta_y};
+
+        if (state & Button1Mask) != 0 {
+            self.lib.move_window(
+                *frame,
+                dest_pos.x,
+                dest_pos.y
+            );
+        }
+    }
+
+    fn frame(&mut self, w: Window) {
         const BORDER_WIDTH: c_uint = 3;
         const BORDER_COLOR: Color = Color::RED;
         const BG_COLOR: Color = Color::BLUE;
 
-            let attributes = self.lib.get_window_attributes(w);
-            let parent = self.lib.get_root();
-            let frame = self.lib.create_simple_window(
-                parent,
-                Position { x: attributes.x, y: attributes.y },
-                Size { width: attributes.width as u32, height: attributes.height as u32 },
-                BORDER_WIDTH,
-                BORDER_COLOR,
-                BG_COLOR);
-            let mask = (SubstructureRedirectMask | SubstructureNotifyMask) as Mask;
-            self.lib.select_input(
-                frame,
-                mask
-            );
-            self.lib.add_to_save_set(w);
-            self.lib.reparent_window(w, frame);
-            self.lib.map_window(frame);
-            self.clients.insert(w, frame);
+        let attributes = self.lib.get_window_attributes(w);
+        let parent = self.lib.get_root();
+        let frame = self.lib.create_simple_window(
+            parent,
+            Position { x: attributes.x, y: attributes.y },
+            Size { width: attributes.width as u32, height: attributes.height as u32 },
+            BORDER_WIDTH,
+            BORDER_COLOR,
+            BG_COLOR);
+        self.lib.select_input(
+            frame,
+            SubstructureRedirectMask | SubstructureNotifyMask
+        );
+        self.lib.add_to_save_set(w);
+        self.lib.reparent_window(w, frame);
+        self.lib.map_window(frame);
+        self.clients.insert(w, frame);
 
-        unsafe {
-            // move window with alt + right button
-            /*(lib.XGrabButton)(
-              self.display,
-              xlib::Button3,
-              xlib::Mod1Mask,
-              w,
-              0,
-              (xlib::ButtonPressMask | xlib::ButtonReleaseMask | xlib::ButtonMotionMask) as u32,
-              xlib::GrabModeAsync,
-              xlib::GrabModeAsync,
-              0,0);*/
-            //(lib.XGrabButton)(...)
-            //(lib.XGrabKey)(...)
-            //(lib.XGrabKey)(...)
-        }
+        self.lib.grab_button(
+            Button1,
+            Mod1Mask,
+            w,
+            false,
+            (ButtonPressMask | ButtonReleaseMask | ButtonMotionMask) as u32,
+            GrabModeAsync,
+            GrabModeAsync,
+            0,0);
 
+        //(lib.XGrabButton)(...)
+        //(lib.XGrabKey)(...)
+        //(lib.XGrabKey)(...)
         // TODO - see framing existing Top-Level windows section below
 
         //create frame

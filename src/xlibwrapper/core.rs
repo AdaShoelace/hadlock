@@ -1,4 +1,4 @@
-
+#![allow(non_upper_case_globals)]
 
 use x11::xlib;
 use libc::{c_char, c_uchar, c_int, c_uint, c_long, c_ulong};
@@ -9,12 +9,15 @@ use std::mem;
 use bitflags;
 use util::*;
 
+use super::xlibwrappererror::{ Result as XResult, XlibWrapperError as XlibError};
+use super::masks::*;
+
 pub(crate) type Mask = c_long;
 pub(crate) type Window = xlib::Window;
 pub(crate) type Display = xlib::Display;
+pub(crate) type Drawable = xlib::Drawable;
 
-pub const SubstructureRedirectMask: i64 = xlib::SubstructureRedirectMask;
-pub const SubstructureNotifyMask: i64 = xlib::SubstructureNotifyMask;
+
 
 pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> c_int {
     let error = CString::from_raw((*e).error_code as *mut c_char);
@@ -102,6 +105,34 @@ impl XlibWrapper {
         }
     }
 
+    pub fn get_geometry(&self, w: Window) -> super::xlibwrappererror::Result<Geometry> {
+
+        /* 
+         * Because of xlib being designed as most c libraries it takes pointers and mutates them
+         * instead of returning a new value.
+         * Here we instead return a struct representing the changes in pointers sent to
+         * xlib::XGetGeometry
+         */
+
+        unsafe {
+            let mut attr: xlib::XWindowAttributes = mem::uninitialized();
+            let status = xlib::XGetWindowAttributes(self.display, w, &mut attr);
+
+            match status as u8 {
+                xlib::BadValue => return Err(XlibError::BadValueError),
+                xlib::BadWindow => return Err(XlibError::BadWindowError),
+                _=> {}
+            } 
+
+            Ok(Geometry {
+                x: attr.x,
+                y: attr.y,
+                width: attr.width as u32,
+                height: attr.height as u32,
+            })
+        }
+    }
+
     pub fn get_root(&self) -> Window {
         self.root
     }
@@ -114,20 +145,51 @@ impl XlibWrapper {
         }
     }
 
+    pub fn grab_button(&self,
+                       button: u32,
+                       modifiers: u32,
+                       grab_window: Window,
+                       owner_events: bool,
+                       event_mask: u32,
+                       pointer_mode: i32,
+                       keyboard_mode: i32,
+                       confine_to: Window,
+                       cursor: u64
+    ) {
+        unsafe {
+            xlib::XGrabButton(
+                self.display,
+                button,
+                modifiers,
+                grab_window,
+                to_c_bool(owner_events),
+                event_mask,
+                pointer_mode,
+                keyboard_mode,
+                confine_to,
+                cursor
+            );
+        }
+    }
+
     pub fn map_window(&mut self, window: Window) {
         unsafe {
             xlib::XMapWindow(self.display, window);
         }
     }
 
-
+    pub fn move_window(&self, w: Window, dest_x: i32, dest_y: i32) {
+        unsafe {
+            xlib::XMoveWindow(self.display, w, dest_x, dest_y);
+        }
+    }
 
     pub fn next_event(&self) -> Event {
         let ret_event = unsafe {
             let mut event: xlib::XEvent = mem::uninitialized();
             xlib::XNextEvent(self.display, &mut event);
-            // println!("Event: {:?}", event);
-            // println!("Event type: {:?}", event.get_type());
+            println!("Event: {:?}", event);
+            println!("Event type: {:?}", event.get_type());
             match event.get_type() {
                 xlib::ConfigureRequest => {
                     let event = xlib::XConfigureRequestEvent::from(event);
@@ -150,25 +212,38 @@ impl XlibWrapper {
                     let event = xlib::XMapRequestEvent::from(event);
                     Event::WindowCreated(event.window)
                 },
+                xlib::ButtonPress => {
+                    println!("Button press");
+                    let event = xlib::XButtonEvent::from(event);
+                   Event::ButtonPressed(event.window, event.subwindow, event.button, event.x_root as u32, event.y_root as u32) 
+                },
+                xlib::MotionNotify => {
+                    let event = xlib::XMotionEvent::from(event);
+                    Event::MotionNotify(
+                        event.window,
+                        event.x_root,
+                        event.y_root,
+                        event.state
+                    )
+                }
                 _ => Event::UnknownEvent
             }
         };
-        println!("ret_event: {:?}", ret_event);
+        // println!("ret_event: {:?}", ret_event);
         ret_event
     }
-
-    pub fn next_event_bajs(&self) -> xlib::XEvent {
+    
+    pub fn raise_window(&self, w: Window) -> XResult<()> {
         unsafe {
-            let mut event = xlib::XEvent{ pad: [0; 24] };
-            xlib::XNextEvent(self.display, &mut event);
-            match event.get_type() {
-                xlib::CreateNotify => event,
-                _ => event
+            match xlib::XRaiseWindow(self.display, w) as u8 {
+                xlib::BadValue => Err(XlibError::BadValueError),
+                xlib::BadWindow => Err(XlibError::BadWindowError),
+                _ => Err(XlibError::UnknownError) 
             }
         }
     }
 
-    pub fn reparent_window(&mut self, w: Window, parent: Window) {
+    pub fn reparent_window(&self, w: Window, parent: Window) {
         unsafe {
             xlib::XReparentWindow(
                 self.display,
@@ -213,6 +288,9 @@ pub enum Event {
     ConfigurationNotification(Window),
     ConfigurationRequest(Window, WindowChanges, u64),
     WindowCreated(Window),
+    ButtonPressed(Window, Window, u32, u32, u32),
+    MotionNotify(Window, i32, i32, u32),
+    ButtonReleased,
     // CreateNotify(CreateWindowEvent),
     UnknownEvent
 }
@@ -226,6 +304,14 @@ pub struct WindowChanges {
     pub border_width: c_int,
     pub sibling: Window,
     pub stack_mode: c_int,
+}
+
+
+pub struct Geometry {
+    pub x: i32,
+    pub y: i32,
+    pub width: u32,
+    pub height: u32,
 }
 
 pub struct WindowAttributes<'a> {
