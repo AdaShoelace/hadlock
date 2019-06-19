@@ -7,22 +7,28 @@ pub type Result<T> = std::result::Result<T, XlibWrapperError>;
 
 #[derive(Debug, Clone)]
 pub enum XlibWrapperError {
-    DisplayConnectionError,
-    GetGeometryError,
-    BadValueError,
-    BadWindowError,
-    UnknownError,
+    DisplayConnection,
+    GetGeometry,
+    BadValue,
+    BadWindow,
+    BadMatch,
+    BadAlloc,
+    BadAtom,
+    Unknown,
 }
 
 
 impl error::Error for XlibWrapperError {
     fn description(&self) -> &str {
         match *self {
-            XlibWrapperError::DisplayConnectionError => "Failed to connect to display server!",
-            XlibWrapperError::GetGeometryError => "An error occured when fetching geometry for a Drawable",
-            XlibWrapperError::BadValueError => "A value false outside the accepted range",
-            XlibWrapperError::BadWindowError => "A value for a Window argument does not name a defined Window",
-            XlibWrapperError::UnknownError => "Something went wrong",
+            XlibWrapperError::DisplayConnection => "Failed to connect to display server!",
+            XlibWrapperError::GetGeometry => "An error occured when fetching geometry for a Drawable",
+            XlibWrapperError::BadValue => "A value false outside the accepted range",
+            XlibWrapperError::BadWindow => "A value for a Window argument does not name a defined Window",
+            XlibWrapperError::BadMatch => "BadMatchError",
+            XlibWrapperError::BadAlloc => "Server failed to allocate memory",
+            XlibWrapperError::BadAtom => "No Atom defined by that value",
+            XlibWrapperError::Unknown => "Something went wrong",
         }
     }
 
@@ -35,11 +41,14 @@ impl error::Error for XlibWrapperError {
 impl fmt::Display for XlibWrapperError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let description = match *self {
-            XlibWrapperError::DisplayConnectionError => format!("{:?}", self),
-            XlibWrapperError::GetGeometryError => format!("{:?}", self),
-            XlibWrapperError::BadValueError => format!("{:?}", self),
-            XlibWrapperError::BadWindowError => format!("{:?}", self),
-            XlibWrapperError::UnknownError => format!("{:?}", self),
+            XlibWrapperError::DisplayConnection => format!("{:?}", self),
+            XlibWrapperError::GetGeometry => format!("{:?}", self),
+            XlibWrapperError::BadValue => format!("{:?}", self),
+            XlibWrapperError::BadWindow => format!("{:?}", self),
+            XlibWrapperError::BadMatch => format!("{:?}", self),
+            XlibWrapperError::BadAlloc => format!("{:?}", self),
+            XlibWrapperError::BadAtom => format!("{:?}", self),
+            XlibWrapperError::Unknown => format!("{:?}", self),
         };
         write!(f, "{}", description)
     }

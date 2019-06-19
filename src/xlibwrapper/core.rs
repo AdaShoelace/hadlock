@@ -16,6 +16,7 @@ pub(crate) type Mask = c_long;
 pub(crate) type Window = xlib::Window;
 pub(crate) type Display = xlib::Display;
 pub(crate) type Drawable = xlib::Drawable;
+pub(crate) type Time = xlib::Time;
 
 
 
@@ -70,22 +71,6 @@ impl XlibWrapper {
         }
     }
 
-    pub fn create_simple_window(&self, w: Window, pos: Position, size: Size, border_width: u32, border_color: Color, bg_color: Color) -> Window {
-        unsafe {
-            xlib::XCreateSimpleWindow(
-                self.display,
-                w,
-                pos.x,
-                pos.y,
-                size.width,
-                size.height,
-                border_width,
-                border_color as u64,
-                bg_color as u64
-            )
-        }
-    }
-
     pub fn configure_window(&mut self,
                             window: Window,
                             value_mask: Mask,
@@ -105,9 +90,51 @@ impl XlibWrapper {
         }
     }
 
+    pub fn create_simple_window(&self, w: Window, pos: Position, size: Size, border_width: u32, border_color: Color, bg_color: Color) -> Window {
+        unsafe {
+            xlib::XCreateSimpleWindow(
+                self.display,
+                w,
+                pos.x,
+                pos.y,
+                size.width,
+                size.height,
+                border_width,
+                border_color as u64,
+                bg_color as u64
+            )
+        }
+    }
+
+    pub fn destroy_window(&self, w: Window) -> XResult<()>{
+        unsafe {
+            let status = xlib::XDestroyWindow(self.display, w);
+            match status as u8 {
+                xlib::BadWindow => Err(XlibError::BadWindow),
+                _ => Ok(())
+            }
+        }
+    }
+
+    pub fn intern_atom(&self, s: &str) -> XResult<u64> {
+        unsafe {
+            match CString::new(s) {
+                Ok(b) => {
+                    let ret = xlib::XInternAtom(self.display, b.as_ptr() as *const i8, 0) as u64;
+                    match ret as u8 {
+                        xlib::BadAlloc => Err(XlibError::BadAlloc),
+                        xlib::BadAtom => Err(XlibError::BadAtom),
+                        _ => Ok(ret)
+                    }
+                },
+                _ => panic!("Invalid atom {}", s)
+            }
+        }
+    }
+
     pub fn get_geometry(&self, w: Window) -> super::xlibwrappererror::Result<Geometry> {
 
-        /* 
+        /*
          * Because of xlib being designed as most c libraries it takes pointers and mutates them
          * instead of returning a new value.
          * Here we instead return a struct representing the changes in pointers sent to
@@ -119,10 +146,10 @@ impl XlibWrapper {
             let status = xlib::XGetWindowAttributes(self.display, w, &mut attr);
 
             match status as u8 {
-                xlib::BadValue => return Err(XlibError::BadValueError),
-                xlib::BadWindow => return Err(XlibError::BadWindowError),
+                xlib::BadValue => return Err(XlibError::BadValue),
+                xlib::BadWindow => return Err(XlibError::BadWindow),
                 _=> {}
-            } 
+            }
 
             Ok(Geometry {
                 x: attr.x,
@@ -130,6 +157,19 @@ impl XlibWrapper {
                 width: attr.width as u32,
                 height: attr.height as u32,
             })
+        }
+    }
+
+    pub fn get_wm_protocols(&self, w: Window) -> Vec<u64> {
+        unsafe {
+            let mut protocols: *mut u64 = std::ptr::null_mut();
+            let mut num = 0;
+            xlib::XGetWMProtocols(self.display, w, &mut protocols, &mut num);
+            let slice = std::slice::from_raw_parts(protocols, num as usize);
+
+            slice.iter()
+                .map(|&x| x as u64)
+                .collect::<Vec<u64>>()
         }
     }
 
@@ -172,6 +212,34 @@ impl XlibWrapper {
         }
     }
 
+    pub fn kill_client(&self, w: Window) {
+        unsafe {
+            let wmdelete = self.intern_atom("WM_DELETE_WINDOW").unwrap();
+            let wmprotocols = self.intern_atom("WM_PROTOCOLS").unwrap();
+            let protocols = self.get_wm_protocols(w);
+
+            println!("Supported protocols: {:?}, (wmdelete = {:?})", protocols, wmdelete);
+            if protocols.iter().any(|x| *x == wmdelete) {
+                let mut data: xlib::ClientMessageData = mem::uninitialized();
+                data.set_long(0, (wmdelete >> 32) as i64);
+                data.set_long(0, (wmdelete & 0xFFFFFFFF) as i64);
+                let mut event = xlib::XEvent::from(xlib::XClientMessageEvent{
+                    type_: 33,
+                    serial: 0,
+                    send_event: 0,
+                    display: std::ptr::null_mut(),
+                    window: w as u64,
+                    message_type: wmprotocols as u64,
+                    format: 32,
+                    data: data
+                });
+                xlib::XSendEvent(self.display, w, 0, 0, &mut event);
+            } else {
+                xlib::XKillClient(self.display, w);
+            }
+        }
+    }
+
     pub fn map_window(&mut self, window: Window) {
         unsafe {
             xlib::XMapWindow(self.display, window);
@@ -188,8 +256,8 @@ impl XlibWrapper {
         let ret_event = unsafe {
             let mut event: xlib::XEvent = mem::uninitialized();
             xlib::XNextEvent(self.display, &mut event);
-            println!("Event: {:?}", event);
-            println!("Event type: {:?}", event.get_type());
+            //println!("Event: {:?}", event);
+            //println!("Event type: {:?}", event.get_type());
             match event.get_type() {
                 xlib::ConfigureRequest => {
                     let event = xlib::XConfigureRequestEvent::from(event);
@@ -215,7 +283,7 @@ impl XlibWrapper {
                 xlib::ButtonPress => {
                     println!("Button press");
                     let event = xlib::XButtonEvent::from(event);
-                   Event::ButtonPressed(event.window, event.subwindow, event.button, event.x_root as u32, event.y_root as u32) 
+                    Event::ButtonPressed(event.window, event.subwindow, event.button, event.x_root as u32, event.y_root as u32, event.state as u32)
                 },
                 xlib::MotionNotify => {
                     let event = xlib::XMotionEvent::from(event);
@@ -232,14 +300,20 @@ impl XlibWrapper {
         // println!("ret_event: {:?}", ret_event);
         ret_event
     }
-    
+
     pub fn raise_window(&self, w: Window) -> XResult<()> {
         unsafe {
             match xlib::XRaiseWindow(self.display, w) as u8 {
-                xlib::BadValue => Err(XlibError::BadValueError),
-                xlib::BadWindow => Err(XlibError::BadWindowError),
-                _ => Err(XlibError::UnknownError) 
+                xlib::BadValue => Err(XlibError::BadValue),
+                xlib::BadWindow => Err(XlibError::BadWindow),
+                _ => Err(XlibError::Unknown)
             }
+        }
+    }
+    
+    pub fn remove_from_save_set(&self, w: Window) {
+        unsafe {
+            xlib::XRemoveFromSaveSet(self.display, w);
         }
     }
 
@@ -264,9 +338,53 @@ impl XlibWrapper {
         }
     }
 
+    pub fn set_border_width(&self, w: Window, border_width: u32) {
+        if w == self.root {
+            return;
+        }
+        unsafe {
+            xlib::XSetWindowBorderWidth(self.display, w, border_width);
+        }
+    }
+
+    pub fn set_input_focus(&self, w: Window, revert_to: i32, time: Time) -> XResult<()> {
+        unsafe {
+            match xlib::XSetInputFocus(self.display, w, revert_to, time) as u8 {
+                xlib::BadValue => Err(XlibError::BadValue),
+                xlib::BadMatch => Err(XlibError::BadMatch),
+                xlib::BadWindow => Err(XlibError::BadWindow),
+                _ => Ok(())
+            }
+        }
+    }
+
     pub fn sync(&mut self, discard: bool) {
         unsafe {
             xlib::XSync(self.display, discard as i32);
+        }
+    }
+    
+    pub fn top_level_window_count(&self) -> u32 {
+        unsafe {
+            let mut returned_root: Window = mem::uninitialized();
+            let mut returned_parent: Window = mem::uninitialized();
+            let mut top_level_windows: *mut Window = mem::uninitialized();
+            let mut num_top_level_windows: u32 = mem::uninitialized();
+            xlib::XQueryTree(
+                self.display,
+                self.root,
+                &mut returned_root,
+                &mut returned_parent,
+                &mut top_level_windows,
+                &mut num_top_level_windows
+                );
+            num_top_level_windows
+        }
+    }
+
+    pub fn unmap_window(&self, w: Window) {
+        unsafe {
+            xlib::XUnmapWindow(self.display, w);
         }
     }
 
@@ -288,7 +406,7 @@ pub enum Event {
     ConfigurationNotification(Window),
     ConfigurationRequest(Window, WindowChanges, u64),
     WindowCreated(Window),
-    ButtonPressed(Window, Window, u32, u32, u32),
+    ButtonPressed(Window, Window, u32, u32, u32, u32),
     MotionNotify(Window, i32, i32, u32),
     ButtonReleased,
     // CreateNotify(CreateWindowEvent),
@@ -429,6 +547,3 @@ pub mod util {
     }
 }
 
-pub struct EventWrapper {
-    pub event: xlib::XEvent
-}

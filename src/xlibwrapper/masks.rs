@@ -31,3 +31,8 @@ pub const Mod5Mask: u32 = xlib::Mod5Mask;
 
 // Modes
 pub const GrabModeAsync: i32 = xlib::GrabModeAsync;
+
+pub const RevertToParent: i32 = xlib::RevertToParent;
+pub const RevertToNone: i32 = xlib::RevertToNone;
+pub const RevertToPointerRoot: i32 = xlib::RevertToPointerRoot;
+

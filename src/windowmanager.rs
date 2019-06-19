@@ -8,6 +8,7 @@ use crate::xlibwrapper::core::util::{Color, Position, Size};
 pub struct WindowManager {
     lib:  XlibWrapper,
     clients: HashMap<u64, Window>,
+    parent_counter: usize,
     drag_start_pos: (c_int, c_int),
     drag_start_frame_pos: (c_int, c_int),
     drag_start_frame_size: (c_uint, c_uint)
@@ -24,6 +25,7 @@ impl WindowManager {
         Self {
             lib: XlibWrapper::new(),
             clients: HashMap::new(),
+            parent_counter: 0,
             drag_start_pos: (0, 0),
             drag_start_frame_pos: (0, 0),
             drag_start_frame_size: (0, 0)
@@ -33,13 +35,13 @@ impl WindowManager {
     pub fn run(&mut self) {
         loop {
             let event = self.lib.next_event();
-            println!("{:?}", &event);
+            //println!("{:?}", &event);
             match event {
                 Event::ConfigurationRequest(window, window_changes, value_mask) => self.on_configure_request(window, window_changes, value_mask),
                 Event::WindowCreated(window) => self.on_map_request(window),
-                Event::ButtonPressed(window, sub_window, button, x_root, y_root) => {
+                Event::ButtonPressed(window, sub_window, button, x_root, y_root, state) => {
                     println!("Button pressed");
-                    self.on_button_pressed(window, sub_window, button, x_root, y_root);
+                    self.on_button_pressed(window, sub_window, button, x_root, y_root, state);
                 },
                 Event::MotionNotify(window, x_root, y_root, state) => {
                     println!("On motion notify");
@@ -56,13 +58,13 @@ impl WindowManager {
     }
 
     fn on_map_request(&mut self, w: Window) {
-        println!("on_map_request");
+        //println!("on_map_request");
         self.frame(w);
         self.lib.map_window(w);
     }
 
     fn on_configure_request(&mut self, w: Window, window_changes: WindowChanges, value_mask: u64) {
-        println!("on_configure_request");
+        //println!("on_configure_request");
         let changes = WindowChanges {
             x: window_changes.x,
             y: window_changes.y,
@@ -88,8 +90,8 @@ impl WindowManager {
         );
     }
 
-    fn on_button_pressed(&mut self, window: Window, sub_window: Window, button: u32, x_root: u32, y_root: u32) {
-        println!("On button pressed");
+    fn on_button_pressed(&mut self, window: Window, sub_window: Window, button: u32, x_root: u32, y_root: u32, state: u32) {
+        //println!("On button pressed");
         if !self.clients.contains_key(&window) {
             return
         }
@@ -98,17 +100,30 @@ impl WindowManager {
         let geometry = match self.lib.get_geometry(*frame) {
             Ok(g) => g,
             //Err(err) => panic!(err)
-            Err(err) => panic!("Shit went south")
+            Err(err) => panic!(format!("Shit went south: {:?}", err))
         };
 
         self.drag_start_pos = (x_root as i32 , y_root as i32);
         self.drag_start_frame_pos = (geometry.x,geometry.y);
         self.drag_start_frame_size = (geometry.width, geometry.height);
 
-        if let Err(e) = self.lib.raise_window(*frame) {
+        
+        /*if let Err(e) = self.lib.raise_window(*frame) {
             println!("Ole dole doff");
             println!("{}", e);
+        }*/
+
+        if button == Button3 {
+            // self.lib.unmap_window(*frame);
+            self.kill_window(window);
+            //self.lib.destroy_window(*frame);
+            // let err = self.kill_window(*frame);
+
+            println!("Top level windows: {}", self.lib.top_level_window_count());
+
+            // println!("kill_window response: {:?}", err);
         }
+
     }
 
     fn on_motion_notify(&mut self, w: Window, x_root: i32, y_root: i32, state: u32) {
@@ -127,6 +142,20 @@ impl WindowManager {
                 dest_pos.y
             );
         }
+    }
+    
+    fn kill_window(&mut self, w: Window) {
+        if !self.clients.contains_key(&w) {
+            return;
+        }
+        
+        let frame = self.clients.get(&w).unwrap();
+    
+        self.lib.kill_client(w);
+        self.lib.destroy_window(*frame);
+        self.clients.remove(&w);
+        let clients = self.clients.len();
+        println!("Clients: {}, parents: {}", clients, self.parent_counter);
     }
 
     fn frame(&mut self, w: Window) {
@@ -151,23 +180,37 @@ impl WindowManager {
         self.lib.reparent_window(w, frame);
         self.lib.map_window(frame);
         self.clients.insert(w, frame);
-
+        
+        // move window super + mouse1
         self.lib.grab_button(
             Button1,
-            Mod1Mask,
+            Mod4Mask,
             w,
             false,
             (ButtonPressMask | ButtonReleaseMask | ButtonMotionMask) as u32,
             GrabModeAsync,
             GrabModeAsync,
             0,0);
-
+        
+        //test implementation (redo with alt + f4)
+        //kill window with super + mouse2
+        self.lib.grab_button(
+            Button3,
+            Mod4Mask,
+            w,
+            false,
+            (ButtonPressMask | ButtonReleaseMask | ButtonMotionMask) as u32,
+            GrabModeAsync,
+            GrabModeAsync,
+            0,0);
         //(lib.XGrabButton)(...)
         //(lib.XGrabKey)(...)
         //(lib.XGrabKey)(...)
-        // TODO - see framing existing Top-Level windows section below
+        // TODO - implement keygrabbing/keyevent
+        // TODO - implement closing of windows by protocols/atom else by KillClient
+        
 
+        self.parent_counter += 1;
         //create frame
     }
-
 }
