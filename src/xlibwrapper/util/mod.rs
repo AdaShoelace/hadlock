@@ -2,7 +2,7 @@ pub mod keysym_lookup;
 
 
 use std::os::raw::*;
-use x11::xlib;
+use x11_dl::xlib;
 
 pub(crate) type Mask = c_long;
 pub(crate) type Window = xlib::Window;
