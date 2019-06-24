@@ -9,7 +9,6 @@ use crate::xlibwrapper::util::*;
 pub struct WindowManager {
     lib:  XlibWrapper,
     clients: HashMap<u64, Window>,
-    parent_counter: usize,
     drag_start_pos: (c_int, c_int),
     drag_start_frame_pos: (c_int, c_int),
     drag_start_frame_size: (c_uint, c_uint)
@@ -26,7 +25,6 @@ impl WindowManager {
         Self {
             lib: XlibWrapper::new(),
             clients: HashMap::new(),
-            parent_counter: 0,
             drag_start_pos: (0, 0),
             drag_start_frame_pos: (0, 0),
             drag_start_frame_size: (0, 0)
@@ -44,7 +42,10 @@ impl WindowManager {
                     println!("Button pressed");
                     self.on_button_pressed(window, sub_window, button, x_root, y_root, state);
                 },
-                Event::KeyPress(window, state, keycode) => self.on_key_pressed(window, state, keycode),
+                Event::KeyPress(window, state, keycode) => {
+                    println!("keypress");
+                    self.on_key_pressed(window, state, keycode)
+                },
                 Event::MotionNotify(window, x_root, y_root, state) => {
                     println!("On motion notify");
                     self.on_motion_notify(
@@ -61,7 +62,7 @@ impl WindowManager {
 
     fn on_map_request(&mut self, w: Window) {
         //println!("on_map_request");
-        self.frame(w);
+        self.setup_window(w);
         self.lib.map_window(w);
     }
 
@@ -109,11 +110,11 @@ impl WindowManager {
         self.drag_start_frame_pos = (geometry.x,geometry.y);
         self.drag_start_frame_size = (geometry.width, geometry.height);
 
-        
+
         /*if let Err(e) = self.lib.raise_window(*frame) {
-            println!("Ole dole doff");
-            println!("{}", e);
-        }*/
+          println!("Ole dole doff");
+          println!("{}", e);
+          }*/
 
         if button == Button3 {
             // self.lib.unmap_window(*frame);
@@ -127,9 +128,11 @@ impl WindowManager {
         }
 
     }
-    
+
     fn on_key_pressed(&mut self, w: Window, state: u32, keycode: u32) {
-        println!("Keypress event in window manager");
+        if self.lib.key_sym_to_keycode(keysym_lookup::into_keysym("q").unwrap() as u64 ) == keycode as u8 && (state & Mod4Mask) != 0 {
+            self.kill_window(w);
+        }
     }
 
     fn on_motion_notify(&mut self, w: Window, x_root: i32, y_root: i32, state: u32) {
@@ -149,44 +152,36 @@ impl WindowManager {
             );
         }
     }
-    
+
     fn kill_window(&mut self, w: Window) {
         if !self.clients.contains_key(&w) {
             return;
         }
-        
+
         let frame = self.clients.get(&w).unwrap();
-    
-        self.lib.kill_client(w);
-        self.lib.destroy_window(*frame);
+
+        self.lib.kill_client(*frame);
+        // self.lib.destroy_window(*frame);
         self.clients.remove(&w);
         let clients = self.clients.len();
-        println!("Clients: {}, parents: {}", clients, self.parent_counter);
     }
 
-    fn frame(&mut self, w: Window) {
+    fn setup_window(&mut self, w: Window) {
         const BORDER_WIDTH: c_uint = 3;
         const BORDER_COLOR: Color = Color::RED;
         const BG_COLOR: Color = Color::BLUE;
 
         let attributes = self.lib.get_window_attributes(w);
         let parent = self.lib.get_root();
-        let frame = self.lib.create_simple_window(
-            parent,
-            Position { x: attributes.x, y: attributes.y },
-            Size { width: attributes.width as u32, height: attributes.height as u32 },
-            BORDER_WIDTH,
-            BORDER_COLOR,
-            BG_COLOR);
         self.lib.select_input(
-            frame,
+            w,
             SubstructureRedirectMask | SubstructureNotifyMask
         );
+        //self.lib.configure_window()
         self.lib.add_to_save_set(w);
-        self.lib.reparent_window(w, frame);
-        self.lib.map_window(frame);
-        self.clients.insert(w, frame);
-        
+        self.lib.map_window(w);
+        self.clients.insert(w, w);
+
         // move window super + mouse1
         self.lib.grab_button(
             Button1,
@@ -197,7 +192,7 @@ impl WindowManager {
             GrabModeAsync,
             GrabModeAsync,
             0,0);
-        
+
         //test implementation (redo with alt + f4)
         //kill window with super + mouse2
         self.lib.grab_button(
@@ -209,9 +204,9 @@ impl WindowManager {
             GrabModeAsync,
             GrabModeAsync,
             0,0);
-        
+        let q_sym = keysym_lookup::into_keysym("q").expect("Apparently q is not a keysym");
         self.lib.grab_key(
-            self.lib.get_keycode_from_string("q") as i32,
+            self.lib.key_sym_to_keycode(q_sym as u64) as u32,
             Mod4Mask,
             w,
             false,
@@ -222,9 +217,8 @@ impl WindowManager {
         //(lib.XGrabKey)(...)
         // TODO - implement keygrabbing/keyevent
         // TODO - implement closing of windows by protocols/atom else by KillClient
-        
 
-        self.parent_counter += 1;
+
         //create frame
     }
 }

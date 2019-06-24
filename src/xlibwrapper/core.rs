@@ -12,6 +12,7 @@ use super::xlibwrappererror::{ Result as XResult, XlibWrapperError as XlibError}
 use super::masks::*;
 use super::util::*;
 use super::util::keysym_lookup::*;
+use super::xatom::*;
 
 pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> c_int {
     let error = CString::from_raw((*e).error_code as *mut c_char);
@@ -28,13 +29,14 @@ pub(crate) unsafe extern "C" fn on_wm_detected(_: *mut xlib::Display, e: *mut xl
 
 pub struct XlibWrapper {
     lib: xlib::Xlib,
+    xatom: XAtom,
     display: *mut Display,
     root: xlib::Window,
 }
 
 impl XlibWrapper {
     pub fn new() -> Self {
-        let (disp, root, lib) = unsafe {
+        let (disp, root, lib, xatom) = unsafe {
             let lib = xlib::Xlib::open().unwrap();
             let disp = (lib.XOpenDisplay)(std::ptr::null_mut());
 
@@ -51,11 +53,13 @@ impl XlibWrapper {
             );
             (lib.XSync)(disp, 0);
             (lib.XSetErrorHandler)(Some(error_handler));
-            (disp, root, lib)
+            let xatom = XAtom::new(&lib, disp);
+            (disp, root, lib, xatom)
         };
 
         Self {
             lib: lib,
+            xatom: xatom,
             display: disp,
             root: root,
         }
@@ -65,6 +69,33 @@ impl XlibWrapper {
         unsafe {
             (self.lib.XAddToSaveSet)(self.display, w);
         }
+    }
+
+    fn expects_xevent_atom(&self, window: Window, atom: xlib::Atom) -> bool {
+        unsafe {
+            let mut array: *mut xlib::Atom = mem::uninitialized();
+            let mut length: c_int = mem::uninitialized();
+            let status: xlib::Status =
+                (self.lib.XGetWMProtocols)(self.display, window, &mut array, &mut length);
+            let protocols: &[xlib::Atom] = std::slice::from_raw_parts(array, length as usize);
+            status > 0 && protocols.contains(&atom)
+        }
+    }
+
+    fn send_xevent_atom(&self, window: Window, atom: xlib::Atom) -> bool {
+        if self.expects_xevent_atom(window, atom) {
+            let mut msg: xlib::XClientMessageEvent = unsafe { std::mem::uninitialized() };
+            msg.type_ = xlib::ClientMessage;
+            msg.window = window;
+            msg.message_type = self.xatom.WMProtocols;
+            msg.format = 32;
+            msg.data.set_long(0, atom as i64);
+            msg.data.set_long(1, xlib::CurrentTime as i64);
+            let mut ev: xlib::XEvent = msg.into();
+            unsafe { (self.lib.XSendEvent)(self.display, window, 0, xlib::NoEventMask, &mut ev) };
+            return true;
+        }
+        false
     }
 
     pub fn configure_window(&mut self,
@@ -84,6 +115,25 @@ impl XlibWrapper {
 
             (self.lib.XConfigureWindow)(self.display, window, value_mask as u32, &mut raw_changes);
         }
+    }
+
+    pub fn change_frame_property(&self, frame: Window) {
+        unsafe {
+            let list = vec![frame];
+
+            (self.lib.XChangeProperty)(
+                self.display,
+                self.root,
+                self.xatom.NetClientList,
+                xlib::XA_WINDOW,
+                32,
+                xlib::PropModeAppend,
+                list.as_ptr() as *const u8,
+                1
+            );
+            mem::forget(list);
+        }
+
     }
 
     pub fn create_simple_window(&self, w: Window, pos: Position, size: Size, border_width: u32, border_color: Color, bg_color: Color) -> Window {
@@ -224,7 +274,7 @@ impl XlibWrapper {
     }
 
     pub fn grab_key(&self,
-                    key_code: i32,
+                    key_code: u32,
                     modifiers: u32,
                     grab_window: Window,
                     owner_event: bool,
@@ -234,7 +284,7 @@ impl XlibWrapper {
             // add error handling.. Like really come up with a strategy!
             (self.lib.XGrabKey)(
                 self.display,
-                key_code,
+                key_code as i32,
                 modifiers,
                 grab_window,
                 to_c_bool(owner_event),
@@ -245,29 +295,13 @@ impl XlibWrapper {
     }
 
     pub fn kill_client(&self, w: Window) {
-        unsafe {
-            let wmdelete = self.intern_atom("WM_DELETE_WINDOW").unwrap();
-            let wmprotocols = self.intern_atom("WM_PROTOCOLS").unwrap();
-            let protocols = self.get_wm_protocols(w);
-
-            println!("Supported protocols: {:?}, (wmdelete = {:?})", protocols, wmdelete);
-            if protocols.iter().any(|x| *x == wmdelete) {
-                let mut data: xlib::ClientMessageData = mem::uninitialized();
-                data.set_long(0, (wmdelete >> 32) as i64);
-                data.set_long(0, (wmdelete & 0xFFFFFFFF) as i64);
-                let mut event = xlib::XEvent::from(xlib::XClientMessageEvent{
-                    type_: 33,
-                    serial: 0,
-                    send_event: 0,
-                    display: std::ptr::null_mut(),
-                    window: w as u64,
-                    message_type: wmprotocols as u64,
-                    format: 32,
-                    data: data
-                });
-                (self.lib.XSendEvent)(self.display, w, 0, 0, &mut event);
-            } else {
+        if !self.send_xevent_atom(w, self.xatom.WMDelete) {
+            unsafe {
+                (self.lib.XGrabServer)(self.display);
+                (self.lib.XSetCloseDownMode)(self.display, xlib::DestroyAll);
                 (self.lib.XKillClient)(self.display, w);
+                (self.lib.XSync)(self.display, xlib::False);
+                (self.lib.XUngrabServer)(self.display);
             }
         }
     }
@@ -290,6 +324,9 @@ impl XlibWrapper {
             (self.lib.XNextEvent)(self.display, &mut event);
             //println!("Event: {:?}", event);
             //println!("Event type: {:?}", event.get_type());
+            unsafe {
+                println!("Pending events: {}", (self.lib.XPending)(self.display))
+            };
             match event.get_type() {
                 xlib::ConfigureRequest => {
                     let event = xlib::XConfigureRequestEvent::from(event);
@@ -351,17 +388,6 @@ impl XlibWrapper {
     pub fn remove_from_save_set(&self, w: Window) {
         unsafe {
             (self.lib.XRemoveFromSaveSet)(self.display, w);
-        }
-    }
-
-    pub fn reparent_window(&self, w: Window, parent: Window) {
-        unsafe {
-            (self.lib.XReparentWindow)(
-                self.display,
-                w,
-                parent,
-                0,0
-            );
         }
     }
 
