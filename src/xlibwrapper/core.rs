@@ -1,7 +1,7 @@
 #![allow(non_upper_case_globals)]
 
-use x11::xlib;
-use libc::{c_char, c_uchar, c_int, c_uint, c_long, c_ulong};
+use x11_dl::xlib;
+use std::os::raw::*;
 use std::ffi::{CStr, CString};
 use std::mem;
 
@@ -27,32 +27,35 @@ pub(crate) unsafe extern "C" fn on_wm_detected(_: *mut xlib::Display, e: *mut xl
 }
 
 pub struct XlibWrapper {
+    lib: xlib::Xlib,
     display: *mut Display,
     root: xlib::Window,
 }
 
 impl XlibWrapper {
     pub fn new() -> Self {
-        let (disp, root) = unsafe {
-            let disp = xlib::XOpenDisplay(std::ptr::null_mut());
+        let (disp, root, lib) = unsafe {
+            let lib = xlib::Xlib::open().unwrap();
+            let disp = (lib.XOpenDisplay)(std::ptr::null_mut());
 
             if disp == std::ptr::null_mut() {
                 panic!("Failed to load display in Xxlib::rapper");
             }
 
-            let root = (xlib::XDefaultRootWindow)(disp);
-            xlib::XSetErrorHandler(Some(on_wm_detected));
-            xlib::XSelectInput(
+            let root = (lib.XDefaultRootWindow)(disp);
+            (lib.XSetErrorHandler)(Some(on_wm_detected));
+            (lib.XSelectInput)(
                 disp,
                 root,
                 xlib::SubstructureNotifyMask | xlib::SubstructureRedirectMask
             );
-            xlib::XSync(disp, 0);
-            xlib::XSetErrorHandler(Some(error_handler));
-            (disp, root)
+            (lib.XSync)(disp, 0);
+            (lib.XSetErrorHandler)(Some(error_handler));
+            (disp, root, lib)
         };
 
         Self {
+            lib: lib,
             display: disp,
             root: root,
         }
@@ -60,7 +63,7 @@ impl XlibWrapper {
 
     pub fn add_to_save_set(&self, w: Window) {
         unsafe {
-            xlib::XAddToSaveSet(self.display, w);
+            (self.lib.XAddToSaveSet)(self.display, w);
         }
     }
 
@@ -79,13 +82,13 @@ impl XlibWrapper {
                 stack_mode: changes.stack_mode
             };
 
-            xlib::XConfigureWindow(self.display, window, value_mask as u32, &mut raw_changes);
+            (self.lib.XConfigureWindow)(self.display, window, value_mask as u32, &mut raw_changes);
         }
     }
 
     pub fn create_simple_window(&self, w: Window, pos: Position, size: Size, border_width: u32, border_color: Color, bg_color: Color) -> Window {
         unsafe {
-            xlib::XCreateSimpleWindow(
+            (self.lib.XCreateSimpleWindow)(
                 self.display,
                 w,
                 pos.x,
@@ -101,7 +104,7 @@ impl XlibWrapper {
 
     pub fn destroy_window(&self, w: Window) -> XResult<()>{
         unsafe {
-            let status = xlib::XDestroyWindow(self.display, w);
+            let status = (self.lib.XDestroyWindow)(self.display, w);
             match status as u8 {
                 xlib::BadWindow => Err(XlibError::BadWindow),
                 _ => Ok(())
@@ -113,7 +116,7 @@ impl XlibWrapper {
         unsafe {
             match CString::new(s) {
                 Ok(b) => {
-                    let ret = xlib::XInternAtom(self.display, b.as_ptr() as *const i8, 0) as u64;
+                    let ret = (self.lib.XInternAtom)(self.display, b.as_ptr() as *const i8, 0) as u64;
                     match ret as u8 {
                         xlib::BadAlloc => Err(XlibError::BadAlloc),
                         xlib::BadAtom => Err(XlibError::BadAtom),
@@ -125,7 +128,7 @@ impl XlibWrapper {
         }
     }
 
-    pub fn get_geometry(&self, w: Window) -> super::xlibwrappererror::Result<Geometry> {
+    pub fn get_geometry(&self, w: Window) -> XResult<Geometry> {
 
         /*
          * Because of xlib being designed as most c libraries it takes pointers and mutates them
@@ -136,7 +139,7 @@ impl XlibWrapper {
 
         unsafe {
             let mut attr: xlib::XWindowAttributes = mem::uninitialized();
-            let status = xlib::XGetWindowAttributes(self.display, w, &mut attr);
+            let status = (self.lib.XGetWindowAttributes)(self.display, w, &mut attr);
 
             match status as u8 {
                 xlib::BadValue => return Err(XlibError::BadValue),
@@ -157,7 +160,7 @@ impl XlibWrapper {
         unsafe {
             let mut protocols: *mut u64 = std::ptr::null_mut();
             let mut num = 0;
-            xlib::XGetWMProtocols(self.display, w, &mut protocols, &mut num);
+            (self.lib.XGetWMProtocols)(self.display, w, &mut protocols, &mut num);
             let slice = std::slice::from_raw_parts(protocols, num as usize);
 
             slice.iter()
@@ -173,7 +176,7 @@ impl XlibWrapper {
     pub fn get_window_attributes(&self, w: Window) -> WindowAttributes {
         unsafe {
             let mut attr: xlib::XWindowAttributes = mem::uninitialized();
-            xlib::XGetWindowAttributes(self.display, w, &mut attr);
+            (self.lib.XGetWindowAttributes)(self.display, w, &mut attr);
             WindowAttributes::from(attr)
         }
     }
@@ -190,7 +193,7 @@ impl XlibWrapper {
                        cursor: u64
     ) {
         unsafe {
-            xlib::XGrabButton(
+            (self.lib.XGrabButton)(
                 self.display,
                 button,
                 modifiers,
@@ -207,14 +210,14 @@ impl XlibWrapper {
 
     pub fn key_sym_to_keycode(&self, keysym: u64) -> KeyCode {
         unsafe {
-            xlib::XKeysymToKeycode(self.display, keysym)
+            (self.lib.XKeysymToKeycode)(self.display, keysym)
         }
     }
 
     pub fn get_keycode_from_string(&self, key: &str) -> u64 {
         unsafe {
             match CString::new(key.as_bytes()) {
-                Ok(b) => xlib::XStringToKeysym(b.as_ptr()) as u64,
+                Ok(b) => (self.lib.XStringToKeysym)(b.as_ptr()) as u64,
                 _ => panic!("Invalid key string!"),
             }
         }
@@ -229,7 +232,7 @@ impl XlibWrapper {
                     keyboard_mode: i32) {
         unsafe {
             // add error handling.. Like really come up with a strategy!
-            xlib::XGrabKey(
+            (self.lib.XGrabKey)(
                 self.display,
                 key_code,
                 modifiers,
@@ -262,29 +265,29 @@ impl XlibWrapper {
                     format: 32,
                     data: data
                 });
-                xlib::XSendEvent(self.display, w, 0, 0, &mut event);
+                (self.lib.XSendEvent)(self.display, w, 0, 0, &mut event);
             } else {
-                xlib::XKillClient(self.display, w);
+                (self.lib.XKillClient)(self.display, w);
             }
         }
     }
 
     pub fn map_window(&mut self, window: Window) {
         unsafe {
-            xlib::XMapWindow(self.display, window);
+            (self.lib.XMapWindow)(self.display, window);
         }
     }
 
     pub fn move_window(&self, w: Window, dest_x: i32, dest_y: i32) {
         unsafe {
-            xlib::XMoveWindow(self.display, w, dest_x, dest_y);
+            (self.lib.XMoveWindow)(self.display, w, dest_x, dest_y);
         }
     }
 
     pub fn next_event(&self) -> Event {
         let ret_event = unsafe {
             let mut event: xlib::XEvent = mem::uninitialized();
-            xlib::XNextEvent(self.display, &mut event);
+            (self.lib.XNextEvent)(self.display, &mut event);
             //println!("Event: {:?}", event);
             //println!("Event type: {:?}", event.get_type());
             match event.get_type() {
@@ -337,7 +340,7 @@ impl XlibWrapper {
 
     pub fn raise_window(&self, w: Window) -> XResult<()> {
         unsafe {
-            match xlib::XRaiseWindow(self.display, w) as u8 {
+            match (self.lib.XRaiseWindow)(self.display, w) as u8 {
                 xlib::BadValue => Err(XlibError::BadValue),
                 xlib::BadWindow => Err(XlibError::BadWindow),
                 _ => Err(XlibError::Unknown)
@@ -347,13 +350,13 @@ impl XlibWrapper {
 
     pub fn remove_from_save_set(&self, w: Window) {
         unsafe {
-            xlib::XRemoveFromSaveSet(self.display, w);
+            (self.lib.XRemoveFromSaveSet)(self.display, w);
         }
     }
 
     pub fn reparent_window(&self, w: Window, parent: Window) {
         unsafe {
-            xlib::XReparentWindow(
+            (self.lib.XReparentWindow)(
                 self.display,
                 w,
                 parent,
@@ -364,7 +367,7 @@ impl XlibWrapper {
 
     pub fn select_input(&mut self, window: xlib::Window, masks: Mask) {
         unsafe {
-            xlib::XSelectInput(
+            (self.lib.XSelectInput)(
                 self.display,
                 window,
                 masks
@@ -377,13 +380,13 @@ impl XlibWrapper {
             return;
         }
         unsafe {
-            xlib::XSetWindowBorderWidth(self.display, w, border_width);
+            (self.lib.XSetWindowBorderWidth)(self.display, w, border_width);
         }
     }
 
     pub fn set_input_focus(&self, w: Window, revert_to: i32, time: Time) -> XResult<()> {
         unsafe {
-            match xlib::XSetInputFocus(self.display, w, revert_to, time) as u8 {
+            match (self.lib.XSetInputFocus)(self.display, w, revert_to, time) as u8 {
                 xlib::BadValue => Err(XlibError::BadValue),
                 xlib::BadMatch => Err(XlibError::BadMatch),
                 xlib::BadWindow => Err(XlibError::BadWindow),
@@ -394,7 +397,7 @@ impl XlibWrapper {
 
     pub fn sync(&mut self, discard: bool) {
         unsafe {
-            xlib::XSync(self.display, discard as i32);
+            (self.lib.XSync)(self.display, discard as i32);
         }
     }
 
@@ -404,7 +407,7 @@ impl XlibWrapper {
             let mut returned_parent: Window = mem::uninitialized();
             let mut top_level_windows: *mut Window = mem::uninitialized();
             let mut num_top_level_windows: u32 = mem::uninitialized();
-            xlib::XQueryTree(
+            (self.lib.XQueryTree)(
                 self.display,
                 self.root,
                 &mut returned_root,
@@ -418,18 +421,18 @@ impl XlibWrapper {
 
     pub fn unmap_window(&self, w: Window) {
         unsafe {
-            xlib::XUnmapWindow(self.display, w);
+            (self.lib.XUnmapWindow)(self.display, w);
         }
     }
 
     pub fn generic_error_handler(&mut self) {
         unsafe {
-            xlib::XSetErrorHandler(Some(error_handler));
+            (self.lib.XSetErrorHandler)(Some(error_handler));
         }
     }
     pub fn other_wm_error_handler(&mut self) {
         unsafe {
-            xlib::XSetErrorHandler(Some(on_wm_detected));
+            (self.lib.XSetErrorHandler)(Some(on_wm_detected));
         }
     }
 
