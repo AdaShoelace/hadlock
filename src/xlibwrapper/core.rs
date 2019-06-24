@@ -7,18 +7,11 @@ use std::mem;
 
 #[macro_use]
 use bitflags;
-use util::*;
 
 use super::xlibwrappererror::{ Result as XResult, XlibWrapperError as XlibError};
 use super::masks::*;
-
-pub(crate) type Mask = c_long;
-pub(crate) type Window = xlib::Window;
-pub(crate) type Display = xlib::Display;
-pub(crate) type Drawable = xlib::Drawable;
-pub(crate) type Time = xlib::Time;
-
-
+use super::util::*;
+use super::util::keysym_lookup::*;
 
 pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> c_int {
     let error = CString::from_raw((*e).error_code as *mut c_char);
@@ -212,6 +205,42 @@ impl XlibWrapper {
         }
     }
 
+    pub fn key_sym_to_keycode(&self, keysym: u64) -> KeyCode {
+        unsafe {
+            xlib::XKeysymToKeycode(self.display, keysym)
+        }
+    }
+
+    pub fn get_keycode_from_string(&self, key: &str) -> u64 {
+        unsafe {
+            match CString::new(key.as_bytes()) {
+                Ok(b) => xlib::XStringToKeysym(b.as_ptr()) as u64,
+                _ => panic!("Invalid key string!"),
+            }
+        }
+    }
+
+    pub fn grab_key(&self,
+                    key_code: i32,
+                    modifiers: u32,
+                    grab_window: Window,
+                    owner_event: bool,
+                    pointer_mode: i32,
+                    keyboard_mode: i32) {
+        unsafe {
+            // add error handling.. Like really come up with a strategy!
+            xlib::XGrabKey(
+                self.display,
+                key_code,
+                modifiers,
+                grab_window,
+                to_c_bool(owner_event),
+                pointer_mode,
+                keyboard_mode
+            );
+        }
+    }
+
     pub fn kill_client(&self, w: Window) {
         unsafe {
             let wmdelete = self.intern_atom("WM_DELETE_WINDOW").unwrap();
@@ -285,6 +314,11 @@ impl XlibWrapper {
                     let event = xlib::XButtonEvent::from(event);
                     Event::ButtonPressed(event.window, event.subwindow, event.button, event.x_root as u32, event.y_root as u32, event.state as u32)
                 },
+                xlib::KeyPress => {
+                    println!("Keypress\tEvent: {:?}", event);
+                    let event = xlib::XKeyEvent::from(event);
+                    Event::KeyPress(event.window, event.state, event.keycode)
+                },
                 xlib::MotionNotify => {
                     let event = xlib::XMotionEvent::from(event);
                     Event::MotionNotify(
@@ -310,7 +344,7 @@ impl XlibWrapper {
             }
         }
     }
-    
+
     pub fn remove_from_save_set(&self, w: Window) {
         unsafe {
             xlib::XRemoveFromSaveSet(self.display, w);
@@ -363,7 +397,7 @@ impl XlibWrapper {
             xlib::XSync(self.display, discard as i32);
         }
     }
-    
+
     pub fn top_level_window_count(&self) -> u32 {
         unsafe {
             let mut returned_root: Window = mem::uninitialized();
@@ -377,7 +411,7 @@ impl XlibWrapper {
                 &mut returned_parent,
                 &mut top_level_windows,
                 &mut num_top_level_windows
-                );
+            );
             num_top_level_windows
         }
     }
@@ -407,6 +441,7 @@ pub enum Event {
     ConfigurationRequest(Window, WindowChanges, u64),
     WindowCreated(Window),
     ButtonPressed(Window, Window, u32, u32, u32, u32),
+    KeyPress(Window, u32, u32),
     MotionNotify(Window, i32, i32, u32),
     ButtonReleased,
     // CreateNotify(CreateWindowEvent),
@@ -522,28 +557,4 @@ impl <'a> Into<xlib::XWindowAttributes> for WindowAttributes<'a> {
     }
 }
 
-pub mod util {
-    pub fn from_c_bool(b: i32) -> bool {
-        if b > 0 || b < 0{
-            true
-        } else {
-            false
-        }
-    }
-
-    pub fn to_c_bool(b: bool) -> i32 {
-        if b || !b {
-            1
-        } else {
-            0
-        }
-    }
-
-    pub struct Position { pub x: i32, pub y: i32 }
-    pub struct Size { pub width: u32, pub height: u32 }
-    pub enum Color {
-        RED = 0xff0000,
-        BLUE = 0x0000ff,
-    }
-}
 

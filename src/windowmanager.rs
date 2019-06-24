@@ -3,7 +3,8 @@ use libc::{c_char, c_uchar, c_int, c_uint, c_long, c_ulong};
 use std::collections::HashMap;
 use crate::xlibwrapper::masks::*;
 use crate::xlibwrapper::core::*;
-use crate::xlibwrapper::core::util::{Color, Position, Size};
+use crate::xlibwrapper::util::*;
+
 
 pub struct WindowManager {
     lib:  XlibWrapper,
@@ -43,6 +44,7 @@ impl WindowManager {
                     println!("Button pressed");
                     self.on_button_pressed(window, sub_window, button, x_root, y_root, state);
                 },
+                Event::KeyPress(window, state, keycode) => self.on_key_pressed(window, state, keycode),
                 Event::MotionNotify(window, x_root, y_root, state) => {
                     println!("On motion notify");
                     self.on_motion_notify(
@@ -125,6 +127,10 @@ impl WindowManager {
         }
 
     }
+    
+    fn on_key_pressed(&mut self, w: Window, state: u32, keycode: u32) {
+        println!("Keypress event in window manager");
+    }
 
     fn on_motion_notify(&mut self, w: Window, x_root: i32, y_root: i32, state: u32) {
         let frame = self.clients.get(&w).unwrap();
@@ -203,8 +209,16 @@ impl WindowManager {
             GrabModeAsync,
             GrabModeAsync,
             0,0);
-        //(lib.XGrabButton)(...)
-        //(lib.XGrabKey)(...)
+        
+        self.lib.grab_key(
+            self.lib.get_keycode_from_string("q") as i32,
+            Mod4Mask,
+            w,
+            false,
+            GrabModeAsync,
+            GrabModeAsync);
+        //self.lib.grab_key
+
         //(lib.XGrabKey)(...)
         // TODO - implement keygrabbing/keyevent
         // TODO - implement closing of windows by protocols/atom else by KillClient
