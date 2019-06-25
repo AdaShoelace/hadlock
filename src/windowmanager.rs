@@ -55,6 +55,8 @@ impl WindowManager {
                         state
                     )
                 },
+                Event::EnterNotify(window) => self.on_enter(window),
+                Event::LeaveNotify(window) => self.on_leave(window),
                 _ => {}//println!("Unknown event")
             }
         }
@@ -111,26 +113,25 @@ impl WindowManager {
         self.drag_start_frame_size = (geometry.width, geometry.height);
 
 
-        /*if let Err(e) = self.lib.raise_window(*frame) {
-          println!("Ole dole doff");
-          println!("{}", e);
-          }*/
-
-        if button == Button3 {
-            // self.lib.unmap_window(*frame);
-            self.kill_window(window);
-            //self.lib.destroy_window(*frame);
-            // let err = self.kill_window(*frame);
-
-            println!("Top level windows: {}", self.lib.top_level_window_count());
-
-            // println!("kill_window response: {:?}", err);
+        if let Err(e) = self.lib.raise_window(*frame) {
+            println!("Ole dole doff");
+            println!("{}", e);
         }
+    }
 
+    fn on_enter(&self, w: Window) {
+        //self.lib.unmap_window(w);
+        self.lib.set_border_width(w, 3);
+        self.lib.set_border_color(w);
+        //self.lib.map_window(w);
+    }
+
+    fn on_leave(&self, w: Window) {
+        self.lib.set_border_width(w, 0);
     }
 
     fn on_key_pressed(&mut self, w: Window, state: u32, keycode: u32) {
-        if self.lib.key_sym_to_keycode(keysym_lookup::into_keysym("q").unwrap() as u64 ) == keycode as u8 && (state & Mod4Mask) != 0 {
+        if self.lib.key_sym_to_keycode(keysym_lookup::into_keysym("q").unwrap() as u64 ) == keycode as u8 && (state & (Mod4Mask | Shift)) != 0 {
             self.kill_window(w);
         }
     }
@@ -173,13 +174,16 @@ impl WindowManager {
 
         let attributes = self.lib.get_window_attributes(w);
         let parent = self.lib.get_root();
+
         self.lib.select_input(
             w,
-            SubstructureRedirectMask | SubstructureNotifyMask
+            EnterWindowMask | LeaveWindowMask 
         );
+
         //self.lib.configure_window()
         self.lib.add_to_save_set(w);
         self.lib.map_window(w);
+        self.lib.change_frame_property(w);
         self.clients.insert(w, w);
 
         // move window super + mouse1
@@ -204,10 +208,11 @@ impl WindowManager {
             GrabModeAsync,
             GrabModeAsync,
             0,0);
+
         let q_sym = keysym_lookup::into_keysym("q").expect("Apparently q is not a keysym");
         self.lib.grab_key(
             self.lib.key_sym_to_keycode(q_sym as u64) as u32,
-            Mod4Mask,
+            Mod4Mask | Shift,
             w,
             false,
             GrabModeAsync,
