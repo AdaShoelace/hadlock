@@ -22,7 +22,7 @@ pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xli
 
 pub(crate) unsafe extern "C" fn on_wm_detected(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> c_int {
     if (*e).error_code == xlib::BadAccess {
-        panic!("Other wm registered!")
+        panic!("Other wm registered!");
     }
     return 0;
 }
@@ -98,6 +98,41 @@ impl XlibWrapper {
         false
     }
 
+    pub fn set_border_color(&self, w: Window) {
+        if w == self.root {
+            return;
+        }
+
+
+        unsafe {
+            /*let mut attr: xlib::XSetWindowAttributes = mem::uninitialized();
+            attr.border_pixel = 0x00ff00;
+            (self.lib.XChangeWindowAttributes)(
+                self.display,
+                w,
+                xlib::CWBorderPixel,
+                &mut attr
+            );*/
+            (self.lib.XSetWindowBorder)(
+                self.display,
+                w,
+                0x00ff00
+            );
+            (self.lib.XUnmapWindow)(
+                self.display,
+                w
+            );
+            (self.lib.XMapWindow)(
+                self.display,
+                w
+            );
+            (self.lib.XSync)(
+                self.display,
+                0
+            );
+        }
+    }
+
     pub fn configure_window(&mut self,
                             window: Window,
                             value_mask: Mask,
@@ -159,6 +194,23 @@ impl XlibWrapper {
                 xlib::BadWindow => Err(XlibError::BadWindow),
                 _ => Ok(())
             }
+        }
+    }
+
+    pub fn focus_window(&self, w: Window) {
+        unsafe {
+            let list = vec![w];
+            (self.lib.XChangeProperty)(
+                self.display,
+                self.root,
+                self.xatom.NetActiveWindow,
+                xlib::XA_WINDOW,
+                32,
+                xlib::PropModeReplace,
+                list.as_ptr() as *const u8,
+                1
+            );
+            mem::forget(list);
         }
     }
 
@@ -306,11 +358,12 @@ impl XlibWrapper {
         }
     }
 
-    pub fn map_window(&mut self, window: Window) {
+    pub fn map_window(&self, window: Window) {
         unsafe {
             (self.lib.XMapWindow)(self.display, window);
         }
     }
+
 
     pub fn move_window(&self, w: Window, dest_x: i32, dest_y: i32) {
         unsafe {
@@ -324,9 +377,8 @@ impl XlibWrapper {
             (self.lib.XNextEvent)(self.display, &mut event);
             //println!("Event: {:?}", event);
             //println!("Event type: {:?}", event.get_type());
-            unsafe {
-                println!("Pending events: {}", (self.lib.XPending)(self.display))
-            };
+            println!("Pending events: {}", (self.lib.XPending)(self.display));
+
             match event.get_type() {
                 xlib::ConfigureRequest => {
                     let event = xlib::XConfigureRequestEvent::from(event);
@@ -367,6 +419,16 @@ impl XlibWrapper {
                         event.y_root,
                         event.state
                     )
+                },
+                xlib::EnterNotify => {
+                    println!("EnterNotify");
+                    let event = xlib::XCrossingEvent::from(event);
+                    Event::EnterNotify(event.window)
+                },
+                xlib::LeaveNotify => {
+                    println!("LeaveNotify");
+                    let event = xlib::XCrossingEvent::from(event);
+                    Event::LeaveNotify(event.window)
                 }
                 _ => Event::UnknownEvent
             }
@@ -472,6 +534,8 @@ pub enum Event {
     ButtonPressed(Window, Window, u32, u32, u32, u32),
     KeyPress(Window, u32, u32),
     MotionNotify(Window, i32, i32, u32),
+    EnterNotify(Window),
+    LeaveNotify(Window),
     ButtonReleased,
     // CreateNotify(CreateWindowEvent),
     UnknownEvent

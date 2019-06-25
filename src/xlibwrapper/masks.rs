@@ -3,6 +3,8 @@ use x11::xlib;
 // input masks
 pub const SubstructureRedirectMask: i64 = xlib::SubstructureRedirectMask;
 pub const SubstructureNotifyMask: i64 = xlib::SubstructureNotifyMask;
+pub const EnterWindowMask: i64 = xlib::EnterWindowMask;
+pub const LeaveWindowMask: i64 = xlib::LeaveWindowMask;
 
 // Mouse buttons
 pub const Button1: u32 = xlib::Button1;
