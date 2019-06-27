@@ -54,6 +54,11 @@ impl XlibWrapper {
             (lib.XSync)(disp, 0);
             (lib.XSetErrorHandler)(Some(error_handler));
             let xatom = XAtom::new(&lib, disp);
+
+
+            
+
+
             (disp, root, lib, xatom)
         };
 
@@ -105,26 +110,10 @@ impl XlibWrapper {
 
 
         unsafe {
-            /*let mut attr: xlib::XSetWindowAttributes = mem::uninitialized();
-            attr.border_pixel = 0x00ff00;
-            (self.lib.XChangeWindowAttributes)(
-                self.display,
-                w,
-                xlib::CWBorderPixel,
-                &mut attr
-            );*/
             (self.lib.XSetWindowBorder)(
                 self.display,
                 w,
                 0x00ff00
-            );
-            (self.lib.XUnmapWindow)(
-                self.display,
-                w
-            );
-            (self.lib.XMapWindow)(
-                self.display,
-                w
             );
             (self.lib.XSync)(
                 self.display,
@@ -152,9 +141,9 @@ impl XlibWrapper {
         }
     }
 
-    pub fn change_frame_property(&self, frame: Window) {
+    pub fn add_to_root_net_client_list(&self, w: Window) {
         unsafe {
-            let list = vec![frame];
+            let list = vec![w];
 
             (self.lib.XChangeProperty)(
                 self.display,
@@ -280,6 +269,33 @@ impl XlibWrapper {
             let mut attr: xlib::XWindowAttributes = mem::uninitialized();
             (self.lib.XGetWindowAttributes)(self.display, w, &mut attr);
             WindowAttributes::from(attr)
+        }
+    }
+    
+    pub fn grab_server(&self) {
+        unsafe {
+            (self.lib.XGrabServer)(
+                self.display
+            );
+        }
+    }
+
+    pub fn ungrab_server(&self) {
+        unsafe {
+            (self.lib.XUngrabServer)(
+                self.display
+            );
+        }
+    }
+    
+    pub fn ungrab_all_buttons(&self, w: Window) {
+        unsafe {
+            (self.lib.XUngrabButton)(
+                self.display,
+                xlib::AnyButton as u32,
+                xlib::AnyModifier,
+                w
+            );
         }
     }
 
@@ -486,6 +502,26 @@ impl XlibWrapper {
     pub fn sync(&mut self, discard: bool) {
         unsafe {
             (self.lib.XSync)(self.display, discard as i32);
+        }
+    }
+    
+    pub fn get_top_level_windows(&self) -> Vec<Window> {
+        unsafe {
+            let mut returned_root: Window = mem::uninitialized();
+            let mut returned_parent: Window = mem::uninitialized();
+            let mut top_level_windows: *mut Window = mem::uninitialized();
+            let mut num_top_level_windows: u32 = mem::uninitialized();
+            (self.lib.XQueryTree)(
+                self.display,
+                self.root,
+                &mut returned_root,
+                &mut returned_parent,
+                &mut top_level_windows,
+                &mut num_top_level_windows
+            );
+
+            let mut windows = std::slice::from_raw_parts(top_level_windows, num_top_level_windows as usize);
+            Vec::from(windows)
         }
     }
 
