@@ -7,6 +7,7 @@ extern crate lazy_static;
 mod windowmanager;
 //mod windowmanager_bup;
 mod xlibwrapper;
+mod models;
 
 //use windowmanager_bup as windowmanager;
 use windowmanager::*;

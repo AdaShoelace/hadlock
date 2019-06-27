@@ -32,6 +32,17 @@ impl WindowManager {
     }
 
     pub fn run(&mut self) {
+
+
+        // manage windows created before wm
+        self.lib.grab_server();
+        self.lib.get_top_level_windows()
+            .iter()
+            .map(|w| {
+                self.setup_window(*w)
+            });
+        self.lib.ungrab_server();
+
         loop {
             let event = self.lib.next_event();
             //println!("{:?}", &event);
@@ -166,26 +177,18 @@ impl WindowManager {
         self.clients.remove(&w);
         let clients = self.clients.len();
     }
-
+    
     fn setup_window(&mut self, w: Window) {
-        const BORDER_WIDTH: c_uint = 3;
-        const BORDER_COLOR: Color = Color::RED;
-        const BG_COLOR: Color = Color::BLUE;
 
-        let attributes = self.lib.get_window_attributes(w);
-        let parent = self.lib.get_root();
-
-        self.lib.select_input(
-            w,
-            EnterWindowMask | LeaveWindowMask 
-        );
-
-        //self.lib.configure_window()
         self.lib.add_to_save_set(w);
         self.lib.map_window(w);
-        self.lib.change_frame_property(w);
+        self.lib.add_to_root_net_client_list(w);
         self.clients.insert(w, w);
-
+        self.lib.ungrab_all_buttons(w);
+        self.lib.select_input(
+            w,
+            EnterWindowMask | ButtonPressMask
+        );
         // move window super + mouse1
         self.lib.grab_button(
             Button1,
