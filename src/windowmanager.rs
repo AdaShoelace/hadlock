@@ -107,8 +107,7 @@ impl WindowManager {
     }
 
     fn on_button_pressed(&mut self, window: Window, sub_window: Window, button: u32, x_root: u32, y_root: u32, state: u32) {
-        //println!("On button pressed");
-        if !self.clients.contains_key(&window) {
+        if !self.clients.contains_key(&window) && window == self.lib.get_root() {
             return
         }
 
@@ -131,10 +130,8 @@ impl WindowManager {
     }
 
     fn on_enter(&self, w: Window) {
-        //self.lib.unmap_window(w);
         self.lib.set_border_width(w, 3);
         self.lib.set_border_color(w);
-        //self.lib.map_window(w);
     }
 
     fn on_leave(&self, w: Window) {
@@ -173,22 +170,48 @@ impl WindowManager {
         let frame = self.clients.get(&w).unwrap();
 
         self.lib.kill_client(*frame);
-        // self.lib.destroy_window(*frame);
+        //self.lib.destroy_window(*frame);
         self.clients.remove(&w);
-        let clients = self.clients.len();
     }
-    
+
+    fn subscribe_to_events(&mut self, w: Window) {
+        self.lib.select_input(
+            w,
+            EnterWindowMask | LeaveWindowMask
+        );
+    }
+
+    fn grab_keys(&mut self, w: Window) {
+
+        let keys: Vec<u32> =
+            vec!["q"]
+            .into_iter()
+            .map(|key| {
+                keysym_lookup::into_keysym(key).unwrap()
+            }).map(|keysym| {
+                self.lib.key_sym_to_keycode(keysym as u64) as u32
+            }).collect();
+
+
+        let q_sym = keysym_lookup::into_keysym("q").expect("Apparently q is not a keysym");
+        self.lib.grab_key(
+            self.lib.key_sym_to_keycode(q_sym as u64) as u32,
+            Mod4Mask,
+            w,
+            false,
+            GrabModeAsync,
+            GrabModeAsync);
+    }
+
     fn setup_window(&mut self, w: Window) {
 
         self.lib.add_to_save_set(w);
         self.lib.map_window(w);
-        self.lib.add_to_root_net_client_list(w);
+        // self.lib.add_to_root_net_client_list(w);
         self.clients.insert(w, w);
         self.lib.ungrab_all_buttons(w);
-        self.lib.select_input(
-            w,
-            EnterWindowMask | ButtonPressMask
-        );
+        self.subscribe_to_events(w);
+
         // move window super + mouse1
         self.lib.grab_button(
             Button1,
@@ -211,15 +234,7 @@ impl WindowManager {
             GrabModeAsync,
             GrabModeAsync,
             0,0);
-
-        let q_sym = keysym_lookup::into_keysym("q").expect("Apparently q is not a keysym");
-        self.lib.grab_key(
-            self.lib.key_sym_to_keycode(q_sym as u64) as u32,
-            Mod4Mask | Shift,
-            w,
-            false,
-            GrabModeAsync,
-            GrabModeAsync);
+        self.grab_keys(w);
         //self.lib.grab_key
 
         //(lib.XGrabKey)(...)

@@ -15,16 +15,19 @@ use super::util::keysym_lookup::*;
 use super::xatom::*;
 
 pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> c_int {
-    let error = CString::from_raw((*e).error_code as *mut c_char);
-    println!("Error: {}", error.to_str().unwrap());
-    return 0;
+    let err = unsafe { *e };
+    if err.error_code == xlib::BadWindow {
+        return 0;
+    }
+    1
 }
 
 pub(crate) unsafe extern "C" fn on_wm_detected(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> c_int {
     if (*e).error_code == xlib::BadAccess {
         panic!("Other wm registered!");
+        return 1;
     }
-    return 0;
+    0
 }
 
 pub struct XlibWrapper {
@@ -49,15 +52,11 @@ impl XlibWrapper {
             (lib.XSelectInput)(
                 disp,
                 root,
-                xlib::SubstructureNotifyMask | xlib::SubstructureRedirectMask
+                xlib::SubstructureNotifyMask | xlib::SubstructureRedirectMask /*| xlib::ButtonPressMask | xlib::Button1Mask as i64*/
             );
             (lib.XSync)(disp, 0);
             (lib.XSetErrorHandler)(Some(error_handler));
             let xatom = XAtom::new(&lib, disp);
-
-
-            
-
 
             (disp, root, lib, xatom)
         };
@@ -138,6 +137,19 @@ impl XlibWrapper {
             };
 
             (self.lib.XConfigureWindow)(self.display, window, value_mask as u32, &mut raw_changes);
+        }
+    }
+    
+    pub fn grab_keyboard(&self, w: Window) {
+        unsafe {
+            (self.lib.XGrabKeyboard)(
+                self.display,
+                w,
+                to_c_bool(false),
+                GrabModeAsync,
+                GrabModeAsync,
+                xlib::CurrentTime
+            );
         }
     }
 
