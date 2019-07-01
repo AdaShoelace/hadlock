@@ -6,7 +6,7 @@ use crate::xlibwrapper::core::*;
 use crate::xlibwrapper::util::*;
 use crate::models::windowwrapper::*;
 
-pub const DecorationHeight: i32 = 20;
+pub const DecorationHeight: i32 = 15;
 pub const BorderWidth: i32 = 2;
 pub const InnerBorderWidth: i32 = 0;
 
@@ -39,11 +39,11 @@ impl WindowManager {
         let window_geom = self.lib.get_geometry(w.window()).expect("Failed to get window geometry");
         let dec_window = self.lib.create_simple_window(
             self.lib.get_root(),
-            Position { x: window_geom.x, y: window_geom.y - DecorationHeight },
-            Size { width: window_geom.width, height: window_geom.height + (DecorationHeight as u32) },
-            3,
-            Color::SolarizedCyan,
-            Color::SolarizedDarkGray
+            Position { x: window_geom.x - InnerBorderWidth - BorderWidth, y: window_geom.y - InnerBorderWidth - BorderWidth - DecorationHeight },
+            Size { width: window_geom.width + 2 * InnerBorderWidth as u32, height: window_geom.height + 2 * (BorderWidth + DecorationHeight) as u32 },
+            BorderWidth as u32,
+            Color::SolarizedPurple,
+            Color::SolarizedPurple
         );
 
         self.lib.select_input(dec_window, ExposureMask);
@@ -71,6 +71,7 @@ impl WindowManager {
         let mut ww = WindowWrapper::new(w);
         let inner_window = ww.window();
         self.lib.set_border_width(w, InnerBorderWidth as u32);
+        self.lib.set_border_color(w, Color::SolarizedPurple);
         self.decorate_window(&mut ww);
 
         self.lib.add_to_save_set(inner_window);
@@ -188,11 +189,9 @@ impl WindowManager {
 
         match ww.get_dec() {
             Some(dec) => {
-                self.lib.set_border_width(dec, 3);
-                self.lib.set_border_color(dec, Color::SolarizedPurple);
+                self.lib.set_border_color(dec, Color::SolarizedCyan);
             },
             None => {
-                self.lib.set_border_width(w, 3);
                 self.lib.set_border_color(w, Color::SolarizedPurple);
             }
         }
@@ -200,11 +199,17 @@ impl WindowManager {
     }
 
     fn on_leave(&self, w: Window) {
+        // this check is an ugly hack to not crash when decorations window gets destroyed before
+        // client and client recieves an "OnLeave"-event
+        if !self.clients.contains_key(&w) {
+            return;
+        }
+
         let ww = self.clients.get(&w).expect("OnLeave: No such window in client list");
 
         match ww.get_dec() {
-            Some(dec) => self.lib.set_border_width(dec, 0),
-            None => self.lib.set_border_width(ww.window(), 0)
+            Some(dec) => self.lib.set_border_color(dec, Color::SolarizedPurple),
+            None => self.lib.set_border_color(ww.window(), Color::SolarizedPurple)
         }
     }
 
@@ -235,13 +240,13 @@ impl WindowManager {
             Some(dec) => {
                 self.lib.move_window(
                     dec,
-                    x - BorderWidth,
-                    y - DecorationHeight
+                    x,
+                    y
                 );
                 self.lib.move_window(
                     ww.window(),
-                    x,
-                    y
+                    x + InnerBorderWidth + BorderWidth,
+                    y + DecorationHeight + BorderWidth + DecorationHeight
                 );
             },
             None => self.lib.move_window(
