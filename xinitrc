@@ -5,7 +5,7 @@ xrdb -load Xresources
 feh --bg-scale ./wallpaper.jpg &
 
 # 1. Start some programs to play with.
-xterm &
+#xterm &
 xclock &
 xeyes &
 

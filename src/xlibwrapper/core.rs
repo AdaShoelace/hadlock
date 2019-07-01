@@ -24,7 +24,7 @@ pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xli
 
 pub(crate) unsafe extern "C" fn on_wm_detected(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> c_int {
     if (*e).error_code == xlib::BadAccess {
-        panic!("Other wm registered!");
+        eprintln!("Other wm registered!");
         return 1;
     }
     0
@@ -102,17 +102,18 @@ impl XlibWrapper {
         false
     }
 
-    pub fn set_border_color(&self, w: Window) {
+    pub fn set_border_color(&self, w: Window, color: Color) {
         if w == self.root {
             return;
         }
 
+        let color = color.value();
 
         unsafe {
             (self.lib.XSetWindowBorder)(
                 self.display,
                 w,
-                0x00ff00
+                color
             );
             (self.lib.XSync)(
                 self.display,
@@ -139,7 +140,7 @@ impl XlibWrapper {
             (self.lib.XConfigureWindow)(self.display, window, value_mask as u32, &mut raw_changes);
         }
     }
-    
+
     pub fn grab_keyboard(&self, w: Window) {
         unsafe {
             (self.lib.XGrabKeyboard)(
@@ -182,8 +183,8 @@ impl XlibWrapper {
                 size.width,
                 size.height,
                 border_width,
-                border_color as u64,
-                bg_color as u64
+                border_color.value(),
+                bg_color.value()
             )
         }
     }
@@ -283,7 +284,7 @@ impl XlibWrapper {
             WindowAttributes::from(attr)
         }
     }
-    
+
     pub fn grab_server(&self) {
         unsafe {
             (self.lib.XGrabServer)(
@@ -299,7 +300,7 @@ impl XlibWrapper {
             );
         }
     }
-    
+
     pub fn ungrab_all_buttons(&self, w: Window) {
         unsafe {
             (self.lib.XUngrabButton)(
@@ -426,6 +427,7 @@ impl XlibWrapper {
                     )
                 },
                 xlib::MapRequest => {
+                    println!("MapRequest");
                     let event = xlib::XMapRequestEvent::from(event);
                     Event::WindowCreated(event.window)
                 },
@@ -465,13 +467,9 @@ impl XlibWrapper {
         ret_event
     }
 
-    pub fn raise_window(&self, w: Window) -> XResult<()> {
+    pub fn raise_window(&self, w: Window) {
         unsafe {
-            match (self.lib.XRaiseWindow)(self.display, w) as u8 {
-                xlib::BadValue => Err(XlibError::BadValue),
-                xlib::BadWindow => Err(XlibError::BadWindow),
-                _ => Err(XlibError::Unknown)
-            }
+            (self.lib.XRaiseWindow)(self.display, w);
         }
     }
 
@@ -481,7 +479,7 @@ impl XlibWrapper {
         }
     }
 
-    pub fn select_input(&mut self, window: xlib::Window, masks: Mask) {
+    pub fn select_input(&self, window: xlib::Window, masks: Mask) {
         unsafe {
             (self.lib.XSelectInput)(
                 self.display,
@@ -511,12 +509,12 @@ impl XlibWrapper {
         }
     }
 
-    pub fn sync(&mut self, discard: bool) {
+    pub fn sync(&self, discard: bool) {
         unsafe {
             (self.lib.XSync)(self.display, discard as i32);
         }
     }
-    
+
     pub fn get_top_level_windows(&self) -> Vec<Window> {
         unsafe {
             let mut returned_root: Window = mem::uninitialized();
@@ -558,17 +556,6 @@ impl XlibWrapper {
     pub fn unmap_window(&self, w: Window) {
         unsafe {
             (self.lib.XUnmapWindow)(self.display, w);
-        }
-    }
-
-    pub fn generic_error_handler(&mut self) {
-        unsafe {
-            (self.lib.XSetErrorHandler)(Some(error_handler));
-        }
-    }
-    pub fn other_wm_error_handler(&mut self) {
-        unsafe {
-            (self.lib.XSetErrorHandler)(Some(on_wm_detected));
         }
     }
 
