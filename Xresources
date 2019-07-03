@@ -1,4 +1,5 @@
 
+Xft.dpi: 192
 XTerm*background:        #00F000
 XTerm*foreground:        #9b9b9b
 XTerm*pointerColor:      #00F000
