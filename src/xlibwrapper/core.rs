@@ -1,21 +1,17 @@
-#![allow(non_upper_case_globals)]
+#![allow(non_upper_case_globals, dead_code)]
 
 use x11_dl::xlib;
 use std::os::raw::*;
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 use std::mem;
-
-#[macro_use]
-use bitflags;
 
 use super::xlibwrappererror::{ Result as XResult, XlibWrapperError as XlibError};
 use super::masks::*;
 use super::util::*;
-use super::util::keysym_lookup::*;
 use super::xatom::*;
 
 pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> c_int {
-    let err = unsafe { *e };
+    let err = *e;
     if err.error_code == xlib::BadWindow {
         return 0;
     }
@@ -73,6 +69,10 @@ impl XlibWrapper {
         unsafe {
             (self.lib.XAddToSaveSet)(self.display, w);
         }
+    }
+    
+    pub fn take_focus(&self, w: Window) {
+        self.send_xevent_atom(w, self.xatom.WMTakeFocus);
     }
 
     fn expects_xevent_atom(&self, window: Window, atom: xlib::Atom) -> bool {
@@ -338,6 +338,13 @@ impl XlibWrapper {
             );
         }
     }
+    
+    pub fn str_to_keycode(&self, key: &str) -> Option<KeyCode> {
+        match keysym_lookup::into_keysym(key) {
+            Some(key) => Some(self.key_sym_to_keycode(key.into())),
+            None => None
+        }
+    }
 
     pub fn key_sym_to_keycode(&self, keysym: u64) -> KeyCode {
         unsafe {
@@ -401,12 +408,12 @@ impl XlibWrapper {
     }
 
     pub fn next_event(&self) -> Event {
-        let ret_event = unsafe {
+        unsafe {
             let mut event: xlib::XEvent = mem::uninitialized();
             (self.lib.XNextEvent)(self.display, &mut event);
             //println!("Event: {:?}", event);
             //println!("Event type: {:?}", event.get_type());
-            println!("Pending events: {}", (self.lib.XPending)(self.display));
+            //println!("Pending events: {}", (self.lib.XPending)(self.display));
 
             match event.get_type() {
                 xlib::ConfigureRequest => {
@@ -427,17 +434,17 @@ impl XlibWrapper {
                     )
                 },
                 xlib::MapRequest => {
-                    println!("MapRequest");
+                    //println!("MapRequest");
                     let event = xlib::XMapRequestEvent::from(event);
                     Event::WindowCreated(event.window)
                 },
                 xlib::ButtonPress => {
-                    println!("Button press");
+                    //println!("Button press");
                     let event = xlib::XButtonEvent::from(event);
                     Event::ButtonPressed(event.window, event.subwindow, event.button, event.x_root as u32, event.y_root as u32, event.state as u32)
                 },
                 xlib::KeyPress => {
-                    println!("Keypress\tEvent: {:?}", event);
+                    //println!("Keypress\tEvent: {:?}", event);
                     let event = xlib::XKeyEvent::from(event);
                     Event::KeyPress(event.window, event.state, event.keycode)
                 },
@@ -451,25 +458,35 @@ impl XlibWrapper {
                     )
                 },
                 xlib::EnterNotify => {
-                    println!("EnterNotify");
+                    //println!("EnterNotify");
                     let event = xlib::XCrossingEvent::from(event);
                     Event::EnterNotify(event.window)
                 },
                 xlib::LeaveNotify => {
-                    println!("LeaveNotify");
+                    //println!("LeaveNotify");
                     let event = xlib::XCrossingEvent::from(event);
                     Event::LeaveNotify(event.window)
                 }
                 _ => Event::UnknownEvent
             }
-        };
-        // println!("ret_event: {:?}", ret_event);
-        ret_event
+        }
     }
 
     pub fn raise_window(&self, w: Window) {
         unsafe {
             (self.lib.XRaiseWindow)(self.display, w);
+        }
+    }
+
+    
+    pub fn resize_window(&self, w: Window, width: u32, height: u32) {
+        unsafe {
+            (self.lib.XResizeWindow)(
+                self.display,
+                w,
+                width,
+                height
+            );
         }
     }
 
@@ -530,7 +547,7 @@ impl XlibWrapper {
                 &mut num_top_level_windows
             );
 
-            let mut windows = std::slice::from_raw_parts(top_level_windows, num_top_level_windows as usize);
+            let windows = std::slice::from_raw_parts(top_level_windows, num_top_level_windows as usize);
             Vec::from(windows)
         }
     }

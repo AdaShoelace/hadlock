@@ -8,6 +8,7 @@ feh --bg-scale ./wallpaper.jpg &
 xterm &
 xclock &
 xeyes &
+#pcmanfm &
 
 # 2. Start our window manager.
 exec ./target/debug/hadlock

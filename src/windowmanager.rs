@@ -5,6 +5,7 @@ use crate::xlibwrapper::masks::*;
 use crate::xlibwrapper::core::*;
 use crate::xlibwrapper::util::*;
 use crate::models::windowwrapper::*;
+use crate::models::rect::*;
 
 pub const DecorationHeight: i32 = 15;
 pub const BorderWidth: i32 = 2;
@@ -37,10 +38,14 @@ impl WindowManager {
 
     fn decorate_window(&self, w: &mut WindowWrapper) {
         let window_geom = self.lib.get_geometry(w.window()).expect("Failed to get window geometry");
+        let position = Position { x: window_geom.x - InnerBorderWidth - BorderWidth,
+        y: window_geom.y - InnerBorderWidth - BorderWidth - DecorationHeight };
+
+        let size = Size { width: window_geom.width + (2 * InnerBorderWidth as u32), height: window_geom.height + (2 * BorderWidth as u32) + DecorationHeight as u32 };
         let dec_window = self.lib.create_simple_window(
             self.lib.get_root(),
-            Position { x: window_geom.x - InnerBorderWidth - BorderWidth, y: window_geom.y - InnerBorderWidth - BorderWidth - DecorationHeight },
-            Size { width: window_geom.width + 2 * InnerBorderWidth as u32, height: window_geom.height + 2 * (BorderWidth + DecorationHeight) as u32 },
+            position.clone(),
+            size.clone(),
             BorderWidth as u32,
             Color::SolarizedPurple,
             Color::SolarizedPurple
@@ -61,14 +66,16 @@ impl WindowManager {
         );
 
         // self.grab_keys(dec_window);
-        w.set_decoration(dec_window);
+        w.set_decoration(dec_window, Rect::new(position, size));
         self.lib.map_window(dec_window);
         self.lib.sync(false);
     }
 
     fn setup_window(&mut self, w: Window) {
 
-        let mut ww = WindowWrapper::new(w);
+        let geom = self.lib.get_geometry(w).unwrap();
+
+        let mut ww = WindowWrapper::new(w, Rect::from(geom));
         let inner_window = ww.window();
         self.lib.set_border_width(w, InnerBorderWidth as u32);
         self.lib.set_border_color(w, Color::SolarizedPurple);
@@ -112,7 +119,7 @@ impl WindowManager {
                     self.on_key_pressed(window, state, keycode)
                 },
                 Event::MotionNotify(window, x_root, y_root, state) => {
-                    println!("On motion notify");
+                    // println!("On motion notify");
                     self.on_motion_notify(
                         window,
                         x_root,
@@ -160,7 +167,7 @@ impl WindowManager {
     }
 
     fn on_button_pressed(&mut self, window: Window, sub_window: Window, button: u32, x_root: u32, y_root: u32, state: u32) {
-        if !self.clients.contains_key(&window) && window == self.lib.get_root() {
+        if !self.clients.contains_key(&window) || window == self.lib.get_root() {
             return
         }
 
@@ -195,6 +202,8 @@ impl WindowManager {
                 self.lib.set_border_color(w, Color::SolarizedPurple);
             }
         }
+        // need to rethink focus for non floating modes
+        self.lib.take_focus(w);
         self.lib.set_input_focus(w, RevertToParent, CurrentTime);
     }
 
@@ -214,13 +223,45 @@ impl WindowManager {
     }
 
     fn on_key_pressed(&mut self, w: Window, state: u32, keycode: u32) {
-        if self.lib.key_sym_to_keycode(keysym_lookup::into_keysym("q").unwrap() as u64 ) == keycode as u8
-            && (state & (Mod4Mask | Shift)) != 0 {
+        let ww = match self.clients.get(&w) {
+            Some(ww) => ww,
+            None => { return; }
+        };
+
+
+        if (state & (Mod4Mask | Shift)) != 0 {
+            let keycode = keycode as u8;
+
+            let width = ww.get_width();
+            let height = ww.get_height();
+
+            if self.lib.str_to_keycode("Right").unwrap() == keycode {
+                self.resize_window(w, width + 10, height);
+                return;
+            }
+            if self.lib.str_to_keycode("Left").unwrap() == keycode {
+                self.resize_window(w, ww.get_width() - 10, ww.get_height());
+                return;
+            }
+            if self.lib.str_to_keycode("Down").unwrap() == keycode {
+                self.resize_window(w, ww.get_width(), ww.get_height() + 10);
+                return;
+            }
+            if self.lib.str_to_keycode("Up").unwrap() == keycode {
+                self.resize_window(w, ww.get_width(), ww.get_height() - 10);
+                return;
+            }
+            if self.lib.str_to_keycode("q").unwrap() == keycode {
                 self.kill_window(w);
             }
+
+        }
     }
 
     fn on_motion_notify(&mut self, w: Window, x_root: i32, y_root: i32, state: u32) {
+        if !self.clients.contains_key(&w) {
+            return;
+        }
         let frame = self.clients.get(&w).expect("MotionNotify: No such window in client list").window();
 
         let drag_pos = Position { x: x_root, y: y_root };
@@ -246,7 +287,7 @@ impl WindowManager {
                 self.lib.move_window(
                     ww.window(),
                     x + InnerBorderWidth + BorderWidth,
-                    y + DecorationHeight + BorderWidth + DecorationHeight
+                    y + InnerBorderWidth + BorderWidth + DecorationHeight
                 );
             },
             None => self.lib.move_window(
@@ -276,6 +317,53 @@ impl WindowManager {
         self.clients.remove(&w);
     }
 
+    fn resize_window(&mut self, w: Window, width: u32, height: u32) {
+
+        let ww = match self.clients.get_mut(&w) {
+            Some(ww) => ww,
+            None => {
+                return;
+            }
+        };
+
+        //let inner_size_pre = ww.get_inner_rect().get_size(); //debug
+
+        if let Some(dec_rect) = ww.get_dec_rect() {
+            let mut dec_w = width - (2 * BorderWidth as u32);
+            let mut dec_h = height - (2 * BorderWidth as u32);
+
+            if width == dec_rect.get_size().width {
+                dec_w = width;
+            } else if height == dec_rect.get_size().height {
+                dec_h = height;
+            }
+
+            let dec_size = Size { width: dec_w, height: dec_h };
+            ww.set_dec_size(dec_size);
+            self.lib.resize_window(ww.get_dec().unwrap(), dec_size.width, dec_size.height);
+
+        }
+
+        let window_rect = ww.get_inner_rect();
+        let mut d_width = width - (2* InnerBorderWidth as u32) - (2 * BorderWidth as u32);
+        let mut d_height = height - (2* InnerBorderWidth as u32) - (2 * BorderWidth as u32) - DecorationHeight as u32;
+
+        if width == window_rect.get_size().width {
+            d_width = width;
+        } else if height == window_rect.get_size().height {
+            d_height = height;
+        }
+
+        let window_size = Size { width: d_width, height: d_height };
+
+        ww.set_inner_size(window_size);
+        self.lib.resize_window(ww.window(), window_size.width, window_size.height);
+
+        // let inner_size_post = ww.get_inner_rect().get_size(); //debug
+        // println!("Pre resize: {:?}\nPost resize: {:?}", inner_size_pre, inner_size_post);
+        // //debug
+    }
+
     fn subscribe_to_events(&mut self, w: Window) {
         self.lib.select_input(
             w,
@@ -286,7 +374,7 @@ impl WindowManager {
     fn grab_keys(&self, w: Window) {
 
         let keys: Vec<u32> =
-            vec!["q"]
+            vec!["q", "Left", "Up", "Right", "Down"]
             .into_iter()
             .map(|key| {
                 keysym_lookup::into_keysym(key).unwrap()
@@ -294,15 +382,17 @@ impl WindowManager {
                 self.lib.key_sym_to_keycode(keysym as u64) as u32
             }).collect();
 
-
-        let q_sym = keysym_lookup::into_keysym("q").expect("Apparently q is not a keysym");
-        self.lib.grab_key(
-            self.lib.key_sym_to_keycode(q_sym as u64) as u32,
-            Mod4Mask | Shift,
-            w,
-            false,
-            GrabModeAsync,
-            GrabModeAsync);
+        keys
+            .into_iter()
+            .for_each(|key| {
+                self.lib.grab_key(
+                    key,
+                    Mod4Mask | Shift,
+                    w,
+                    false,
+                    GrabModeAsync,
+                    GrabModeAsync);
+            });
     }
 
     fn grab_buttons(&self, w: Window) {

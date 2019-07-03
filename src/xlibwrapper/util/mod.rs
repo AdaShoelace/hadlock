@@ -11,8 +11,12 @@ pub(crate) type Drawable = xlib::Drawable;
 pub(crate) type Time = xlib::Time;
 pub(crate) type KeyCode = xlib::KeyCode;
 
+#[derive(Copy, Clone, Debug)]
 pub struct Position { pub x: i32, pub y: i32 }
+
+#[derive(Copy, Clone, Debug)]
 pub struct Size { pub width: u32, pub height: u32 }
+
 pub enum Color {
     Red,
     Blue,
@@ -35,6 +39,13 @@ impl Color {
             Color::SolarizedDarkGray => 0xe0e0e2
         }
     }
+}
+
+pub enum Direction {
+    Up,
+    Down,
+    Left,
+    Right
 }
 
 pub fn from_c_bool(b: i32) -> bool {
