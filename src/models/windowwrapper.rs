@@ -89,4 +89,11 @@ impl WindowWrapper {
             None => self.window_rect.get_size().height
         }
     }
+
+    pub fn get_position(&self) -> Position {
+        match self.dec_rect {
+            Some(dec_rect) => dec_rect.get_position(),
+            None => self.window_rect.get_position()
+        }
+    }
 }

@@ -28,7 +28,7 @@ pub(crate) unsafe extern "C" fn on_wm_detected(_: *mut xlib::Display, e: *mut xl
 
 pub struct XlibWrapper {
     lib: xlib::Xlib,
-    xatom: XAtom,
+    pub xatom: XAtom,
     display: *mut Display,
     root: xlib::Window,
 }
@@ -70,7 +70,7 @@ impl XlibWrapper {
             (self.lib.XAddToSaveSet)(self.display, w);
         }
     }
-    
+
     pub fn take_focus(&self, w: Window) {
         self.send_xevent_atom(w, self.xatom.WMTakeFocus);
     }
@@ -216,6 +216,7 @@ impl XlibWrapper {
         }
     }
 
+
     pub fn intern_atom(&self, s: &str) -> XResult<u64> {
         unsafe {
             match CString::new(s) {
@@ -338,7 +339,7 @@ impl XlibWrapper {
             );
         }
     }
-    
+
     pub fn str_to_keycode(&self, key: &str) -> Option<KeyCode> {
         match keysym_lookup::into_keysym(key) {
             Some(key) => Some(self.key_sym_to_keycode(key.into())),
@@ -358,6 +359,44 @@ impl XlibWrapper {
                 Ok(b) => (self.lib.XStringToKeysym)(b.as_ptr()) as u64,
                 _ => panic!("Invalid key string!"),
             }
+        }
+    }
+
+    pub fn get_window_type_atom(&self, w: Window) -> Option<xlib::Atom> {
+        self.get_atom_prop_value(w, self.xatom.NetWMWindowType)
+    }
+
+    pub fn get_atom_prop_value(
+        &self,
+        window: xlib::Window,
+        prop: xlib::Atom,
+        ) -> Option<xlib::Atom> {
+        // Shamelessly stolen from lex148/leftWM
+        let mut format_return: i32 = 0;
+        let mut nitems_return: c_ulong = 0;
+        let mut type_return: xlib::Atom = 0;
+        let mut prop_return: *mut c_uchar = unsafe { std::mem::uninitialized() };
+        unsafe {
+            let status = (self.lib.XGetWindowProperty)(
+                self.display,
+                window,
+                prop,
+                0,
+                1024,
+                xlib::False,
+                xlib::XA_ATOM,
+                &mut type_return,
+                &mut format_return,
+                &mut nitems_return,
+                &mut nitems_return,
+                &mut prop_return,
+                );
+            if status == i32::from(xlib::Success) && !prop_return.is_null() {
+                #[allow(clippy::cast_lossless, clippy::cast_ptr_alignment)]
+                let atom = *(prop_return as *const xlib::Atom);
+                return Some(atom);
+            }
+            None
         }
     }
 
@@ -411,7 +450,7 @@ impl XlibWrapper {
         unsafe {
             let mut event: xlib::XEvent = mem::uninitialized();
             (self.lib.XNextEvent)(self.display, &mut event);
-            //println!("Event: {:?}", event);
+            println!("Event: {:?}", event);
             //println!("Event type: {:?}", event.get_type());
             //println!("Pending events: {}", (self.lib.XPending)(self.display));
 
@@ -466,6 +505,14 @@ impl XlibWrapper {
                     //println!("LeaveNotify");
                     let event = xlib::XCrossingEvent::from(event);
                     Event::LeaveNotify(event.window)
+                },
+                xlib::Expose => {
+                    let event = xlib::XExposeEvent::from(event);
+                    Event::Expose(event.window)
+                },
+                xlib::DestroyNotify => {
+                    let event = xlib::XDestroyWindowEvent::from(event);
+                    Event::DestroyWindow(event.window)
                 }
                 _ => Event::UnknownEvent
             }
@@ -478,7 +525,7 @@ impl XlibWrapper {
         }
     }
 
-    
+
     pub fn resize_window(&self, w: Window, width: u32, height: u32) {
         unsafe {
             (self.lib.XResizeWindow)(
@@ -588,8 +635,9 @@ pub enum Event {
     MotionNotify(Window, i32, i32, u32),
     EnterNotify(Window),
     LeaveNotify(Window),
+    Expose(Window),
+    DestroyWindow(Window),
     ButtonReleased,
-    // CreateNotify(CreateWindowEvent),
     UnknownEvent
 }
 
