@@ -1,5 +1,5 @@
 
-use libc::{c_char, c_uchar, c_int, c_uint, c_long, c_ulong};
+use libc::{c_int, c_uint};
 use std::collections::HashMap;
 use crate::xlibwrapper::masks::*;
 use crate::xlibwrapper::core::*;
@@ -92,6 +92,19 @@ impl WindowManager {
         self.clients.insert(w, ww.clone());
     }
 
+    fn should_be_managed(&self, w: Window) -> bool {
+        if let Some(prop_val) = self.lib.get_window_type_atom(w) {
+            if vec![self.lib.xatom.NetWMWindowTypeDock,
+            self.lib.xatom.NetWMWindowTypeToolbar,
+            self.lib.xatom.NetWMWindowTypeUtility,
+            self.lib.xatom.NetWMWindowTypeDialog,
+            self.lib.xatom.NetWMWindowTypeMenu].contains(&prop_val) {
+                return false;
+            }
+        }
+        true
+    }
+
     pub fn run(&mut self) {
 
 
@@ -129,13 +142,18 @@ impl WindowManager {
                 },
                 Event::EnterNotify(window) => self.on_enter(window),
                 Event::LeaveNotify(window) => self.on_leave(window),
+                Event::Expose(window) => self.on_expose(window),
+                Event::DestroyWindow(window) => self.on_destroy_window(window),
                 _ => {}//println!("Unknown event")
             }
         }
     }
 
     fn on_map_request(&mut self, w: Window) {
-        self.setup_window(w);
+        if self.should_be_managed(w) {
+            self.setup_window(w);
+        }
+        self.lib.map_window(w);
         //self.lib.map_window(w);
     }
 
@@ -275,6 +293,13 @@ impl WindowManager {
             self.move_window(ww, dest_pos.x, dest_pos.y);
         }
     }
+    
+    fn on_destroy_window(&mut self, w: Window) {
+        self.kill_window(w);
+    }
+
+    fn on_expose(&self, w: Window) {
+    }
 
     fn move_window(&self, ww: WindowWrapper, x: i32, y: i32) {
         match ww.get_dec() {
@@ -314,6 +339,7 @@ impl WindowManager {
             },
             None => self.lib.kill_client(frame.window())
         }
+        // TODO: remove from roots NetClientList
         self.clients.remove(&w);
     }
 
