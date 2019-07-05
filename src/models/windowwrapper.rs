@@ -63,6 +63,13 @@ impl WindowWrapper {
     pub fn get_dec_rect(&self) -> Option<Rect> {
         self.dec_rect.clone()
     }
+    
+    pub fn set_position(&mut self, pos: Position) {
+        match self.dec_rect {
+            Some(mut dec_rect) => dec_rect.set_position(pos),
+            None => self.window_rect.set_position(pos)
+        }
+    }
 
     pub fn window(&self) -> Window {
         self.window
