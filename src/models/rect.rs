@@ -23,6 +23,14 @@ impl Rect {
     pub fn get_size(&self) -> Size {
         self.size.clone()
     }
+
+    pub fn set_position(&mut self, pos: Position) {
+        self.position = pos
+    }
+
+    pub fn set_size(&mut self, size: Size) {
+        self.size = size
+    }
 }
 
 impl From<Geometry> for Rect {

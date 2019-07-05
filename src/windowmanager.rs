@@ -7,7 +7,7 @@ use crate::xlibwrapper::util::*;
 use crate::models::windowwrapper::*;
 use crate::models::rect::*;
 
-pub const DecorationHeight: i32 = 15;
+pub const DecorationHeight: i32 = 20;
 pub const BorderWidth: i32 = 2;
 pub const InnerBorderWidth: i32 = 0;
 
@@ -41,7 +41,7 @@ impl WindowManager {
         let position = Position { x: window_geom.x - InnerBorderWidth - BorderWidth,
         y: window_geom.y - InnerBorderWidth - BorderWidth - DecorationHeight };
 
-        let size = Size { width: window_geom.width + (2 * InnerBorderWidth as u32), height: window_geom.height + (2 * BorderWidth as u32) + DecorationHeight as u32 };
+        let size = Size { width: window_geom.width + (2 * InnerBorderWidth as u32), height: window_geom.height + (2 * InnerBorderWidth as u32) + DecorationHeight as u32 };
         let dec_window = self.lib.create_simple_window(
             self.lib.get_root(),
             position.clone(),
@@ -77,16 +77,16 @@ impl WindowManager {
 
         let mut ww = WindowWrapper::new(w, Rect::from(geom));
         let inner_window = ww.window();
-        self.lib.set_border_width(w, InnerBorderWidth as u32);
-        self.lib.set_border_color(w, Color::SolarizedPurple);
+        self.lib.set_border_width(inner_window, InnerBorderWidth as u32);
+        self.lib.set_border_color(inner_window, Color::SolarizedPurple);
         self.decorate_window(&mut ww);
-
         self.lib.add_to_save_set(inner_window);
         self.lib.add_to_root_net_client_list(inner_window);
         self.lib.ungrab_all_buttons(inner_window);
         self.subscribe_to_events(inner_window);
         self.grab_buttons(inner_window);
         self.grab_keys(inner_window);
+        self.move_window(ww, 0, DecorationHeight);
         self.lib.map_window(inner_window);
         self.lib.raise_window(inner_window);
         self.clients.insert(w, ww.clone());
@@ -101,6 +101,10 @@ impl WindowManager {
             self.lib.xatom.NetWMWindowTypeMenu].contains(&prop_val) {
                 return false;
             }
+        }
+
+        if self.lib.get_window_attributes(w).override_redirect {
+            return false;
         }
         true
     }
