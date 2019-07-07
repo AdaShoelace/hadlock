@@ -24,6 +24,7 @@ pub enum Color {
     SolarizedNavy,
     SolarizedBlue,
     SolarizedPurple,
+    SolarizedDarkPurple,
     SolarizedDarkGray
 }
 
@@ -36,6 +37,7 @@ impl Color {
             Color::SolarizedNavy => 0xb5bad0,
             Color::SolarizedBlue => 0x7389ae,
             Color::SolarizedPurple => 0x624cab,
+            Color::SolarizedDarkPurple => 0xaba9bf,
             Color::SolarizedDarkGray => 0xe0e0e2
         }
     }

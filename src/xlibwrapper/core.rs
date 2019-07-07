@@ -475,7 +475,7 @@ impl XlibWrapper {
                 xlib::MapRequest => {
                     //println!("MapRequest");
                     let event = xlib::XMapRequestEvent::from(event);
-                    Event::WindowCreated(event.window)
+                    Event::MapRequest(event.window)
                 },
                 xlib::ButtonPress => {
                     //println!("Button press");
@@ -573,6 +573,27 @@ impl XlibWrapper {
         }
     }
 
+    fn set_desktop_prop(&self, data: &[u32], atom: c_ulong) {
+        let xdata = data.to_owned();
+        unsafe {
+            (self.lib.XChangeProperty)(
+                self.display,
+                self.root,
+                atom,
+                xlib::XA_CARDINAL,
+                32,
+                xlib::PropModeReplace,
+                xdata.as_ptr() as *const u8,
+                data.len() as i32,
+                );
+            std::mem::forget(xdata);
+        }
+    }
+
+    pub fn set_atom_number_of_desktops(&self, num: u32) {
+        self.set_desktop_prop(&[num], self.xatom.NetNumberOfDesktops);
+    }
+
     pub fn sync(&self, discard: bool) {
         unsafe {
             (self.lib.XSync)(self.display, discard as i32);
@@ -629,7 +650,7 @@ impl XlibWrapper {
 pub enum Event {
     ConfigurationNotification(Window),
     ConfigurationRequest(Window, WindowChanges, u64),
-    WindowCreated(Window),
+    MapRequest(Window),
     ButtonPressed(Window, Window, u32, u32, u32, u32),
     KeyPress(Window, u32, u32),
     MotionNotify(Window, i32, i32, u32),

@@ -76,19 +76,18 @@ impl WindowManager {
         let geom = self.lib.get_geometry(w).unwrap();
 
         let mut ww = WindowWrapper::new(w, Rect::from(geom));
-        let inner_window = ww.window();
-        self.lib.set_border_width(inner_window, InnerBorderWidth as u32);
-        self.lib.set_border_color(inner_window, Color::SolarizedPurple);
+        self.lib.set_border_width(w, InnerBorderWidth as u32);
+        self.lib.set_border_color(w, Color::SolarizedPurple);
         self.decorate_window(&mut ww);
-        self.lib.add_to_save_set(inner_window);
-        self.lib.add_to_root_net_client_list(inner_window);
-        self.lib.ungrab_all_buttons(inner_window);
-        self.subscribe_to_events(inner_window);
-        self.grab_buttons(inner_window);
-        self.grab_keys(inner_window);
+        self.lib.add_to_save_set(w);
+        self.lib.add_to_root_net_client_list(w);
+        self.lib.ungrab_all_buttons(w);
+        self.subscribe_to_events(w);
+        self.grab_buttons(w);
+        self.grab_keys(w);
         self.move_window(ww, 0, DecorationHeight);
-        self.lib.map_window(inner_window);
-        self.lib.raise_window(inner_window);
+        self.lib.map_window(w);
+        self.lib.raise_window(w);
         self.clients.insert(w, ww.clone());
     }
 
@@ -126,7 +125,7 @@ impl WindowManager {
             //println!("{:?}", &event);
             match event {
                 Event::ConfigurationRequest(window, window_changes, value_mask) => self.on_configure_request(window, window_changes, value_mask),
-                Event::WindowCreated(window) => self.on_map_request(window),
+                Event::MapRequest(window) => self.on_map_request(window),
                 Event::ButtonPressed(window, sub_window, button, x_root, y_root, state) => {
                     println!("Button pressed");
                     self.on_button_pressed(window, sub_window, button, x_root, y_root, state);
@@ -326,6 +325,17 @@ impl WindowManager {
             )
         }
     }
+    
+    fn destroy_dec(&self, ww: WindowWrapper) {
+        match ww.get_dec() {
+            Some(dec) => {
+                self.lib.unmap_window(dec);
+                self.lib.destroy_window(dec);
+            },
+            None => {}
+        }
+
+    }
 
     fn kill_window(&mut self, w: Window) {
         if !self.clients.contains_key(&w) {
@@ -333,17 +343,22 @@ impl WindowManager {
         }
 
         let frame = self.clients.get(&w).expect("KillWindow: No such window in client list");
+        
 
-
-        match frame.get_dec() {
+        /*match frame.get_dec() {
             Some(dec) => {
+                self.destroy_dec(ww);
                 self.lib.unmap_window(dec);
                 self.lib.destroy_window(dec);
                 self.lib.kill_client(frame.window())
             },
             None => self.lib.kill_client(frame.window())
+        }*/
+
+        if frame.decorated() {
+            self.destroy_dec(*frame);
         }
-        // TODO: remove from roots NetClientList
+        self.lib.kill_client(frame.window());
         self.clients.remove(&w);
     }
 

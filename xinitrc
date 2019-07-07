@@ -9,6 +9,7 @@ xterm &
 #xclock &
 #xeyes &
 pcmanfm &
+#mousepad &
 
 # 2. Start our window manager.
 exec ./target/debug/hadlock
