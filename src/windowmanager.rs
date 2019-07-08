@@ -244,6 +244,8 @@ impl WindowManager {
             Some(dec) => self.lib.set_border_color(dec, Color::SolarizedPurple),
             None => self.lib.set_border_color(ww.window(), Color::SolarizedPurple)
         }
+
+        self.lib.un
     }
 
     fn on_key_pressed(&mut self, w: Window, state: u32, keycode: u32) {
@@ -264,15 +266,15 @@ impl WindowManager {
                 return;
             }
             if self.lib.str_to_keycode("Left").unwrap() == keycode {
-                self.resize_window(w, ww.get_width() - 10, ww.get_height());
+                self.resize_window(w, width - 10, height);
                 return;
             }
             if self.lib.str_to_keycode("Down").unwrap() == keycode {
-                self.resize_window(w, ww.get_width(), ww.get_height() + 10);
+                self.resize_window(w, width, height + 10);
                 return;
             }
             if self.lib.str_to_keycode("Up").unwrap() == keycode {
-                self.resize_window(w, ww.get_width(), ww.get_height() - 10);
+                self.resize_window(w, width, height - 10);
                 return;
             }
             if self.lib.str_to_keycode("q").unwrap() == keycode {
@@ -280,13 +282,12 @@ impl WindowManager {
             }
 
             if self.lib.str_to_keycode("Return").unwrap() == keycode {
+                println!("Start terminal");
                 match Command::new("alacritty").spawn() {
                     Ok(_) => {},
                     Err(e) => eprintln!("Failed to open terminal. Error: {}", e)
                 }
             }
-        } else if (state & Mod4Mask) != 0 {
-            let keycode = keycode as u8;
         }
     }
 
@@ -307,7 +308,7 @@ impl WindowManager {
             self.move_window(ww, dest_pos.x, dest_pos.y);
         }
     }
-    
+
     fn on_destroy_window(&mut self, w: Window) {
         self.kill_window(w);
     }
@@ -336,7 +337,7 @@ impl WindowManager {
             )
         }
     }
-    
+
     fn toggle_decorations(&mut self) {
     }
 
@@ -417,7 +418,7 @@ impl WindowManager {
     fn grab_keys(&self, w: Window) {
 
         let keys: Vec<u32> =
-            vec!["q", "Left", "Up", "Right", "Down"]
+            vec!["q", "Left", "Up", "Right", "Down", "Return"]
             .into_iter()
             .map(|key| {
                 keysym_lookup::into_keysym(key).unwrap()
