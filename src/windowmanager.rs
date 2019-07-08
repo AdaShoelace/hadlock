@@ -244,8 +244,6 @@ impl WindowManager {
             Some(dec) => self.lib.set_border_color(dec, Color::SolarizedPurple),
             None => self.lib.set_border_color(ww.window(), Color::SolarizedPurple)
         }
-
-        self.lib.un
     }
 
     fn on_key_pressed(&mut self, w: Window, state: u32, keycode: u32) {
