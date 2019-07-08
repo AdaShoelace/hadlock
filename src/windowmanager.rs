@@ -1,6 +1,7 @@
 
 use libc::{c_int, c_uint};
 use std::collections::HashMap;
+use std::process::Command;
 use crate::xlibwrapper::masks::*;
 use crate::xlibwrapper::core::*;
 use crate::xlibwrapper::util::*;
@@ -212,6 +213,9 @@ impl WindowManager {
     }
 
     fn on_enter(&self, w: Window) {
+        if !self.clients.contains_key(&w) {
+            return;
+        }
 
         let ww = self.clients.get(&w).expect("OnEnter: No such window in client list");
 
@@ -225,7 +229,6 @@ impl WindowManager {
         }
         // need to rethink focus for non floating modes
         self.lib.take_focus(w);
-        self.lib.set_input_focus(w, RevertToParent, CurrentTime);
     }
 
     fn on_leave(&self, w: Window) {
@@ -276,6 +279,14 @@ impl WindowManager {
                 self.kill_window(w);
             }
 
+            if self.lib.str_to_keycode("Return").unwrap() == keycode {
+                match Command::new("alacritty").spawn() {
+                    Ok(_) => {},
+                    Err(e) => eprintln!("Failed to open terminal. Error: {}", e)
+                }
+            }
+        } else if (state & Mod4Mask) != 0 {
+            let keycode = keycode as u8;
         }
     }
 
@@ -326,6 +337,9 @@ impl WindowManager {
         }
     }
     
+    fn toggle_decorations(&mut self) {
+    }
+
     fn destroy_dec(&self, ww: WindowWrapper) {
         match ww.get_dec() {
             Some(dec) => {
@@ -343,17 +357,7 @@ impl WindowManager {
         }
 
         let frame = self.clients.get(&w).expect("KillWindow: No such window in client list");
-        
 
-        /*match frame.get_dec() {
-            Some(dec) => {
-                self.destroy_dec(ww);
-                self.lib.unmap_window(dec);
-                self.lib.destroy_window(dec);
-                self.lib.kill_client(frame.window())
-            },
-            None => self.lib.kill_client(frame.window())
-        }*/
 
         if frame.decorated() {
             self.destroy_dec(*frame);
@@ -370,8 +374,6 @@ impl WindowManager {
                 return;
             }
         };
-
-        //let inner_size_pre = ww.get_inner_rect().get_size(); //debug
 
         if let Some(dec_rect) = ww.get_dec_rect() {
             let mut dec_w = width - (2 * BorderWidth as u32);
@@ -403,10 +405,6 @@ impl WindowManager {
 
         ww.set_inner_size(window_size);
         self.lib.resize_window(ww.window(), window_size.width, window_size.height);
-
-        // let inner_size_post = ww.get_inner_rect().get_size(); //debug
-        // println!("Pre resize: {:?}\nPost resize: {:?}", inner_size_pre, inner_size_post);
-        // //debug
     }
 
     fn subscribe_to_events(&mut self, w: Window) {

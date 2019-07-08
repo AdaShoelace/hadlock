@@ -72,7 +72,30 @@ impl XlibWrapper {
     }
 
     pub fn take_focus(&self, w: Window) {
+        unsafe {
+            (self.lib.XSetInputFocus)(
+                self.display,
+                w,
+                xlib::RevertToPointerRoot,
+                xlib::CurrentTime
+            );
+            let list = vec![w];
+            (self.lib.XChangeProperty)(
+                self.display,
+                self.root,
+                self.xatom.NetActiveWindow,
+                xlib::XA_WINDOW,
+                32,
+                xlib::PropModeReplace,
+                list.as_ptr() as *const u8,
+                1
+            );
+            std::mem::forget(list);
+        }
         self.send_xevent_atom(w, self.xatom.WMTakeFocus);
+    }
+
+    pub fn set_active(&self, w: Window) {
     }
 
     fn expects_xevent_atom(&self, window: Window, atom: xlib::Atom) -> bool {
@@ -562,16 +585,6 @@ impl XlibWrapper {
         }
     }
 
-    pub fn set_input_focus(&self, w: Window, revert_to: i32, time: Time) -> XResult<()> {
-        unsafe {
-            match (self.lib.XSetInputFocus)(self.display, w, revert_to, time) as u8 {
-                xlib::BadValue => Err(XlibError::BadValue),
-                xlib::BadMatch => Err(XlibError::BadMatch),
-                xlib::BadWindow => Err(XlibError::BadWindow),
-                _ => Ok(())
-            }
-        }
-    }
 
     fn set_desktop_prop(&self, data: &[u32], atom: c_ulong) {
         let xdata = data.to_owned();
@@ -621,21 +634,7 @@ impl XlibWrapper {
     }
 
     pub fn top_level_window_count(&self) -> u32 {
-        unsafe {
-            let mut returned_root: Window = mem::uninitialized();
-            let mut returned_parent: Window = mem::uninitialized();
-            let mut top_level_windows: *mut Window = mem::uninitialized();
-            let mut num_top_level_windows: u32 = mem::uninitialized();
-            (self.lib.XQueryTree)(
-                self.display,
-                self.root,
-                &mut returned_root,
-                &mut returned_parent,
-                &mut top_level_windows,
-                &mut num_top_level_windows
-            );
-            num_top_level_windows
-        }
+        self.get_top_level_windows().len() as u32
     }
 
     pub fn unmap_window(&self, w: Window) {
