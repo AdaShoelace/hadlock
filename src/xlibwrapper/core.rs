@@ -31,11 +31,12 @@ pub struct XlibWrapper {
     pub xatom: XAtom,
     display: *mut Display,
     root: xlib::Window,
+    check: xlib::Window
 }
 
 impl XlibWrapper {
     pub fn new() -> Self {
-        let (disp, root, lib, xatom) = unsafe {
+        let (disp, root, lib, xatom, check) = unsafe {
             let lib = xlib::Xlib::open().unwrap();
             let disp = (lib.XOpenDisplay)(std::ptr::null_mut());
 
@@ -53,17 +54,21 @@ impl XlibWrapper {
             (lib.XSync)(disp, 0);
             (lib.XSetErrorHandler)(Some(error_handler));
             let xatom = XAtom::new(&lib, disp);
-
-            (disp, root, lib, xatom)
+            let check = (lib.XCreateSimpleWindow)(disp, root, 0, 0, 1, 1, 0, 0, 0);
+            (disp, root, lib, xatom, check)
         };
 
-        Self {
+        let ret = Self {
             lib: lib,
             xatom: xatom,
             display: disp,
             root: root,
-        }
+            check: check
+        };
+
+        ret
     }
+
 
     pub fn add_to_save_set(&self, w: Window) {
         unsafe {
@@ -473,7 +478,7 @@ impl XlibWrapper {
         unsafe {
             let mut event: xlib::XEvent = mem::uninitialized();
             (self.lib.XNextEvent)(self.display, &mut event);
-            println!("Event: {:?}", event);
+            //println!("Event: {:?}", event);
             //println!("Event type: {:?}", event.get_type());
             //println!("Pending events: {}", (self.lib.XPending)(self.display));
 

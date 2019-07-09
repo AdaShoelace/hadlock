@@ -1,4 +1,4 @@
-
+#![allow(dead_code)]
 use libc::{c_int, c_uint};
 use std::collections::HashMap;
 use std::process::Command;
@@ -128,11 +128,11 @@ impl WindowManager {
                 Event::ConfigurationRequest(window, window_changes, value_mask) => self.on_configure_request(window, window_changes, value_mask),
                 Event::MapRequest(window) => self.on_map_request(window),
                 Event::ButtonPressed(window, sub_window, button, x_root, y_root, state) => {
-                    println!("Button pressed");
+                    //println!("Button pressed");
                     self.on_button_pressed(window, sub_window, button, x_root, y_root, state);
                 },
                 Event::KeyPress(window, state, keycode) => {
-                    println!("keypress");
+                    //println!("keypress");
                     self.on_key_pressed(window, state, keycode)
                 },
                 Event::MotionNotify(window, x_root, y_root, state) => {
@@ -188,7 +188,7 @@ impl WindowManager {
         );
     }
 
-    fn on_button_pressed(&mut self, window: Window, sub_window: Window, button: u32, x_root: u32, y_root: u32, state: u32) {
+    fn on_button_pressed(&mut self, window: Window, _sub_window: Window, _button: u32, x_root: u32, y_root: u32, _state: u32) {
         if !self.clients.contains_key(&window) || window == self.lib.get_root() {
             return
         }
@@ -293,7 +293,6 @@ impl WindowManager {
         if !self.clients.contains_key(&w) {
             return;
         }
-        let frame = self.clients.get(&w).expect("MotionNotify: No such window in client list").window();
 
         let drag_pos = Position { x: x_root, y: y_root };
         let (delta_x, delta_y) =  (drag_pos.x - self.drag_start_pos.0,
@@ -311,7 +310,7 @@ impl WindowManager {
         self.kill_window(w);
     }
 
-    fn on_expose(&self, w: Window) {
+    fn on_expose(&self, _w: Window) {
     }
 
     fn move_window(&self, ww: WindowWrapper, x: i32, y: i32) {
@@ -363,6 +362,7 @@ impl WindowManager {
         }
         self.lib.kill_client(frame.window());
         self.clients.remove(&w);
+        println!("Top level windows: {}", self.lib.top_level_window_count());
     }
 
     fn resize_window(&mut self, w: Window, width: u32, height: u32) {
