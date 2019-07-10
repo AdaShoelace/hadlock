@@ -2,14 +2,6 @@ pub mod keysym_lookup;
 
 
 use std::os::raw::*;
-use x11_dl::xlib;
-
-pub(crate) type Mask = c_long;
-pub(crate) type Window = xlib::Window;
-pub(crate) type Display = xlib::Display;
-pub(crate) type Drawable = xlib::Drawable;
-pub(crate) type Time = xlib::Time;
-pub(crate) type KeyCode = xlib::KeyCode;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Position { pub x: i32, pub y: i32 }
