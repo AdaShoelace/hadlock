@@ -1,6 +1,6 @@
 
 use crate::xlibwrapper::util::*;
-use crate::xlibwrapper::core::Geometry;
+use crate::xlibwrapper::xlibmodels::Geometry;
 
 #[derive(Copy, Clone)]
 pub struct Rect {

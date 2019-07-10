@@ -1,4 +1,5 @@
 use crate::xlibwrapper::util::*;
+use crate::xlibwrapper::xlibmodels::*;
 use super::rect::*;
 
 #[derive(Copy, Clone)]

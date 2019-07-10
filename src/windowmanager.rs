@@ -1,23 +1,25 @@
 #![allow(dead_code)]
 use libc::{c_int, c_uint};
 use std::collections::HashMap;
-use std::process::Command;
 use crate::xlibwrapper::masks::*;
 use crate::xlibwrapper::core::*;
 use crate::xlibwrapper::util::*;
+use crate::xlibwrapper::xlibmodels::*;
 use crate::models::windowwrapper::*;
 use crate::models::rect::*;
+
+use std::rc::Rc;
 
 pub const DecorationHeight: i32 = 20;
 pub const BorderWidth: i32 = 2;
 pub const InnerBorderWidth: i32 = 0;
 
 pub struct WindowManager {
-    lib:  XlibWrapper,
-    clients: HashMap<u64, WindowWrapper>,
-    drag_start_pos: (c_int, c_int),
-    drag_start_frame_pos: (c_int, c_int),
-    drag_start_frame_size: (c_uint, c_uint)
+    pub lib: Rc<XlibWrapper>,
+    pub clients: HashMap<u64, WindowWrapper>,
+    pub drag_start_pos: (c_int, c_int),
+    pub drag_start_frame_pos: (c_int, c_int),
+    pub drag_start_frame_size: (c_uint, c_uint)
 }
 
 impl WindowManager {
@@ -27,9 +29,9 @@ impl WindowManager {
      * Check for failure
      * return WindowManager
      */
-    pub fn new () -> Self {
+    pub fn new (lib: Rc<XlibWrapper>) -> Self {
         Self {
-            lib: XlibWrapper::new(),
+            lib: lib,
             clients: HashMap::new(),
             drag_start_pos: (0, 0),
             drag_start_frame_pos: (0, 0),
@@ -38,7 +40,7 @@ impl WindowManager {
     }
 
     fn decorate_window(&self, w: &mut WindowWrapper) {
-        let window_geom = self.lib.get_geometry(w.window()).expect("Failed to get window geometry");
+        let window_geom = self.lib.get_geometry(w.window());
         let position = Position { x: window_geom.x - InnerBorderWidth - BorderWidth,
         y: window_geom.y - InnerBorderWidth - BorderWidth - DecorationHeight };
 
@@ -72,9 +74,9 @@ impl WindowManager {
         self.lib.sync(false);
     }
 
-    fn setup_window(&mut self, w: Window) {
+    pub fn setup_window(&mut self, w: Window) {
 
-        let geom = self.lib.get_geometry(w).unwrap();
+        let geom = self.lib.get_geometry(w);
 
         let mut ww = WindowWrapper::new(w, Rect::from(geom));
         self.lib.set_border_width(w, InnerBorderWidth as u32);
@@ -92,7 +94,7 @@ impl WindowManager {
         self.clients.insert(w, ww.clone());
     }
 
-    fn should_be_managed(&self, w: Window) -> bool {
+    pub fn should_be_managed(&self, w: Window) -> bool {
         if let Some(prop_val) = self.lib.get_window_type_atom(w) {
             if vec![self.lib.xatom.NetWMWindowTypeDock,
             self.lib.xatom.NetWMWindowTypeToolbar,
@@ -120,200 +122,15 @@ impl WindowManager {
                 self.setup_window(*w)
             });
         self.lib.ungrab_server();
-
-        loop {
-            let event = self.lib.next_event();
-            //println!("{:?}", &event);
-            match event {
-                Event::ConfigurationRequest(window, window_changes, value_mask) => self.on_configure_request(window, window_changes, value_mask),
-                Event::MapRequest(window) => self.on_map_request(window),
-                Event::ButtonPressed(window, sub_window, button, x_root, y_root, state) => {
-                    //println!("Button pressed");
-                    self.on_button_pressed(window, sub_window, button, x_root, y_root, state);
-                },
-                Event::KeyPress(window, state, keycode) => {
-                    //println!("keypress");
-                    self.on_key_pressed(window, state, keycode)
-                },
-                Event::MotionNotify(window, x_root, y_root, state) => {
-                    // println!("On motion notify");
-                    self.on_motion_notify(
-                        window,
-                        x_root,
-                        y_root,
-                        state
-                    )
-                },
-                Event::EnterNotify(window) => self.on_enter(window),
-                Event::LeaveNotify(window) => self.on_leave(window),
-                Event::Expose(window) => self.on_expose(window),
-                Event::DestroyWindow(window) => self.on_destroy_window(window),
-                _ => {}//println!("Unknown event")
-            }
-        }
     }
 
-    fn on_map_request(&mut self, w: Window) {
-        if self.should_be_managed(w) {
-            self.setup_window(w);
-        }
-        self.lib.map_window(w);
-        //self.lib.map_window(w);
-    }
-
-    fn on_configure_request(&mut self, w: Window, window_changes: WindowChanges, value_mask: u64) {
-        //println!("on_configure_request");
-        let changes = WindowChanges {
-            x: window_changes.x,
-            y: window_changes.y,
-            width: window_changes.width,
-            height: window_changes.height,
-            border_width: window_changes.border_width,
-            sibling: window_changes.sibling,
-            stack_mode: window_changes.stack_mode,
-        };
-
-        if self.clients.contains_key(&w) {
-            let frame = self.clients.get(&w).expect("ConfigureWindow: No such window in client list");
-            self.lib.configure_window(
-                frame.window(),
-                value_mask as i64,
-                changes.clone()
-            );
-        }
-        self.lib.configure_window(
-            w,
-            value_mask as i64,
-            window_changes
-        );
-    }
-
-    fn on_button_pressed(&mut self, window: Window, _sub_window: Window, _button: u32, x_root: u32, y_root: u32, _state: u32) {
-        if !self.clients.contains_key(&window) || window == self.lib.get_root() {
-            return
-        }
-
-        let ww = self.clients.get(&window).expect("ButtonPressed: No such window in client list");
-        let geometry = match self.lib.get_geometry(ww.window()) {
-            Ok(g) => g,
-            Err(err) => panic!(format!("Shit went south: {:?}", err))
-        };
-
-        self.drag_start_pos = (x_root as i32 , y_root as i32);
-        self.drag_start_frame_pos = (geometry.x,geometry.y);
-        self.drag_start_frame_size = (geometry.width, geometry.height);
-
-        match ww.get_dec() {
-            Some(dec) => {
-                self.lib.raise_window(dec);
-                self.lib.raise_window(ww.window());
-            },
-            None => self.lib.raise_window(ww.window())
-        }
-    }
-
-    fn on_enter(&self, w: Window) {
-        if !self.clients.contains_key(&w) {
-            return;
-        }
-
-        let ww = self.clients.get(&w).expect("OnEnter: No such window in client list");
-
-        match ww.get_dec() {
-            Some(dec) => {
-                self.lib.set_border_color(dec, Color::SolarizedCyan);
-            },
-            None => {
-                self.lib.set_border_color(w, Color::SolarizedPurple);
-            }
-        }
-        // need to rethink focus for non floating modes
-        self.lib.take_focus(w);
-    }
-
-    fn on_leave(&self, w: Window) {
-        // this check is an ugly hack to not crash when decorations window gets destroyed before
-        // client and client recieves an "OnLeave"-event
-        if !self.clients.contains_key(&w) {
-            return;
-        }
-
-        let ww = self.clients.get(&w).expect("OnLeave: No such window in client list");
-
-        match ww.get_dec() {
-            Some(dec) => self.lib.set_border_color(dec, Color::SolarizedPurple),
-            None => self.lib.set_border_color(ww.window(), Color::SolarizedPurple)
-        }
-    }
-
-    fn on_key_pressed(&mut self, w: Window, state: u32, keycode: u32) {
-        let ww = match self.clients.get(&w) {
-            Some(ww) => ww,
-            None => { return; }
-        };
 
 
-        if (state & (Mod4Mask | Shift)) != 0 {
-            let keycode = keycode as u8;
 
-            let width = ww.get_width();
-            let height = ww.get_height();
 
-            if self.lib.str_to_keycode("Right").unwrap() == keycode {
-                self.resize_window(w, width + 10, height);
-                return;
-            }
-            if self.lib.str_to_keycode("Left").unwrap() == keycode {
-                self.resize_window(w, width - 10, height);
-                return;
-            }
-            if self.lib.str_to_keycode("Down").unwrap() == keycode {
-                self.resize_window(w, width, height + 10);
-                return;
-            }
-            if self.lib.str_to_keycode("Up").unwrap() == keycode {
-                self.resize_window(w, width, height - 10);
-                return;
-            }
-            if self.lib.str_to_keycode("q").unwrap() == keycode {
-                self.kill_window(w);
-            }
 
-            if self.lib.str_to_keycode("Return").unwrap() == keycode {
-                println!("Start terminal");
-                match Command::new("alacritty").spawn() {
-                    Ok(_) => {},
-                    Err(e) => eprintln!("Failed to open terminal. Error: {}", e)
-                }
-            }
-        }
-    }
 
-    fn on_motion_notify(&mut self, w: Window, x_root: i32, y_root: i32, state: u32) {
-        if !self.clients.contains_key(&w) {
-            return;
-        }
-
-        let drag_pos = Position { x: x_root, y: y_root };
-        let (delta_x, delta_y) =  (drag_pos.x - self.drag_start_pos.0,
-                                   drag_pos.y - self.drag_start_pos.1);
-        let dest_pos = Position{ x: self.drag_start_frame_pos.0 + delta_x,
-        y: self.drag_start_frame_pos.1 + delta_y};
-
-        if (state & Button1Mask) != 0 {
-            let ww = *self.clients.get(&w).unwrap();
-            self.move_window(ww, dest_pos.x, dest_pos.y);
-        }
-    }
-
-    fn on_destroy_window(&mut self, w: Window) {
-        self.kill_window(w);
-    }
-
-    fn on_expose(&self, _w: Window) {
-    }
-
-    fn move_window(&self, ww: WindowWrapper, x: i32, y: i32) {
+    pub fn move_window(&self, ww: WindowWrapper, x: i32, y: i32) {
         match ww.get_dec() {
             Some(dec) => {
                 self.lib.move_window(
@@ -349,7 +166,7 @@ impl WindowManager {
 
     }
 
-    fn kill_window(&mut self, w: Window) {
+    pub fn kill_window(&mut self, w: Window) {
         if !self.clients.contains_key(&w) {
             return;
         }
@@ -365,7 +182,7 @@ impl WindowManager {
         println!("Top level windows: {}", self.lib.top_level_window_count());
     }
 
-    fn resize_window(&mut self, w: Window, width: u32, height: u32) {
+    pub fn resize_window(&mut self, w: Window, width: u32, height: u32) {
 
         let ww = match self.clients.get_mut(&w) {
             Some(ww) => ww,

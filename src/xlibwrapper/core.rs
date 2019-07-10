@@ -5,10 +5,11 @@ use std::os::raw::*;
 use std::ffi::CString;
 use std::mem;
 
-use super::xlibwrappererror::{ Result as XResult, XlibWrapperError as XlibError};
 use super::masks::*;
 use super::util::*;
 use super::xatom::*;
+use super::xlibmodels::*;
+use super::event::*;
 
 pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> c_int {
     let err = *e;
@@ -30,8 +31,8 @@ pub struct XlibWrapper {
     lib: xlib::Xlib,
     pub xatom: XAtom,
     display: *mut Display,
-    root: xlib::Window,
-    check: xlib::Window
+    root: Window,
+    check: Window
 }
 
 impl XlibWrapper {
@@ -49,7 +50,7 @@ impl XlibWrapper {
             (lib.XSelectInput)(
                 disp,
                 root,
-                xlib::SubstructureNotifyMask | xlib::SubstructureRedirectMask /*| xlib::ButtonPressMask | xlib::Button1Mask as i64*/
+                xlib::SubstructureNotifyMask | xlib::SubstructureRedirectMask
             );
             (lib.XSync)(disp, 0);
             (lib.XSetErrorHandler)(Some(error_handler));
@@ -150,7 +151,7 @@ impl XlibWrapper {
         }
     }
 
-    pub fn configure_window(&mut self,
+    pub fn configure_window(&self,
                             window: Window,
                             value_mask: Mask,
                             changes: WindowChanges) {
@@ -217,13 +218,9 @@ impl XlibWrapper {
         }
     }
 
-    pub fn destroy_window(&self, w: Window) -> XResult<()>{
+    pub fn destroy_window(&self, w: Window) {
         unsafe {
-            let status = (self.lib.XDestroyWindow)(self.display, w);
-            match status as u8 {
-                xlib::BadWindow => Err(XlibError::BadWindow),
-                _ => Ok(())
-            }
+            (self.lib.XDestroyWindow)(self.display, w);
         }
     }
 
@@ -245,47 +242,27 @@ impl XlibWrapper {
     }
 
 
-    pub fn intern_atom(&self, s: &str) -> XResult<u64> {
+    pub fn intern_atom(&self, s: &str) -> u64 {
         unsafe {
             match CString::new(s) {
-                Ok(b) => {
-                    let ret = (self.lib.XInternAtom)(self.display, b.as_ptr() as *const i8, 0) as u64;
-                    match ret as u8 {
-                        xlib::BadAlloc => Err(XlibError::BadAlloc),
-                        xlib::BadAtom => Err(XlibError::BadAtom),
-                        _ => Ok(ret)
-                    }
-                },
+                Ok(b) =>  (self.lib.XInternAtom)(self.display, b.as_ptr() as *const i8, 0) as u64,
                 _ => panic!("Invalid atom {}", s)
             }
         }
     }
 
-    pub fn get_geometry(&self, w: Window) -> XResult<Geometry> {
-
-        /*
-         * Because of xlib being designed as most c libraries it takes pointers and mutates them
-         * instead of returning a new value.
-         * Here we instead return a struct representing the changes in pointers sent to
-         * xlib::XGetGeometry
-         */
+    pub fn get_geometry(&self, w: Window) -> Geometry {
 
         unsafe {
             let mut attr: xlib::XWindowAttributes = mem::uninitialized();
             let status = (self.lib.XGetWindowAttributes)(self.display, w, &mut attr);
 
-            match status as u8 {
-                xlib::BadValue => return Err(XlibError::BadValue),
-                xlib::BadWindow => return Err(XlibError::BadWindow),
-                _=> {}
-            }
-
-            Ok(Geometry {
+            Geometry {
                 x: attr.x,
                 y: attr.y,
                 width: attr.width as u32,
                 height: attr.height as u32,
-            })
+            }
         }
     }
 
@@ -494,55 +471,72 @@ impl XlibWrapper {
                         sibling: event.above,
                         stack_mode: event.detail
                     };
-                    Event::ConfigurationRequest(
+                    let payload = EventPayload::ConfigurationRequest(
                         event.window,
                         window_changes,
                         event.value_mask
-                    )
+                    );
+
+                    Event::new(EventType::ConfigurationRequest, Some(payload))
                 },
                 xlib::MapRequest => {
                     //println!("MapRequest");
                     let event = xlib::XMapRequestEvent::from(event);
-                    Event::MapRequest(event.window)
+                    let payload = EventPayload::MapRequest(event.window);
+                    Event::new(EventType::MapRequest, Some(payload))
                 },
                 xlib::ButtonPress => {
                     //println!("Button press");
                     let event = xlib::XButtonEvent::from(event);
-                    Event::ButtonPressed(event.window, event.subwindow, event.button, event.x_root as u32, event.y_root as u32, event.state as u32)
+                    let payload = EventPayload::ButtonPress(
+                        event.window,
+                        event.subwindow,
+                        event.button,
+                        event.x_root as u32,
+                        event.y_root as u32,
+                        event.state as u32
+                    );
+                    Event::new(EventType::ButtonPress, Some(payload))
                 },
                 xlib::KeyPress => {
                     //println!("Keypress\tEvent: {:?}", event);
                     let event = xlib::XKeyEvent::from(event);
-                    Event::KeyPress(event.window, event.state, event.keycode)
+                    let payload = EventPayload::KeyPress(event.window, event.state, event.keycode);
+                    Event::new(EventType::KeyPress, Some(payload))
                 },
                 xlib::MotionNotify => {
                     let event = xlib::XMotionEvent::from(event);
-                    Event::MotionNotify(
+                    let payload = EventPayload::MotionNotify(
                         event.window,
                         event.x_root,
                         event.y_root,
                         event.state
-                    )
+                    );
+                    Event::new(EventType::MotionNotify, Some(payload))
                 },
                 xlib::EnterNotify => {
                     //println!("EnterNotify");
                     let event = xlib::XCrossingEvent::from(event);
-                    Event::EnterNotify(event.window)
+                    let payload = EventPayload::EnterNotify(event.window);
+                    Event::new(EventType::EnterNotify, Some(payload))
                 },
                 xlib::LeaveNotify => {
                     //println!("LeaveNotify");
                     let event = xlib::XCrossingEvent::from(event);
-                    Event::LeaveNotify(event.window)
+                    let payload = EventPayload::LeaveNotify(event.window);
+                    Event::new(EventType::LeaveNotify, Some(payload))
                 },
                 xlib::Expose => {
                     let event = xlib::XExposeEvent::from(event);
-                    Event::Expose(event.window)
+                    let payload = EventPayload::Expose(event.window);
+                    Event::new(EventType::Expose, Some(payload))
                 },
                 xlib::DestroyNotify => {
                     let event = xlib::XDestroyWindowEvent::from(event);
-                    Event::DestroyWindow(event.window)
+                    let payload = EventPayload::DestroyWindow(event.window);
+                    Event::new(EventType::DestroyWindow, Some(payload))
                 }
-                _ => Event::UnknownEvent
+                _ => Event::new(EventType::UnknownEvent, None)
             }
         }
     }
@@ -650,40 +644,7 @@ impl XlibWrapper {
 
 }
 
-#[derive(Debug)]
-pub enum Event {
-    ConfigurationNotification(Window),
-    ConfigurationRequest(Window, WindowChanges, u64),
-    MapRequest(Window),
-    ButtonPressed(Window, Window, u32, u32, u32, u32),
-    KeyPress(Window, u32, u32),
-    MotionNotify(Window, i32, i32, u32),
-    EnterNotify(Window),
-    LeaveNotify(Window),
-    Expose(Window),
-    DestroyWindow(Window),
-    ButtonReleased,
-    UnknownEvent
-}
 
-#[derive(Clone, Copy, Debug)]
-pub struct WindowChanges {
-    pub x: c_int,
-    pub y: c_int,
-    pub width: c_int,
-    pub height: c_int,
-    pub border_width: c_int,
-    pub sibling: Window,
-    pub stack_mode: c_int,
-}
-
-
-pub struct Geometry {
-    pub x: i32,
-    pub y: i32,
-    pub width: u32,
-    pub height: u32,
-}
 
 pub struct WindowAttributes<'a> {
     pub x: c_int,
