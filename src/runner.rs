@@ -34,6 +34,14 @@ impl Runner {
 
     pub fn run(&mut self) {
 
+        self.lib.grab_server();
+        let _ = self.lib.get_top_level_windows()
+            .iter()
+            .map(|w| {
+                self.wm.setup_window(*w)
+            });
+        self.lib.ungrab_server();
+
         loop {
             let event = self.lib.next_event();
             //println!("{:?}", &event);

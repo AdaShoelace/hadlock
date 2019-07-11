@@ -75,6 +75,8 @@ impl WindowManager {
     }
 
     pub fn setup_window(&mut self, w: Window) {
+        
+        if self.clients.contains_key(&w) { return }
 
         let geom = self.lib.get_geometry(w);
 
@@ -105,30 +107,11 @@ impl WindowManager {
             }
         }
 
-        if self.lib.get_window_attributes(w).override_redirect {
+        /*if self.lib.get_window_attributes(w).override_redirect {
             return false;
-        }
+        }*/
         true
     }
-
-    pub fn run(&mut self) {
-
-
-        // manage windows created before wm
-        self.lib.grab_server();
-        let _ = self.lib.get_top_level_windows()
-            .iter()
-            .map(|w| {
-                self.setup_window(*w)
-            });
-        self.lib.ungrab_server();
-    }
-
-
-
-
-
-
 
     pub fn move_window(&self, ww: WindowWrapper, x: i32, y: i32) {
         match ww.get_dec() {
@@ -226,7 +209,7 @@ impl WindowManager {
     fn subscribe_to_events(&mut self, w: Window) {
         self.lib.select_input(
             w,
-            EnterWindowMask | LeaveWindowMask
+            EnterWindowMask | LeaveWindowMask | FocusChangeMask | PropertyChangeMask
         );
     }
 

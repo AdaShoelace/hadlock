@@ -32,12 +32,11 @@ pub struct XlibWrapper {
     pub xatom: XAtom,
     display: *mut Display,
     root: Window,
-    check: Window
 }
 
 impl XlibWrapper {
     pub fn new() -> Self {
-        let (disp, root, lib, xatom, check) = unsafe {
+        let (disp, root, lib, xatom) = unsafe {
             let lib = xlib::Xlib::open().unwrap();
             let disp = (lib.XOpenDisplay)(std::ptr::null_mut());
 
@@ -55,8 +54,7 @@ impl XlibWrapper {
             (lib.XSync)(disp, 0);
             (lib.XSetErrorHandler)(Some(error_handler));
             let xatom = XAtom::new(&lib, disp);
-            let check = (lib.XCreateSimpleWindow)(disp, root, 0, 0, 1, 1, 0, 0, 0);
-            (disp, root, lib, xatom, check)
+            (disp, root, lib, xatom)
         };
 
         let ret = Self {
@@ -64,12 +62,76 @@ impl XlibWrapper {
             xatom: xatom,
             display: disp,
             root: root,
-            check: check
         };
-
         ret
     }
 
+    fn init(){
+
+    }
+
+    fn init_desktop_hints(&self) {
+        let data = vec![12u32];
+        self.set_desktop_prop(&data, self.xatom.NetNumberOfDesktops);
+        let data = vec![0u32, xlib::CurrentTime as u32];
+        self.set_desktop_prop(&data, self.xatom.NetCurrentDesktop);
+        self.set_desktop_prop_string("Hadlok", self.xatom.NetWMName);
+        self.set_desktop_prop_u64(self.root, self.xatom.NetSupportingWmCheck, xlib::XA_WINDOW);
+        let data = vec![0u32, 0u32];
+        self.set_desktop_prop(&data, self.xatom.NetDesktopViewport);
+    }
+
+    fn set_desktop_prop_u64(&self, value: u64, atom: c_ulong, type_: c_ulong) {
+        let data = vec![value as u32];
+        unsafe {
+            (self.lib.XChangeProperty)(
+                self.display,
+                self.root,
+                atom,
+                type_,
+                32,
+                xlib::PropModeReplace,
+                data.as_ptr() as *const u8,
+                1 as i32,
+                );
+            std::mem::forget(data);
+        }
+    }
+
+    fn set_desktop_prop_string(&self, value: &str, atom: c_ulong) {
+        if let Ok(cstring) = CString::new(value) {
+            unsafe {
+                (self.lib.XChangeProperty)(
+                    self.display,
+                    self.root,
+                    atom,
+                    xlib::XA_CARDINAL,
+                    32,
+                    xlib::PropModeReplace,
+                    cstring.as_ptr() as *const u8,
+                    value.len() as i32,
+                    );
+                std::mem::forget(cstring);
+            }
+        }
+    }
+
+    fn set_desktop_prop(&self, data: &[u32], atom: c_ulong) {
+        let xdata = data.to_owned();
+        unsafe {
+            (self.lib.XChangeProperty)(
+                self.display,
+                self.root,
+                atom,
+                xlib::XA_CARDINAL,
+                32,
+                xlib::PropModeReplace,
+                xdata.as_ptr() as *const u8,
+                data.len() as i32,
+                );
+            std::mem::forget(xdata);
+        }
+    }
 
     pub fn add_to_save_set(&self, w: Window) {
         unsafe {
@@ -455,7 +517,7 @@ impl XlibWrapper {
         unsafe {
             let mut event: xlib::XEvent = mem::uninitialized();
             (self.lib.XNextEvent)(self.display, &mut event);
-            //println!("Event: {:?}", event);
+            println!("Event: {:?}", event);
             //println!("Event type: {:?}", event.get_type());
             //println!("Pending events: {}", (self.lib.XPending)(self.display));
 
@@ -535,7 +597,20 @@ impl XlibWrapper {
                     let event = xlib::XDestroyWindowEvent::from(event);
                     let payload = EventPayload::DestroyWindow(event.window);
                     Event::new(EventType::DestroyWindow, Some(payload))
-                }
+                },
+                xlib::PropertyNotify => {
+                    let event = xlib::XPropertyEvent::from(event);
+                    unsafe {
+                        let ret = CString::from_raw((self.lib.XGetAtomName)(self.display, event.atom));
+                        ret.to_str().unwrap();
+                        println!("Property changed {:?}", ret);
+                    };
+                    Event::new(EventType::UnknownEvent, None)
+                },
+                xlib::ClientMessage => {
+                    println!("This is client message");
+                    Event::new(EventType::UnknownEvent, None)
+                },
                 _ => Event::new(EventType::UnknownEvent, None)
             }
         }
@@ -581,24 +656,6 @@ impl XlibWrapper {
         }
         unsafe {
             (self.lib.XSetWindowBorderWidth)(self.display, w, border_width);
-        }
-    }
-
-
-    fn set_desktop_prop(&self, data: &[u32], atom: c_ulong) {
-        let xdata = data.to_owned();
-        unsafe {
-            (self.lib.XChangeProperty)(
-                self.display,
-                self.root,
-                atom,
-                xlib::XA_CARDINAL,
-                32,
-                xlib::PropModeReplace,
-                xdata.as_ptr() as *const u8,
-                data.len() as i32,
-                );
-            std::mem::forget(xdata);
         }
     }
 
