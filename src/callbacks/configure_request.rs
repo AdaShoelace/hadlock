@@ -8,16 +8,14 @@ use std::rc::Rc;
 pub fn configure_request(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
     let (w, window_changes, value_mask) =
-        match event.event_type {
-            EventType::ConfigurationRequest => match event.payload {
-                Some(EventPayload::ConfigurationRequest(w, window_changes, value_mask)) => (w, window_changes, value_mask),
-                _ => { return; }
-            },
+        match event {
+            Event {
+                event_type: EventType::ConfigurationRequest,
+                payload: Some(EventPayload::ConfigurationRequest(w, window_changes, value_mask))
+            } => (w, window_changes, value_mask),
             _ => { return; }
         };
 
-
-    //println!("on_configure_request");
     let changes = WindowChanges {
         x: window_changes.x,
         y: window_changes.y,
