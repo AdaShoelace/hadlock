@@ -45,6 +45,7 @@ pub const RevertToPointerRoot: i32 = xlib::RevertToPointerRoot;
 
 pub const CurrentTime: u64 = xlib::CurrentTime;
 
-
+pub const FocusChangeMask: i64 = xlib::FocusChangeMask;
+pub const PropertyChangeMask: i64 = xlib::PropertyChangeMask;
 
 
