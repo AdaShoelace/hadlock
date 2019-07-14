@@ -8,7 +8,7 @@ use std::process::Command;
 
 pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
-    let (w, state, keycode) = 
+    let (w, state, keycode) =
         match event {
             Event {
                 event_type: EventType::KeyPress,
@@ -49,6 +49,9 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
             wm.kill_window(w);
         }
 
+    }
+    if (state | Mod4Mask) != 0 {
+        let keycode = keycode as u8;
         if xlib.str_to_keycode("Return").unwrap() == keycode {
             println!("Start terminal");
             match Command::new("alacritty").spawn() {

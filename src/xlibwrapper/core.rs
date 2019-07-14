@@ -1,4 +1,4 @@
-#![allow(non_upper_case_globals, dead_code)]
+#![allow(non_upper_case_globals)]
 
 use x11_dl::xlib;
 use std::os::raw::*;
@@ -10,6 +10,8 @@ use super::util::*;
 use super::xatom::*;
 use super::xlibmodels::*;
 use super::event::*;
+
+use crate::models::screen::Screen;
 
 pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> c_int {
     let err = *e;
@@ -32,53 +34,71 @@ pub struct XlibWrapper {
     pub xatom: XAtom,
     display: *mut Display,
     root: Window,
+    screen: Screen
 }
 
 impl XlibWrapper {
     pub fn new() -> Self {
-        let (disp, root, lib, xatom) = unsafe {
+        let (disp, root, lib, xatom, screen) = unsafe {
             let lib = xlib::Xlib::open().unwrap();
             let disp = (lib.XOpenDisplay)(std::ptr::null_mut());
 
             if disp == std::ptr::null_mut() {
-                panic!("Failed to load display in Xxlib::rapper");
+                panic!("Failed to load display in xlib::XlibWrapper");
             }
-
+            
             let root = (lib.XDefaultRootWindow)(disp);
             (lib.XSetErrorHandler)(Some(on_wm_detected));
             (lib.XSelectInput)(
-                disp,
-                root,
-                xlib::SubstructureNotifyMask | xlib::SubstructureRedirectMask
-            );
+              disp,
+              root,
+              xlib::SubstructureNotifyMask | xlib::SubstructureRedirectMask | xlib::KeyPressMask
+              );
             (lib.XSync)(disp, 0);
             (lib.XSetErrorHandler)(Some(error_handler));
             let xatom = XAtom::new(&lib, disp);
-            (disp, root, lib, xatom)
+            
+            let screen_id = (lib.XDefaultScreen)(disp);
+            let display_width = (lib.XDisplayWidth)(disp, screen_id);
+            let display_height = (lib.XDisplayHeight)(disp, screen_id);
+            let screen = Screen::new(root, display_width, display_height, 0, 0);
+
+            (disp, root, lib, xatom, screen)
         };
 
+
         let ret = Self {
-            lib: lib,
-            xatom: xatom,
+            lib,
+            xatom,
             display: disp,
-            root: root,
+            root,
+            screen
         };
+        
+        let buttons = vec!["Return"];
+        buttons
+            .into_iter()
+            .map(|key| {
+                keysym_lookup::into_keysym(key).unwrap()
+            }).map(|keysym| {
+                ret.key_sym_to_keycode(keysym as u64) as u32
+            }).for_each(|key| {
+                ret.grab_key(
+                    key,
+                    Mod4Mask,
+                    root,
+                    false,
+                    GrabModeAsync,
+                    GrabModeAsync,
+                )
+            });
+
         ret
     }
 
-    fn init(){
-
-    }
-
-    fn init_desktop_hints(&self) {
-        let data = vec![12u32];
-        self.set_desktop_prop(&data, self.xatom.NetNumberOfDesktops);
-        let data = vec![0u32, xlib::CurrentTime as u32];
-        self.set_desktop_prop(&data, self.xatom.NetCurrentDesktop);
-        self.set_desktop_prop_string("Hadlok", self.xatom.NetWMName);
-        self.set_desktop_prop_u64(self.root, self.xatom.NetSupportingWmCheck, xlib::XA_WINDOW);
-        let data = vec![0u32, 0u32];
-        self.set_desktop_prop(&data, self.xatom.NetDesktopViewport);
+    
+    pub fn get_screen(&self) -> Screen {
+        self.screen.clone()
     }
 
     fn set_desktop_prop_u64(&self, value: u64, atom: c_ulong, type_: c_ulong) {
@@ -131,6 +151,16 @@ impl XlibWrapper {
                 );
             std::mem::forget(xdata);
         }
+    }
+
+
+    pub fn get_window_attrs(&self, window: xlib::Window) -> Result<xlib::XWindowAttributes, ()> {
+        let mut attrs: xlib::XWindowAttributes = unsafe { std::mem::zeroed() };
+        let status = unsafe { (self.lib.XGetWindowAttributes)(self.display, window, &mut attrs) };
+        if status == 0 {
+            return Err(());
+        }
+        Ok(attrs)
     }
 
     pub fn add_to_save_set(&self, w: Window) {
@@ -262,6 +292,28 @@ impl XlibWrapper {
             mem::forget(list);
         }
 
+    }
+
+    pub fn update_net_client_list(&self, clients: Vec<Window>) {
+        unsafe {
+            (self.lib.XDeleteProperty)(self.display, self.root, self.xatom.NetClientList);
+            clients
+                .iter()
+                .for_each(|c| {
+                    let list = vec![c];
+                    (self.lib.XChangeProperty)(
+                        self.display,
+                        self.root,
+                        self.xatom.NetClientList,
+                        xlib::XA_WINDOW,
+                        32,
+                        xlib::PropModeAppend,
+                        list.as_ptr() as *const u8,
+                        1
+                    );
+                    mem::forget(list);
+                })
+        }
     }
 
     pub fn create_simple_window(&self, w: Window, pos: Position, size: Size, border_width: u32, border_color: Color, bg_color: Color) -> Window {
@@ -488,7 +540,7 @@ impl XlibWrapper {
         }
     }
 
-    pub fn kill_client(&self, w: Window) {
+    pub fn kill_client(&self, w: Window) -> bool {
         if !self.send_xevent_atom(w, self.xatom.WMDelete) {
             unsafe {
                 (self.lib.XGrabServer)(self.display);
@@ -498,6 +550,8 @@ impl XlibWrapper {
                 (self.lib.XUngrabServer)(self.display);
             }
         }
+
+        !self.get_top_level_windows().contains(&w)
     }
 
     pub fn map_window(&self, window: Window) {
@@ -608,7 +662,8 @@ impl XlibWrapper {
                     Event::new(EventType::UnknownEvent, None)
                 },
                 xlib::ClientMessage => {
-                    println!("This is client message");
+                    let event = xlib::XClientMessageEvent::from(event);
+                    println!("{:?}", event);
                     Event::new(EventType::UnknownEvent, None)
                 },
                 _ => Event::new(EventType::UnknownEvent, None)
@@ -703,94 +758,5 @@ impl XlibWrapper {
 
 
 
-pub struct WindowAttributes<'a> {
-    pub x: c_int,
-    pub y: c_int,
-    pub width: c_int,
-    pub height: c_int,
-    pub border_width: c_int,
-    pub depth: c_int,
-    pub visual: &'a mut xlib::Visual,
-    pub root: Window,
-    pub class: c_int,
-    pub bit_gravity: c_int,
-    pub win_gravity: c_int,
-    pub backing_store: c_int,
-    pub backing_planes: c_ulong,
-    pub backing_pixel: c_ulong,
-    pub save_under: bool,
-    pub colormap: xlib::Colormap,
-    pub map_installed: bool,
-    pub map_state: c_int,
-    pub all_event_masks: c_long,
-    pub your_event_mask: c_long,
-    pub do_not_propagate_mask: c_long,
-    pub override_redirect: bool,
-    pub screen: &'a mut xlib::Screen,
-}
-
-impl <'a> From<xlib::XWindowAttributes> for WindowAttributes<'a> {
-    fn from(attr: xlib::XWindowAttributes) -> Self {
-        unsafe {
-            Self {
-                x: attr.x,
-                y: attr.y,
-                width: attr.width,
-                height: attr.height,
-                border_width: attr.border_width,
-                depth: attr.depth,
-                visual: &mut *attr.visual,
-                root: attr.root,
-                class: attr.class,
-                bit_gravity: attr.bit_gravity,
-                win_gravity: attr.win_gravity,
-                backing_store: attr.backing_store,
-                backing_planes: attr.backing_planes,
-                backing_pixel: attr.backing_pixel,
-                save_under: from_c_bool(attr.save_under),
-                colormap: attr.colormap,
-                map_installed: from_c_bool(attr.map_installed),
-                map_state: attr.map_state,
-                all_event_masks: attr.all_event_masks,
-                your_event_mask: attr.your_event_mask,
-                do_not_propagate_mask: attr.do_not_propagate_mask,
-                override_redirect: from_c_bool(attr.override_redirect),
-                screen: &mut *attr.screen,
-            }
-        }
-    }
-}
-
-impl <'a> Into<xlib::XWindowAttributes> for WindowAttributes<'a> {
-    fn into(self) -> xlib::XWindowAttributes {
-        unsafe {
-            let mut ret: xlib::XWindowAttributes = mem::uninitialized();
-            ret.x = self.x;
-            ret.y = self.y;
-            ret.width = self.width;
-            ret.height =  self.height;
-            ret.border_width = self.border_width;
-            ret.depth = self.depth;
-            ret.visual = &mut *self.visual;
-            ret.root = self.root;
-            ret.class = self.class;
-            ret.bit_gravity = self.bit_gravity;
-            ret.win_gravity = self.win_gravity;
-            ret.backing_store = self.backing_store;
-            ret.backing_planes = self.backing_planes;
-            ret.backing_pixel = self.backing_pixel;
-            ret.save_under = to_c_bool(self.save_under);
-            ret.colormap = self.colormap;
-            ret.map_installed = to_c_bool(self.map_installed);
-            ret.map_state = self.map_state;
-            ret.all_event_masks = self.all_event_masks;
-            ret.your_event_mask = self.your_event_mask;
-            ret.do_not_propagate_mask = self.do_not_propagate_mask;
-            ret.override_redirect = to_c_bool(self.override_redirect);
-            ret.screen = &mut *self.screen;
-            ret
-        }
-    }
-}
 
 

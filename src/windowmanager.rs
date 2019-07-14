@@ -7,6 +7,7 @@ use crate::xlibwrapper::util::*;
 use crate::xlibwrapper::xlibmodels::*;
 use crate::models::windowwrapper::*;
 use crate::models::rect::*;
+use crate::models::screen::*;
 
 use std::rc::Rc;
 
@@ -14,8 +15,14 @@ pub const DecorationHeight: i32 = 20;
 pub const BorderWidth: i32 = 2;
 pub const InnerBorderWidth: i32 = 0;
 
+pub enum Mode {
+    Floating,
+    Tiled
+}
+
 pub struct WindowManager {
     pub lib: Rc<XlibWrapper>,
+    pub mode: Mode,
     pub clients: HashMap<u64, WindowWrapper>,
     pub drag_start_pos: (c_int, c_int),
     pub drag_start_frame_pos: (c_int, c_int),
@@ -32,6 +39,7 @@ impl WindowManager {
     pub fn new (lib: Rc<XlibWrapper>) -> Self {
         Self {
             lib: lib,
+            mode: Mode::Floating,
             clients: HashMap::new(),
             drag_start_pos: (0, 0),
             drag_start_frame_pos: (0, 0),
@@ -75,8 +83,10 @@ impl WindowManager {
     }
 
     pub fn setup_window(&mut self, w: Window) {
-        
-        if self.clients.contains_key(&w) { return }
+
+        if self.clients.contains_key(&w) { 
+            return 
+        }
 
         let geom = self.lib.get_geometry(w);
 
@@ -90,10 +100,34 @@ impl WindowManager {
         self.subscribe_to_events(w);
         self.grab_buttons(w);
         self.grab_keys(w);
-        self.move_window(ww, 0, DecorationHeight);
+        // self.move_window(ww, 0, DecorationHeight);
+        //self.move_window(ww, 0, 0);
+        self.window_initial_size(ww);
+        self.center_window(ww);
         self.lib.map_window(w);
         self.lib.raise_window(w);
         self.clients.insert(w, ww.clone());
+    }
+    
+    fn window_initial_size(&mut self, ww: WindowWrapper) {
+        let screen = self.lib.get_screen(); 
+
+        let new_width = (screen.width - 30) as u32;
+        let new_height = (screen.height - 30) as u32;
+
+        self.resize_window(ww.window(), new_width, new_height);
+    }
+
+    fn center_window(&self, ww: WindowWrapper) {
+        
+        let screen = self.lib.get_screen();
+
+        let new_x = (screen.width / 2) - (ww.get_width() as i32 / 2);
+        let new_y = (screen.height / 2) - (ww.get_height() as i32 / 2);
+        
+        println!("Screen width {} Screen height: {}", screen.width, screen.height);
+
+        self.move_window(ww, new_x, new_y);
     }
 
     pub fn should_be_managed(&self, w: Window) -> bool {
@@ -107,9 +141,9 @@ impl WindowManager {
             }
         }
 
-        /*if self.lib.get_window_attributes(w).override_redirect {
+        if self.lib.get_window_attributes(w).override_redirect {
             return false;
-        }*/
+        }
         true
     }
 
@@ -150,18 +184,26 @@ impl WindowManager {
     }
 
     pub fn kill_window(&mut self, w: Window) {
-        if !self.clients.contains_key(&w) {
+        if !self.clients.contains_key(&w) || w == self.lib.get_root() {
             return;
         }
 
         let frame = self.clients.get(&w).expect("KillWindow: No such window in client list");
 
 
-        if frame.decorated() {
-            self.destroy_dec(*frame);
+        if self.lib.kill_client(frame.window()) {
+
+            if frame.decorated() {
+                self.destroy_dec(*frame);
+            }
+            self.clients.remove(&w);
+            let clients: Vec<Window> = self.clients
+                .iter()
+                .map(|(c, w)| {
+                    *c
+                }).collect();
+            self.lib.update_net_client_list(clients);
         }
-        self.lib.kill_client(frame.window());
-        self.clients.remove(&w);
         println!("Top level windows: {}", self.lib.top_level_window_count());
     }
 
@@ -216,7 +258,7 @@ impl WindowManager {
     fn grab_keys(&self, w: Window) {
 
         let keys: Vec<u32> =
-            vec!["q", "Left", "Up", "Right", "Down", "Return"]
+            vec!["q", "Left", "Up", "Right", "Down"]
             .into_iter()
             .map(|key| {
                 keysym_lookup::into_keysym(key).unwrap()

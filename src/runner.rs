@@ -28,6 +28,8 @@ impl Runner {
         ret.call_table.insert(EventType::EnterNotify, Box::new(enter_notify::enter_notify));
         ret.call_table.insert(EventType::ButtonPress, Box::new(button_press::button_press));
         ret.call_table.insert(EventType::KeyPress, Box::new(key_press::key_press));
+
+
         ret
     }
 
@@ -44,7 +46,7 @@ impl Runner {
 
         loop {
             let event = self.lib.next_event();
-            //println!("{:?}", &event);
+            // println!("{:?}", &event);
 
             match self.call_table.get(&event.event_type) {
                 Some(func) => func(self.lib.clone(), &mut self.wm, event),
