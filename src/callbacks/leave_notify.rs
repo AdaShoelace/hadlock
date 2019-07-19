@@ -27,4 +27,6 @@ pub fn leave_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
         Some(dec) => xlib.set_border_color(dec, Color::SolarizedPurple),
         None => xlib.set_border_color(ww.window(), Color::SolarizedPurple)
     }
+    wm.focus_w = xlib.get_root();
+    xlib.take_focus(xlib.get_root());
 }

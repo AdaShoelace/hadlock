@@ -23,6 +23,7 @@ pub enum Mode {
 pub struct WindowManager {
     pub lib: Rc<XlibWrapper>,
     pub mode: Mode,
+    pub focus_w: Window,
     pub clients: HashMap<u64, WindowWrapper>,
     pub drag_start_pos: (c_int, c_int),
     pub drag_start_frame_pos: (c_int, c_int),
@@ -37,9 +38,11 @@ impl WindowManager {
      * return WindowManager
      */
     pub fn new (lib: Rc<XlibWrapper>) -> Self {
+        let root = lib.get_root();
         Self {
             lib: lib,
             mode: Mode::Floating,
+            focus_w: root,
             clients: HashMap::new(),
             drag_start_pos: (0, 0),
             drag_start_frame_pos: (0, 0),
@@ -76,7 +79,7 @@ impl WindowManager {
             0
         );
 
-        // self.grab_keys(dec_window);
+        //self.grab_keys(dec_window);
         w.set_decoration(dec_window, Rect::new(position, size));
         self.lib.map_window(dec_window);
         self.lib.sync(false);
@@ -84,8 +87,8 @@ impl WindowManager {
 
     pub fn setup_window(&mut self, w: Window) {
 
-        if self.clients.contains_key(&w) { 
-            return 
+        if self.clients.contains_key(&w) {
+            return
         }
 
         let geom = self.lib.get_geometry(w);
@@ -102,32 +105,44 @@ impl WindowManager {
         self.grab_keys(w);
         // self.move_window(ww, 0, DecorationHeight);
         //self.move_window(ww, 0, 0);
-        self.window_initial_size(ww);
-        self.center_window(ww);
+        self.clients.insert(w, ww);
+        self.window_initial_size(w);
+        self.center_window(w);
         self.lib.map_window(w);
         self.lib.raise_window(w);
-        self.clients.insert(w, ww.clone());
-    }
-    
-    fn window_initial_size(&mut self, ww: WindowWrapper) {
-        let screen = self.lib.get_screen(); 
-
-        let new_width = (screen.width - 30) as u32;
-        let new_height = (screen.height - 30) as u32;
-
-        self.resize_window(ww.window(), new_width, new_height);
     }
 
-    fn center_window(&self, ww: WindowWrapper) {
-        
+    fn window_initial_size(&mut self, w: Window) {
+
         let screen = self.lib.get_screen();
 
-        let new_x = (screen.width / 2) - (ww.get_width() as i32 / 2);
-        let new_y = (screen.height / 2) - (ww.get_height() as i32 / 2);
-        
-        println!("Screen width {} Screen height: {}", screen.width, screen.height);
+        let new_width = (screen.width - (screen.width / 10)) as u32;
+        let new_height = (screen.height - (screen.height / 10)) as u32;
 
-        self.move_window(ww, new_x, new_y);
+        self.resize_window(w, new_width, new_height);
+    }
+
+    fn center_window(&mut self, w: Window) {
+        let ww = match self.clients.get_mut(&w) {
+            Some(ww) => ww,
+            None => { return }
+        };
+        let screen = self.lib.get_screen();
+        
+        let w_width = ww.get_width() as i32;
+        let w_height = ww.get_height() as i32;
+
+        let dw = (screen.width - w_width).abs() / 2;
+        let dh = (screen.height - w_height).abs() / 2;        
+
+
+        println!("Screen width: {} Screen height: {}", screen.width, screen.height);
+        println!("Window width: {} Window height: {}", w_width, w_height);
+
+        println!("dw: {}, dh: {}", dw, dh);
+        //self.move_window(ww, new_x, new_y);
+
+        self.move_window(w, dw, dh);
     }
 
     pub fn should_be_managed(&self, w: Window) -> bool {
@@ -147,7 +162,11 @@ impl WindowManager {
         true
     }
 
-    pub fn move_window(&self, ww: WindowWrapper, x: i32, y: i32) {
+    pub fn move_window(&mut self, w: Window, x: i32, y: i32) {
+        let ww = match self.clients.get_mut(&w) {
+            Some(ww) => ww,
+            None => { return }
+        };
         match ww.get_dec() {
             Some(dec) => {
                 self.lib.move_window(
@@ -160,13 +179,18 @@ impl WindowManager {
                     x + InnerBorderWidth + BorderWidth,
                     y + InnerBorderWidth + BorderWidth + DecorationHeight
                 );
+                ww.set_position(Position { x, y });
             },
-            None => self.lib.move_window(
-                ww.window(),
-                x,
-                y
-            )
+            None => {
+                self.lib.move_window(
+                    ww.window(),
+                    x,
+                    y
+                );
+                ww.set_position(Position { x, y });
+            }
         }
+        println!("Window pos: {:?}", ww.get_position());
     }
 
     fn toggle_decorations(&mut self) {
@@ -209,7 +233,7 @@ impl WindowManager {
 
     pub fn resize_window(&mut self, w: Window, width: u32, height: u32) {
 
-        let ww = match self.clients.get_mut(&w) {
+        let mut ww = match self.clients.get_mut(&w) {
             Some(ww) => ww,
             None => {
                 return;
@@ -246,6 +270,8 @@ impl WindowManager {
 
         ww.set_inner_size(window_size);
         self.lib.resize_window(ww.window(), window_size.width, window_size.height);
+
+        //println!("Window width: {}, height: {}", ww.get_width(), ww.get_height());
     }
 
     fn subscribe_to_events(&mut self, w: Window) {
@@ -257,26 +283,10 @@ impl WindowManager {
 
     fn grab_keys(&self, w: Window) {
 
-        let keys: Vec<u32> =
-            vec!["q", "Left", "Up", "Right", "Down"]
-            .into_iter()
-            .map(|key| {
-                keysym_lookup::into_keysym(key).unwrap()
-            }).map(|keysym| {
-                self.lib.key_sym_to_keycode(keysym as u64) as u32
-            }).collect();
-
-        keys
-            .into_iter()
-            .for_each(|key| {
-                self.lib.grab_key(
-                    key,
-                    Mod4Mask | Shift,
-                    w,
-                    false,
-                    GrabModeAsync,
-                    GrabModeAsync);
-            });
+        let _keys = vec!["q", "Left", "Up", "Right", "Down"]
+            .iter()
+            .map(|key| { keysym_lookup::into_keysym(key).expect("Core: no such key") })
+            .for_each(|key_sym| { self.lib.grab_keys(w, key_sym, Mod4Mask | Shift) });
     }
 
     fn grab_buttons(&self, w: Window) {

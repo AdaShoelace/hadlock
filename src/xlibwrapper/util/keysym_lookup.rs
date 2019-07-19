@@ -1,11 +1,10 @@
 
-use std::os::raw::c_uint;
 use x11_dl::keysym::*;
 use x11_dl::xlib;
 
-pub type XKeysym = c_uint;
-pub type ModMask = c_uint;
-pub type Button = c_uint;
+pub type XKeysym = u32;
+pub type ModMask = u32;
+pub type Button = u32;
 
 pub fn into_modmask(keys: &[String]) -> ModMask {
     let mut mask = 0;

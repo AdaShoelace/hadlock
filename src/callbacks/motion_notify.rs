@@ -27,7 +27,7 @@ pub fn motion_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event
     y: wm.drag_start_frame_pos.1 + delta_y};
 
     if (state & Button1Mask) != 0 {
-        let ww = *wm.clients.get(&w).unwrap();
-        wm.move_window(ww, dest_pos.x, dest_pos.y);
+        //let ww = wm.clients.get_mut(&w).unwrap();
+        wm.move_window(w, dest_pos.x, dest_pos.y);
     }
 }

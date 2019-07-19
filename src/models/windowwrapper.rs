@@ -67,8 +67,8 @@ impl WindowWrapper {
     
     pub fn set_position(&mut self, pos: Position) {
         match self.dec_rect {
-            Some(mut dec_rect) => dec_rect.set_position(pos),
-            None => self.window_rect.set_position(pos)
+            Some(dec_rect) => self.dec_rect = Some(Rect::new(pos, dec_rect.get_size())),
+            None => self.window_rect = Rect::new(pos, self.window_rect.get_size())
         }
     }
 

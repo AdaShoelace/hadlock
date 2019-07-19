@@ -63,6 +63,9 @@ impl XlibWrapper {
             let display_height = (lib.XDisplayHeight)(disp, screen_id);
             let screen = Screen::new(root, display_width, display_height, 0, 0);
 
+            //clean up grabs
+            (lib.XUngrabKey)(disp, xlib::AnyKey, xlib::AnyModifier, root);
+
             (disp, root, lib, xatom, screen)
         };
 
@@ -74,24 +77,20 @@ impl XlibWrapper {
             root,
             screen
         };
-        
-        let buttons = vec!["Return"];
-        buttons
-            .into_iter()
-            .map(|key| {
-                keysym_lookup::into_keysym(key).unwrap()
-            }).map(|keysym| {
-                ret.key_sym_to_keycode(keysym as u64) as u32
-            }).for_each(|key| {
-                ret.grab_key(
-                    key,
-                    Mod4Mask,
-                    root,
-                    false,
-                    GrabModeAsync,
-                    GrabModeAsync,
-                )
-            });
+    
+        let keys = vec![
+            "Left",
+            "Right",
+            "Up",
+            "Down",
+            "Return",
+            "q"
+        ];
+
+        let _ = keys
+            .iter()
+            .map(|key| { keysym_lookup::into_keysym(key).expect("Core: no such key") })
+            .for_each(|key_sym| { ret.grab_keys(ret.get_root(), key_sym, xlib::Mod4Mask | xlib::ShiftMask) });
 
         ret
     }
@@ -518,6 +517,29 @@ impl XlibWrapper {
             None
         }
     }
+    
+    pub fn grab_keys(&self, w: Window, keysym: u32, modifiers: u32) { 
+        let code = self.key_sym_to_keycode(keysym as u64);
+        
+        let mods: Vec<u32> = vec![
+            modifiers,
+            modifiers | xlib::Mod2Mask,
+            modifiers | xlib::LockMask
+        ];
+
+        let _ = mods
+            .into_iter()
+            .for_each(|m| {
+                self.grab_key(
+                    code as u32,
+                    m,
+                    self.root,
+                    true,
+                    GrabModeAsync,
+                    GrabModeAsync
+                )
+            });
+    }
 
     pub fn grab_key(&self,
                     key_code: u32,
@@ -571,7 +593,7 @@ impl XlibWrapper {
         unsafe {
             let mut event: xlib::XEvent = mem::uninitialized();
             (self.lib.XNextEvent)(self.display, &mut event);
-            println!("Event: {:?}", event);
+            //println!("Event: {:?}", event);
             //println!("Event type: {:?}", event.get_type());
             //println!("Pending events: {}", (self.lib.XPending)(self.display));
 

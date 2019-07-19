@@ -14,10 +14,12 @@ pub fn enter_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
         _ => { return; }
     };
 
+
     if !wm.clients.contains_key(&w) {
         return;
     }
 
+    wm.focus_w = w;
     let ww = wm.clients.get(&w).expect("OnEnter: No such window in client list");
 
     match ww.get_dec() {
