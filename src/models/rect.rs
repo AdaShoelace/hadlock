@@ -2,7 +2,7 @@
 use crate::xlibwrapper::util::*;
 use crate::xlibwrapper::xlibmodels::Geometry;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Rect {
     position: Position,
     size: Size,

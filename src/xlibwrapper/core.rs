@@ -11,7 +11,12 @@ use super::xatom::*;
 use super::xlibmodels::*;
 use super::event::*;
 
-use crate::models::screen::Screen;
+use crate::models::{
+    screen::Screen,
+    dockarea::DockArea,
+    window_type::WindowType
+};
+
 
 pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> c_int {
     let err = *e;
@@ -129,7 +134,8 @@ impl XlibWrapper {
         //set desktop names
         let mut text: xlib::XTextProperty = unsafe { std::mem::uninitialized() };
         unsafe {
-            let mut clist_tags: Vec<*mut c_char> = (0..10)
+            let mut clist_tags: Vec<*mut c_char> = vec!["First"]
+                .iter()
                 .map(|x| CString::new(x.to_string().clone()).unwrap().into_raw())
                 .collect();
             let ptr = clist_tags.as_mut_ptr();
@@ -150,7 +156,7 @@ impl XlibWrapper {
         }
 
         //set the WM NAME
-        self.set_desktop_prop_string("LeftWM", self.xatom.NetWMName);
+        self.set_desktop_prop_string("Hadlok", self.xatom.NetWMName);
 
         self.set_desktop_prop_u64(
             self.root as u64,
@@ -790,6 +796,115 @@ impl XlibWrapper {
         unsafe {
             (self.lib.XSync)(self.display, discard as i32);
         }
+    }
+
+   pub fn get_window_strut_array(&self, window: Window) -> Option<DockArea> {
+        if let Some(d) = self.get_window_strut_array_strut_partial(window) {
+            return Some(d);
+        }
+        if let Some(d) = self.get_window_strut_array_strut(window) {
+            return Some(d);
+        }
+        None
+    }
+
+    //new way to get strut
+    fn get_window_strut_array_strut_partial(&self, window: Window) -> Option<DockArea> {
+        let mut format_return: i32 = 0;
+        let mut nitems_return: c_ulong = 0;
+        let mut type_return: xlib::Atom = 0;
+        let mut bytes_after_return: xlib::Atom = 0;
+        let mut prop_return: *mut c_uchar = unsafe { std::mem::uninitialized() };
+        unsafe {
+            let status = (self.lib.XGetWindowProperty)(
+                self.display,
+                window,
+                self.xatom.NetWMStrutPartial,
+                0,
+                4096,
+                xlib::False,
+                xlib::XA_CARDINAL,
+                &mut type_return,
+                &mut format_return,
+                &mut nitems_return,
+                &mut bytes_after_return,
+                &mut prop_return,
+            );
+            if status == i32::from(xlib::Success) {
+                #[allow(clippy::cast_ptr_alignment)]
+                let array_ptr = prop_return as *const i64;
+                let slice = std::slice::from_raw_parts(array_ptr, nitems_return as usize);
+                if slice.len() == 12 {
+                    return Some(DockArea::from(slice));
+                }
+                None
+            } else {
+                None
+            }
+        }
+    }
+
+    //old way to get strut
+    fn get_window_strut_array_strut(&self, window: xlib::Window) -> Option<DockArea> {
+        let mut format_return: i32 = 0;
+        let mut nitems_return: c_ulong = 0;
+        let mut type_return: xlib::Atom = 0;
+        let mut bytes_after_return: xlib::Atom = 0;
+        let mut prop_return: *mut c_uchar = unsafe { std::mem::uninitialized() };
+        unsafe {
+            let status = (self.lib.XGetWindowProperty)(
+                self.display,
+                window,
+                self.xatom.NetWMStrut,
+                0,
+                4096,
+                xlib::False,
+                xlib::XA_CARDINAL,
+                &mut type_return,
+                &mut format_return,
+                &mut nitems_return,
+                &mut bytes_after_return,
+                &mut prop_return,
+            );
+            if status == i32::from(xlib::Success) {
+                #[allow(clippy::cast_ptr_alignment)]
+                let array_ptr = prop_return as *const i64;
+                let slice = std::slice::from_raw_parts(array_ptr, nitems_return as usize);
+                if slice.len() == 12 {
+                    return Some(DockArea::from(slice));
+                }
+                None
+            } else {
+                None
+            }
+        }
+    } 
+
+     pub fn get_window_type(&self, window: xlib::Window) -> WindowType {
+        if let Some(value) = self.get_atom_prop_value(window, self.xatom.NetWMWindowType) {
+            if value == self.xatom.NetWMWindowTypeDesktop {
+                return WindowType::Desktop;
+            }
+            if value == self.xatom.NetWMWindowTypeDock {
+                return WindowType::Dock;
+            }
+            if value == self.xatom.NetWMWindowTypeToolbar {
+                return WindowType::Toolbar;
+            }
+            if value == self.xatom.NetWMWindowTypeMenu {
+                return WindowType::Menu;
+            }
+            if value == self.xatom.NetWMWindowTypeUtility {
+                return WindowType::Utility;
+            }
+            if value == self.xatom.NetWMWindowTypeSplash {
+                return WindowType::Splash;
+            }
+            if value == self.xatom.NetWMWindowTypeDialog {
+                return WindowType::Dialog;
+            }
+        }
+        WindowType::Normal
     }
 
     pub fn get_top_level_windows(&self) -> Vec<Window> {

@@ -1,7 +1,7 @@
 # xinitrc file for testing our window manager.
 xrdb -load Xresources
 
-#compton &
+compton &
 # 0. Set wallpaper using feh
 feh --bg-scale ./wallpaper.jpg &
 

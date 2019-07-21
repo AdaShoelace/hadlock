@@ -5,9 +5,13 @@ use crate::xlibwrapper::masks::*;
 use crate::xlibwrapper::core::*;
 use crate::xlibwrapper::util::*;
 use crate::xlibwrapper::xlibmodels::*;
-use crate::models::windowwrapper::*;
-use crate::models::rect::*;
-use crate::models::screen::*;
+use crate::models::{
+    windowwrapper::*,
+    rect::*,
+    screen::*,
+    dockarea::*,
+    window_type::*,
+};
 
 use std::rc::Rc;
 
@@ -15,6 +19,7 @@ pub const DecorationHeight: i32 = 20;
 pub const BorderWidth: i32 = 2;
 pub const InnerBorderWidth: i32 = 0;
 
+#[derive(PartialEq, Eq)]
 pub enum Mode {
     Floating,
     Tiled
@@ -24,6 +29,7 @@ pub struct WindowManager {
     pub lib: Rc<XlibWrapper>,
     pub mode: Mode,
     pub focus_w: Window,
+    pub dock_area: DockArea,
     pub clients: HashMap<u64, WindowWrapper>,
     pub drag_start_pos: (c_int, c_int),
     pub drag_start_frame_pos: (c_int, c_int),
@@ -43,6 +49,7 @@ impl WindowManager {
             lib: lib,
             mode: Mode::Floating,
             focus_w: root,
+            dock_area: Default::default(),
             clients: HashMap::new(),
             drag_start_pos: (0, 0),
             drag_start_frame_pos: (0, 0),
@@ -53,7 +60,7 @@ impl WindowManager {
     fn decorate_window(&self, w: &mut WindowWrapper) {
         let window_geom = self.lib.get_geometry(w.window());
         let position = Position { x: window_geom.x - InnerBorderWidth - BorderWidth,
-            y: window_geom.y - InnerBorderWidth - BorderWidth - DecorationHeight };
+        y: window_geom.y - InnerBorderWidth - BorderWidth - DecorationHeight };
 
         let size = Size { width: window_geom.width + (2 * InnerBorderWidth as u32), height: window_geom.height + (2 * InnerBorderWidth as u32) + DecorationHeight as u32 };
         let dec_window = self.lib.create_simple_window(
@@ -87,12 +94,22 @@ impl WindowManager {
 
     pub fn setup_window(&mut self, w: Window) {
 
+        if self.lib.get_window_type(w) == WindowType::Dock {
+            self.dock_area = match self.lib.get_window_strut_array(w) {
+                Some(dock) => dock,
+                None => { return }
+            }
+        }
+
+        if !self.should_be_managed(w) {
+            return
+        }
+
         if self.clients.contains_key(&w) {
             return
         }
 
         let geom = self.lib.get_geometry(w);
-
         let mut ww = WindowWrapper::new(w, Rect::from(geom));
         self.lib.set_border_width(w, InnerBorderWidth as u32);
         self.lib.set_border_color(w, Color::SolarizedPurple);
@@ -112,12 +129,25 @@ impl WindowManager {
 
     fn window_initial_size(&mut self, w: Window) {
 
-        let screen = self.lib.get_screen();
+        if self.mode != Mode::Floating {
+            return
+        }
 
-        let new_width = (screen.width - (screen.width / 10)) as u32;
-        let new_height = (screen.height - (screen.height / 10)) as u32;
-        
-        self.resize_window(w, new_width, new_height);
+        let screen = self.lib.get_screen();
+        if let Some(dock_rect) = self.dock_area.as_rect(screen.width, screen.height) {
+            println!("DockArea: {:?}", dock_rect);
+            let new_width = (screen.width - (screen.width / 10)) as u32;
+            let new_height = ((screen.height - dock_rect.get_size().height as i32) - (screen.height / 10)) as u32;
+
+            self.resize_window(w, new_width, new_height);
+
+        } else {
+
+            let new_width = (screen.width - (screen.width / 10)) as u32;
+            let new_height = (screen.height - (screen.height / 10)) as u32;
+
+            self.resize_window(w, new_width, new_height);
+        }
     }
 
     fn center_window(&mut self, w: Window) {
@@ -127,15 +157,16 @@ impl WindowManager {
         };
         let screen = self.lib.get_screen();
 
-        let w_width = ww.get_width() as i32;
-        let w_height = ww.get_height() as i32;
+        let mut dw = (screen.width - ww.get_width() as i32).abs() / 2;
+        let mut dh = (screen.height - ww.get_height() as i32).abs() / 2;
 
-        let dw = (screen.width - w_width).abs() / 2;
-        let dh = (screen.height - w_height).abs() / 2;
-
+        if let Some(dock_rect) = self.dock_area.as_rect(screen.width, screen.height) {
+            println!("HEFFAKLUMP: {}", dock_rect.get_size().height);
+            dh = ((screen.height + dock_rect.get_size().height as i32) - ww.get_height() as i32).abs() / 2;
+        }
 
         println!("Screen width: {} Screen height: {}", screen.width, screen.height);
-        println!("Window width: {} Window height: {}", w_width, w_height);
+        println!("Window width: {} Window height: {}", ww.get_width(), ww.get_height());
 
         println!("dw: {}, dh: {}", dw, dh);
         //self.move_window(ww, new_x, new_y);

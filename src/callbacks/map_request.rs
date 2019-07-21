@@ -13,9 +13,7 @@ pub fn map_request(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) 
         _ => { return; }
     };
 
-    if wm.should_be_managed(w) {
-        wm.setup_window(w);
-    }
+    wm.setup_window(w);
     xlib.map_window(w);
 }
 
