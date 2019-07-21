@@ -84,6 +84,20 @@ impl WindowWrapper {
         self.window_rect.clone()
     }
 
+    /*
+     * Will set total size of window, so the outmost boundaries (excluding window borders)
+     */
+    pub fn set_size(&mut self, size: Size) {
+        match self.dec_rect {
+            Some(rect) => self.set_dec_size(size),
+            None => self.set_inner_size(size)
+        }
+    }
+    
+    pub fn get_size(&self) -> Size {
+        Size { width: self.get_width(), height: self.get_height() }
+    }
+
     pub fn get_width(&self) -> u32 {
         match self.dec_rect {
             Some(rect) => rect.get_size().width,
@@ -104,4 +118,6 @@ impl WindowWrapper {
             None => self.window_rect.get_position()
         }
     }
+    
+
 }

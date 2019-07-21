@@ -53,7 +53,7 @@ impl WindowManager {
     fn decorate_window(&self, w: &mut WindowWrapper) {
         let window_geom = self.lib.get_geometry(w.window());
         let position = Position { x: window_geom.x - InnerBorderWidth - BorderWidth,
-        y: window_geom.y - InnerBorderWidth - BorderWidth - DecorationHeight };
+            y: window_geom.y - InnerBorderWidth - BorderWidth - DecorationHeight };
 
         let size = Size { width: window_geom.width + (2 * InnerBorderWidth as u32), height: window_geom.height + (2 * InnerBorderWidth as u32) + DecorationHeight as u32 };
         let dec_window = self.lib.create_simple_window(
@@ -103,8 +103,6 @@ impl WindowManager {
         self.subscribe_to_events(w);
         self.grab_buttons(w);
         self.grab_keys(w);
-        // self.move_window(ww, 0, DecorationHeight);
-        //self.move_window(ww, 0, 0);
         self.clients.insert(w, ww);
         self.window_initial_size(w);
         self.center_window(w);
@@ -118,7 +116,7 @@ impl WindowManager {
 
         let new_width = (screen.width - (screen.width / 10)) as u32;
         let new_height = (screen.height - (screen.height / 10)) as u32;
-
+        
         self.resize_window(w, new_width, new_height);
     }
 
@@ -128,12 +126,12 @@ impl WindowManager {
             None => { return }
         };
         let screen = self.lib.get_screen();
-        
+
         let w_width = ww.get_width() as i32;
         let w_height = ww.get_height() as i32;
 
         let dw = (screen.width - w_width).abs() / 2;
-        let dh = (screen.height - w_height).abs() / 2;        
+        let dh = (screen.height - w_height).abs() / 2;
 
 
         println!("Screen width: {} Screen height: {}", screen.width, screen.height);
