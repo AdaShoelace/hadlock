@@ -43,7 +43,7 @@ line-size = 3
 line-color = #f00
 
 border-size = 4
-border-color = #00000000
+border-color = #000000
 
 padding-left = 0
 padding-right = 2
