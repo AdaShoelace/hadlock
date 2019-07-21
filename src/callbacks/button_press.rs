@@ -25,6 +25,8 @@ pub fn button_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
         wm.drag_start_pos = (x_root as i32 , y_root as i32);
         wm.drag_start_frame_pos = (geometry.x,geometry.y);
         wm.drag_start_frame_size = (geometry.width, geometry.height);
+        
+        
 
         match ww.get_dec() {
             Some(dec) => {
@@ -33,4 +35,5 @@ pub fn button_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
             },
             None => xlib.raise_window(ww.window())
         }
+        xlib.take_focus(ww.window());
     }

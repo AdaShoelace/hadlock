@@ -46,56 +46,122 @@ impl XlibWrapper {
             if disp == std::ptr::null_mut() {
                 panic!("Failed to load display in xlib::XlibWrapper");
             }
-            
+
             let root = (lib.XDefaultRootWindow)(disp);
             (lib.XSetErrorHandler)(Some(on_wm_detected));
-            (lib.XSelectInput)(
-              disp,
-              root,
-              xlib::SubstructureNotifyMask | xlib::SubstructureRedirectMask | xlib::KeyPressMask
-              );
             (lib.XSync)(disp, 0);
             (lib.XSetErrorHandler)(Some(error_handler));
             let xatom = XAtom::new(&lib, disp);
-            
+
             let screen_id = (lib.XDefaultScreen)(disp);
             let display_width = (lib.XDisplayWidth)(disp, screen_id);
             let display_height = (lib.XDisplayHeight)(disp, screen_id);
             let screen = Screen::new(root, display_width, display_height, 0, 0);
 
-            //clean up grabs
-            (lib.XUngrabKey)(disp, xlib::AnyKey, xlib::AnyModifier, root);
-
             (disp, root, lib, xatom, screen)
         };
 
 
-        let ret = Self {
+        let mut ret = Self {
             lib,
             xatom,
             display: disp,
             root,
             screen
         };
-    
-        let keys = vec![
-            "Left",
-            "Right",
-            "Up",
-            "Down",
-            "Return",
-            "q"
-        ];
-
-        let _ = keys
-            .iter()
-            .map(|key| { keysym_lookup::into_keysym(key).expect("Core: no such key") })
-            .for_each(|key_sym| { ret.grab_keys(ret.get_root(), key_sym, xlib::Mod4Mask | xlib::ShiftMask) });
-
+        ret.init();
+        ret.init_desktops_hints();
         ret
     }
 
-    
+    fn init(&mut self) {
+        let root_event_mask: i64 = xlib::SubstructureRedirectMask
+            | xlib::SubstructureNotifyMask
+            | xlib::ButtonPressMask
+            | xlib::PointerMotionMask
+            | xlib::EnterWindowMask
+            | xlib::LeaveWindowMask
+            | xlib::StructureNotifyMask
+            | xlib::PropertyChangeMask;
+        self.select_input(self.root, root_event_mask);
+
+        unsafe {
+            let supported = self.xatom.net_supported();
+            let supp_ptr: *const xlib::Atom = supported.as_ptr();
+            let size = supported.len() as i32;
+            (self.lib.XChangeProperty)(
+                self.display,
+                self.root,
+                self.xatom.NetSupported,
+                xlib::XA_ATOM,
+                32,
+                xlib::PropModeReplace,
+                supp_ptr as *const u8,
+                size
+            );
+            std::mem::forget(supported);
+            (self.lib.XUngrabKey)(self.display, xlib::AnyKey, xlib::AnyModifier, self.root);
+            (self.lib.XDeleteProperty)(self.display, self.root, self.xatom.NetClientList);
+            let keys = vec![
+                "Left",
+                "Right",
+                "Up",
+                "Down",
+                "Return",
+                "q"
+            ];
+
+            let _ = keys
+                .iter()
+                .map(|key| { keysym_lookup::into_keysym(key).expect("Core: no such key") })
+                .for_each(|key_sym| { self.grab_keys(self.get_root(), key_sym, xlib::Mod4Mask | xlib::ShiftMask) });
+        }
+        self.sync(false);
+    }
+
+    pub fn init_desktops_hints(&self) {
+        //set the number of desktop
+        let data = vec![1 as u32];
+        self.set_desktop_prop(&data, self.xatom.NetNumberOfDesktops);
+        //set a current desktop
+        let data = vec![0 as u32, xlib::CurrentTime as u32];
+        self.set_desktop_prop(&data, self.xatom.NetCurrentDesktop);
+        //set desktop names
+        let mut text: xlib::XTextProperty = unsafe { std::mem::uninitialized() };
+        unsafe {
+            let mut clist_tags: Vec<*mut c_char> = (0..10)
+                .map(|x| CString::new(x.to_string().clone()).unwrap().into_raw())
+                .collect();
+            let ptr = clist_tags.as_mut_ptr();
+            (self.lib.Xutf8TextListToTextProperty)(
+                self.display,
+                ptr,
+                clist_tags.len() as i32,
+                xlib::XUTF8StringStyle,
+                &mut text,
+                );
+            std::mem::forget(clist_tags);
+            (self.lib.XSetTextProperty)(
+                self.display,
+                self.root,
+                &mut text,
+                self.xatom.NetDesktopNames,
+                );
+        }
+
+        //set the WM NAME
+        self.set_desktop_prop_string("LeftWM", self.xatom.NetWMName);
+
+        self.set_desktop_prop_u64(
+            self.root as u64,
+            self.xatom.NetSupportingWmCheck,
+            xlib::XA_WINDOW,
+            );
+
+        //set a viewport
+        let data = vec![0 as u32, 0 as u32];
+        self.set_desktop_prop(&data, self.xatom.NetDesktopViewport);
+    }
     pub fn get_screen(&self) -> Screen {
         self.screen.clone()
     }
@@ -192,8 +258,6 @@ impl XlibWrapper {
         self.send_xevent_atom(w, self.xatom.WMTakeFocus);
     }
 
-    pub fn set_active(&self, w: Window) {
-    }
 
     fn expects_xevent_atom(&self, window: Window, atom: xlib::Atom) -> bool {
         unsafe {
@@ -336,24 +400,6 @@ impl XlibWrapper {
             (self.lib.XDestroyWindow)(self.display, w);
         }
     }
-
-    pub fn focus_window(&self, w: Window) {
-        unsafe {
-            let list = vec![w];
-            (self.lib.XChangeProperty)(
-                self.display,
-                self.root,
-                self.xatom.NetActiveWindow,
-                xlib::XA_WINDOW,
-                32,
-                xlib::PropModeReplace,
-                list.as_ptr() as *const u8,
-                1
-            );
-            mem::forget(list);
-        }
-    }
-
 
     pub fn intern_atom(&self, s: &str) -> u64 {
         unsafe {
@@ -517,10 +563,10 @@ impl XlibWrapper {
             None
         }
     }
-    
-    pub fn grab_keys(&self, w: Window, keysym: u32, modifiers: u32) { 
+
+    pub fn grab_keys(&self, w: Window, keysym: u32, modifiers: u32) {
         let code = self.key_sym_to_keycode(keysym as u64);
-        
+
         let mods: Vec<u32> = vec![
             modifiers,
             modifiers | xlib::Mod2Mask,
