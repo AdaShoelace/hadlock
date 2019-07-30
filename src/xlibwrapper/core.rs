@@ -223,7 +223,7 @@ impl XlibWrapper {
             std::mem::forget(xdata);
         }
     }
-
+    
 
     pub fn get_window_attrs(&self, window: xlib::Window) -> Result<xlib::XWindowAttributes, ()> {
         let mut attrs: xlib::XWindowAttributes = unsafe { std::mem::zeroed() };
