@@ -6,12 +6,12 @@ xrdb -load Xresources
 feh --bg-scale ./wallpaper.jpg &
 
 # 1. Start some programs to play with.
-xterm &
+#xterm &
 xclock &
-albert &
+#albert &
 #xeyes &
 #pcmanfm &
-#mousepad &
+mousepad &
 
 # polybar
 polybar --config="./polyconf" example 2>/dev/null &

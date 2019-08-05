@@ -1,10 +1,12 @@
 #![allow(dead_code)]
 use libc::{c_int, c_uint};
 use std::collections::HashMap;
-use crate::xlibwrapper::masks::*;
-use crate::xlibwrapper::core::*;
-use crate::xlibwrapper::util::*;
-use crate::xlibwrapper::xlibmodels::*;
+use crate::xlibwrapper::{
+    masks::*,
+    core::*,
+    util::*,
+    xlibmodels::*,
+};
 use crate::models::{
     windowwrapper::*,
     rect::*,
@@ -86,7 +88,7 @@ impl WindowManager {
             0
         );
 
-        //self.grab_keys(dec_window);
+        self.grab_keys(dec_window);
         w.set_decoration(dec_window, Rect::new(position, size));
         self.lib.map_window(dec_window);
         self.lib.sync(false);
@@ -96,8 +98,15 @@ impl WindowManager {
 
         if self.lib.get_window_type(w) == WindowType::Dock {
             self.dock_area = match self.lib.get_window_strut_array(w) {
-                Some(dock) => dock,
-                None => { return }
+                Some(dock) => {
+                    let dock = DockArea::from(dock);
+                    println!("dock geometry: {:?}", dock.as_rect(self.lib.get_screen().width, self.lib.get_screen().height).expect("No fekking dock area!"));
+                    dock
+                }
+                None => {
+                    println!("Say what?!");
+                    return
+                }
             }
         }
 
@@ -161,14 +170,13 @@ impl WindowManager {
         let mut dh = (screen.height - ww.get_height() as i32).abs() / 2;
 
         if let Some(dock_rect) = self.dock_area.as_rect(screen.width, screen.height) {
-            println!("HEFFAKLUMP: {}", dock_rect.get_size().height);
             dh = ((screen.height + dock_rect.get_size().height as i32) - ww.get_height() as i32).abs() / 2;
         }
 
-        println!("Screen width: {} Screen height: {}", screen.width, screen.height);
-        println!("Window width: {} Window height: {}", ww.get_width(), ww.get_height());
+        /*println!("Screen width: {} Screen height: {}", screen.width, screen.height);
+          println!("Window width: {} Window height: {}", ww.get_width(), ww.get_height());
 
-        println!("dw: {}, dh: {}", dw, dh);
+          println!("dw: {}, dh: {}", dw, dh);*/
         //self.move_window(ww, new_x, new_y);
 
         self.move_window(w, dw, dh);
@@ -208,7 +216,8 @@ impl WindowManager {
                     x + InnerBorderWidth + BorderWidth,
                     y + InnerBorderWidth + BorderWidth + DecorationHeight
                 );
-                ww.set_position(Position { x, y });
+                let new_pos = Position { x, y };
+                ww.set_position(new_pos);
             },
             None => {
                 self.lib.move_window(
@@ -222,7 +231,33 @@ impl WindowManager {
         println!("Window pos: {:?}", ww.get_position());
     }
 
-    fn toggle_decorations(&mut self) {
+    pub fn pointer_is_inside(&self, w: Window) -> bool {
+        let pointer_pos = self.lib.pointer_root_pos(w);
+        if !self.clients.contains_key(&w) {
+            let geom = self.lib.get_geometry(w);
+
+            let inside_height = pointer_pos.y > geom.y &&
+                pointer_pos.y < geom.height as i32 + geom.y;
+
+            let inside_width = pointer_pos.x > geom.x &&
+                pointer_pos.x < geom.width as i32 + geom.x;
+
+            return inside_height && inside_width;
+        }
+
+        let ww = self.clients.get(&w).unwrap();
+        let window_size = ww.get_size();
+        let window_pos = ww.get_position();
+
+        println!("Pointer_pos: {:?}, Window_pos: {:?}", pointer_pos, window_pos);
+
+        let inside_height = pointer_pos.y > window_pos.y &&
+            pointer_pos.y < window_pos.y + window_size.height as i32;
+
+        let inside_width = pointer_pos.x > window_pos.x &&
+            pointer_pos.x < window_pos.x + window_size.width as i32;
+
+        inside_height && inside_width
     }
 
     fn destroy_dec(&self, ww: WindowWrapper) {
@@ -262,7 +297,7 @@ impl WindowManager {
 
     pub fn resize_window(&mut self, w: Window, width: u32, height: u32) {
 
-        let mut ww = match self.clients.get_mut(&w) {
+        let ww = match self.clients.get_mut(&w) {
             Some(ww) => ww,
             None => {
                 return;
@@ -312,13 +347,13 @@ impl WindowManager {
 
     fn grab_keys(&self, w: Window) {
 
-        let _keys = vec!["q", "Left", "Up", "Right", "Down"]
+        let _keys = vec!["q", "Left", "Up", "Right", "Down", "Return"]
             .iter()
             .map(|key| { keysym_lookup::into_keysym(key).expect("Core: no such key") })
             .for_each(|key_sym| { self.lib.grab_keys(w, key_sym, Mod4Mask | Shift) });
     }
 
-    fn grab_buttons(&self, w: Window) {
+    pub fn grab_buttons(&self, w: Window) {
         vec![Button1, Button3]
             .into_iter()
             .for_each(|button| {
