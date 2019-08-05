@@ -1,15 +1,15 @@
-#![allow(non_upper_case_globals)]
-
 use x11_dl::xlib;
 use std::os::raw::*;
 use std::ffi::CString;
 use std::mem;
 
-use super::masks::*;
-use super::util::*;
-use super::xatom::*;
-use super::xlibmodels::*;
-use super::event::*;
+use super::{
+    masks::*,
+    util::*,
+    xatom::*,
+    xlibmodels::*,
+    event::*,
+};
 
 use crate::models::{
     screen::Screen,
@@ -223,7 +223,7 @@ impl XlibWrapper {
             std::mem::forget(xdata);
         }
     }
-    
+
 
     pub fn get_window_attrs(&self, window: xlib::Window) -> Result<xlib::XWindowAttributes, ()> {
         let mut attrs: xlib::XWindowAttributes = unsafe { std::mem::zeroed() };
@@ -309,6 +309,30 @@ impl XlibWrapper {
                 self.display,
                 0
             );
+        }
+    }
+
+    pub fn pointer_root_pos(&self, w: Window) -> Position {
+        unsafe {
+            let mut root_return = mem::uninitialized();
+            let mut child_return = mem::uninitialized();
+            let mut root_x = 0i32;
+            let mut root_y = 0i32;
+            let mut win_x = 0i32;
+            let mut win_y = 0i32;
+            let mut mask = 0u32;
+            (self.lib.XQueryPointer)(
+                self.display,
+                w,
+                &mut root_return,
+                &mut child_return,
+                &mut root_x,
+                &mut root_y,
+                &mut win_x,
+                &mut win_y,
+                &mut mask
+            );
+            Position { x: root_x, y: root_y }
         }
     }
 
@@ -575,6 +599,7 @@ impl XlibWrapper {
 
         let mods: Vec<u32> = vec![
             modifiers,
+            modifiers & !Shift,
             modifiers | xlib::Mod2Mask,
             modifiers | xlib::LockMask
         ];
@@ -798,7 +823,7 @@ impl XlibWrapper {
         }
     }
 
-   pub fn get_window_strut_array(&self, window: Window) -> Option<DockArea> {
+    pub fn get_window_strut_array(&self, window: Window) -> Option<DockArea> {
         if let Some(d) = self.get_window_strut_array_strut_partial(window) {
             return Some(d);
         }
@@ -829,7 +854,7 @@ impl XlibWrapper {
                 &mut nitems_return,
                 &mut bytes_after_return,
                 &mut prop_return,
-            );
+                );
             if status == i32::from(xlib::Success) {
                 #[allow(clippy::cast_ptr_alignment)]
                 let array_ptr = prop_return as *const i64;
@@ -865,7 +890,7 @@ impl XlibWrapper {
                 &mut nitems_return,
                 &mut bytes_after_return,
                 &mut prop_return,
-            );
+                );
             if status == i32::from(xlib::Success) {
                 #[allow(clippy::cast_ptr_alignment)]
                 let array_ptr = prop_return as *const i64;
@@ -878,9 +903,9 @@ impl XlibWrapper {
                 None
             }
         }
-    } 
+    }
 
-     pub fn get_window_type(&self, window: xlib::Window) -> WindowType {
+    pub fn get_window_type(&self, window: xlib::Window) -> WindowType {
         if let Some(value) = self.get_atom_prop_value(window, self.xatom.NetWMWindowType) {
             if value == self.xatom.NetWMWindowTypeDesktop {
                 return WindowType::Desktop;
