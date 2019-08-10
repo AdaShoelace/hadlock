@@ -83,6 +83,7 @@ impl XlibWrapper {
         let root_event_mask: i64 = xlib::SubstructureRedirectMask
             | xlib::SubstructureNotifyMask
             | xlib::ButtonPressMask
+            | xlib::KeyPressMask
             | xlib::PointerMotionMask
             | xlib::EnterWindowMask
             | xlib::LeaveWindowMask
@@ -153,6 +154,64 @@ impl XlibWrapper {
                 &mut text,
                 self.xatom.NetDesktopNames,
                 );
+
+            let mut attribute = 1u32;
+            let attrib_ptr: *mut u32 = &mut attribute;
+            let ewmh = (self.lib.XCreateWindow)(
+                self.display,
+                self.root,
+                -1,
+                -1,
+                1,
+                1,
+                0,
+                0,
+                2,
+                ::std::ptr::null_mut(),
+                1 << 9,
+                attrib_ptr as *mut xlib::XSetWindowAttributes
+            ) as u64;
+
+            let mut child: u32 = ewmh as u32;
+            let child_ptr: *mut u32 = &mut child;
+
+            let window = self.get_atom("WINDOW");
+
+            (self.lib.XChangeProperty)(self.display,
+                                  ewmh as c_ulong,
+                                  self.xatom.NetSupportingWmCheck as c_ulong,
+                                  window as c_ulong,
+                                  32,
+                                  0,
+                                  child_ptr as *mut c_uchar,
+                                  1);
+
+            (self.lib.XChangeProperty)(self.display,
+                                  ewmh as c_ulong,
+                                  self.xatom.NetWMName as c_ulong,
+                                  self.xatom.NetUtf8String as c_ulong,
+                                  8,
+                                  0,
+                                  "Hadlok".as_ptr() as *mut c_uchar,
+                                  5);
+
+            (self.lib.XChangeProperty)(self.display,
+                                  self.root,
+                                  self.xatom.NetSupportingWmCheck as c_ulong,
+                                  window as c_ulong,
+                                  32,
+                                  0,
+                                  child_ptr as *mut c_uchar,
+                                  1);
+
+            (self.lib.XChangeProperty)(self.display,
+                                  self.root,
+                                  self.xatom.NetWMName as c_ulong,
+                                  self.xatom.NetUtf8String as c_ulong,
+                                  8,
+                                  0,
+                                  "Hadlok".as_ptr() as *mut c_uchar,
+                                  5);
         }
 
         //set the WM NAME
@@ -167,7 +226,18 @@ impl XlibWrapper {
         //set a viewport
         let data = vec![0 as u32, 0 as u32];
         self.set_desktop_prop(&data, self.xatom.NetDesktopViewport);
+
     }
+
+    fn get_atom(&self, s: &str) -> u64 {
+        unsafe {
+            match CString::new(s) {
+                Ok(b) => (self.lib.XInternAtom)(self.display, b.as_ptr() as *const c_char, 0) as u64,
+                _ => panic!("Invalid atom! {}", s),
+            }
+        }
+    }
+
     pub fn get_screen(&self) -> Screen {
         self.screen.clone()
     }
@@ -492,6 +562,17 @@ impl XlibWrapper {
         unsafe {
             (self.lib.XUngrabServer)(
                 self.display
+            );
+        }
+    }
+
+    pub fn ungrab_keys(&self, w: Window) {
+        unsafe {
+            (self.lib.XUngrabKey)(
+                self.display,
+                xlib::AnyKey,
+                xlib::AnyModifier,
+                self.root
             );
         }
     }

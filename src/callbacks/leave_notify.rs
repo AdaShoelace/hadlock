@@ -17,7 +17,7 @@ pub fn leave_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
 
     // this check is an ugly hack to not crash when decorations window gets destroyed before
     // client and client recieves an "OnLeave"-event
-    if !wm.clients.contains_key(&w) {
+    if !wm.clients.contains_key(&w) || w == xlib.get_root() {
         return;
     }
 
