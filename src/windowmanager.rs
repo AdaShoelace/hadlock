@@ -100,7 +100,7 @@ impl WindowManager {
             self.dock_area = match self.lib.get_window_strut_array(w) {
                 Some(dock) => {
                     let dock = DockArea::from(dock);
-                    println!("dock geometry: {:?}", dock.as_rect(self.lib.get_screen().width, self.lib.get_screen().height).expect("No fekking dock area!"));
+                    println!("dock geometry: {:?}", dock.as_rect(self.lib.get_screen()).expect("No fekking dock area!"));
                     dock
                 }
                 None => {
@@ -126,6 +126,7 @@ impl WindowManager {
         self.lib.add_to_save_set(w);
         self.lib.add_to_root_net_client_list(w);
         self.lib.ungrab_all_buttons(w);
+        self.lib.ungrab_keys(w);
         self.subscribe_to_events(w);
         self.grab_buttons(w);
         self.grab_keys(w);
@@ -143,7 +144,7 @@ impl WindowManager {
         }
 
         let screen = self.lib.get_screen();
-        if let Some(dock_rect) = self.dock_area.as_rect(screen.width, screen.height) {
+        if let Some(dock_rect) = self.dock_area.as_rect(self.lib.get_screen()) {
             println!("DockArea: {:?}", dock_rect);
             let new_width = (screen.width - (screen.width / 10)) as u32;
             let new_height = ((screen.height - dock_rect.get_size().height as i32) - (screen.height / 10)) as u32;
@@ -169,7 +170,7 @@ impl WindowManager {
         let mut dw = (screen.width - ww.get_width() as i32).abs() / 2;
         let mut dh = (screen.height - ww.get_height() as i32).abs() / 2;
 
-        if let Some(dock_rect) = self.dock_area.as_rect(screen.width, screen.height) {
+        if let Some(dock_rect) = self.dock_area.as_rect(self.lib.get_screen()) {
             dh = ((screen.height + dock_rect.get_size().height as i32) - ww.get_height() as i32).abs() / 2;
         }
 
@@ -204,6 +205,17 @@ impl WindowManager {
             Some(ww) => ww,
             None => { return }
         };
+        let mut y = y;
+        match self.dock_area.as_rect(self.lib.get_screen()) {
+            Some(dock) => {
+                if y < dock.get_size().height as i32 {
+                    y = dock.get_size().height as i32;
+                } 
+            }
+            None => {}
+        }        
+
+
         match ww.get_dec() {
             Some(dec) => {
                 self.lib.move_window(
@@ -345,7 +357,7 @@ impl WindowManager {
         );
     }
 
-    fn grab_keys(&self, w: Window) {
+    pub fn grab_keys(&self, w: Window) {
 
         let _keys = vec!["q", "Left", "Up", "Right", "Down", "Return"]
             .iter()

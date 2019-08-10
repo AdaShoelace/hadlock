@@ -1,4 +1,5 @@
 use super::rect::*;
+use super::screen::*;
 use crate::xlibwrapper::util::*;
 
 
@@ -41,7 +42,10 @@ impl From<&[i64]> for DockArea {
 }
 
 impl DockArea {
-    pub fn as_rect(&self, screen_height: i32, screen_width: i32) -> Option<Rect> {
+    pub fn as_rect(&self, s: Screen) -> Option<Rect> {
+        let screen_width = s.width as i32;
+        let screen_height = s.height as i32;
+
         if self.top > 0 {
             return Some(self.rect_from_top());
         }
