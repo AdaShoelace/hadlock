@@ -6,13 +6,13 @@ pub enum EventType {
     ConfigurationRequest,
     MapRequest,
     ButtonPress,
+    ButtonRelease,
     KeyPress,
     MotionNotify,
     EnterNotify,
     LeaveNotify,
     Expose,
     DestroyWindow,
-    ButtonReleased,
     UnknownEvent
 }
 
@@ -37,6 +37,7 @@ pub enum EventPayload {
     ConfigurationRequest(Window, WindowChanges, u64),
     MapRequest(Window),
     ButtonPress(Window, Window, u32, u32, u32, u32),
+    ButtonRelease(Window, Window, u32, u32, u32, u32),
     KeyPress(Window, u32, u32),
     MotionNotify(Window, i32, i32, u32),
     EnterNotify(Window),

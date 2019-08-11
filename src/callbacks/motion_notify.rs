@@ -19,6 +19,8 @@ pub fn motion_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event
     if !wm.clients.contains_key(&w) {
         return;
     }
+    println!("motion_notify on window {}", w);
+    
 
     let drag_pos = Position { x: x_root, y: y_root };
     let (delta_x, delta_y) =  (drag_pos.x - wm.drag_start_pos.0,

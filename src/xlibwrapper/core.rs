@@ -751,7 +751,7 @@ impl XlibWrapper {
         unsafe {
             let mut event: xlib::XEvent = mem::uninitialized();
             (self.lib.XNextEvent)(self.display, &mut event);
-            //println!("Event: {:?}", event);
+            println!("Event: {:?}", event);
             //println!("Event type: {:?}", event.get_type());
             //println!("Pending events: {}", (self.lib.XPending)(self.display));
 
@@ -794,6 +794,19 @@ impl XlibWrapper {
                     );
                     Event::new(EventType::ButtonPress, Some(payload))
                 },
+                xlib::ButtonRelease => {
+                    //println!("Button press");
+                    let event = xlib::XButtonEvent::from(event);
+                    let payload = EventPayload::ButtonRelease(
+                        event.window,
+                        event.subwindow,
+                        event.button,
+                        event.x_root as u32,
+                        event.y_root as u32,
+                        event.state as u32
+                    );
+                    Event::new(EventType::ButtonRelease, Some(payload))
+                },
                 xlib::KeyPress => {
                     //println!("Keypress\tEvent: {:?}", event);
                     let event = xlib::XKeyEvent::from(event);
@@ -808,10 +821,10 @@ impl XlibWrapper {
                         event.y_root,
                         event.state
                     );
+                    println!("motion_notify for window: {}", event.window);
                     Event::new(EventType::MotionNotify, Some(payload))
                 },
                 xlib::EnterNotify => {
-                    //println!("EnterNotify");
                     let event = xlib::XCrossingEvent::from(event);
                     let payload = EventPayload::EnterNotify(event.window);
                     Event::new(EventType::EnterNotify, Some(payload))

@@ -9,6 +9,7 @@ pub mod motion_notify;
 pub mod leave_notify;
 pub mod enter_notify;
 pub mod button_press;
+pub mod button_release;
 pub mod key_press;
 pub mod destroy_window;
 pub mod expose;
