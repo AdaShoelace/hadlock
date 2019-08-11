@@ -82,13 +82,13 @@ impl XlibWrapper {
     fn init(&mut self) {
         let root_event_mask: i64 = xlib::SubstructureRedirectMask
             | xlib::SubstructureNotifyMask
-            | xlib::ButtonPressMask
+            //| xlib::ButtonPressMask
             | xlib::KeyPressMask
-            | xlib::PointerMotionMask
+            //| xlib::PointerMotionMask
             | xlib::EnterWindowMask
             | xlib::LeaveWindowMask
-            | xlib::StructureNotifyMask
-            | xlib::PropertyChangeMask;
+            | xlib::StructureNotifyMask;
+            //| xlib::PropertyChangeMask;
         self.select_input(self.root, root_event_mask);
 
         unsafe {
@@ -309,6 +309,16 @@ impl XlibWrapper {
             (self.lib.XAddToSaveSet)(self.display, w);
         }
     }
+    
+    pub fn remove_focus(&self, w: Window) {
+        unsafe {
+            (self.lib.XDeleteProperty)(
+                self.display,
+                self.root,
+                self.xatom.NetActiveWindow
+            );
+        }
+    }
 
     pub fn take_focus(&self, w: Window) {
         unsafe {
@@ -332,6 +342,7 @@ impl XlibWrapper {
             std::mem::forget(list);
         }
         self.send_xevent_atom(w, self.xatom.WMTakeFocus);
+        self.sync(false);
     }
 
 
@@ -751,7 +762,7 @@ impl XlibWrapper {
         unsafe {
             let mut event: xlib::XEvent = mem::uninitialized();
             (self.lib.XNextEvent)(self.display, &mut event);
-            println!("Event: {:?}", event);
+            //println!("Event: {:?}", event);
             //println!("Event type: {:?}", event.get_type());
             //println!("Pending events: {}", (self.lib.XPending)(self.display));
 
@@ -826,12 +837,13 @@ impl XlibWrapper {
                 },
                 xlib::EnterNotify => {
                     let event = xlib::XCrossingEvent::from(event);
-                    let payload = EventPayload::EnterNotify(event.window);
+                    println!("{:?}", event);
+                    let payload = EventPayload::EnterNotify(event.window, event.subwindow);
                     Event::new(EventType::EnterNotify, Some(payload))
                 },
                 xlib::LeaveNotify => {
-                    //println!("LeaveNotify");
                     let event = xlib::XCrossingEvent::from(event);
+                    println!("{:?}", event);
                     let payload = EventPayload::LeaveNotify(event.window);
                     Event::new(EventType::LeaveNotify, Some(payload))
                 },

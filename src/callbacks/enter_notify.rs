@@ -6,26 +6,29 @@ use std::rc::Rc;
 
 pub fn enter_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
-    let w = match event {
+    let (w, _sub_w) = match event {
         Event {
             event_type: EventType::EnterNotify,
-            payload: Some(EventPayload::EnterNotify(w))
-        } => w,
+            payload: Some(EventPayload::EnterNotify(w, sub_w))
+        } => (w, sub_w),
         _ => { return; }
     };
 
 
-    if !wm.clients.contains_key(&w) || w == wm.focus_w {
+    if !wm.clients.contains_key(&w) {
+        println!("Calling window {} not in client list", w);
         return;
     }
-    
-    if w == xlib.get_root() {
+    /*if w == xlib.get_root() {
+        xlib.remove_focus(wm.focus_w);
         wm.focus_w = xlib.get_root();
         xlib.take_focus(wm.focus_w);
         return;
-    }
-
+    }*/
+    
     let ww = wm.clients.get(&w).expect("OnEnter: No such window in client list");
+
+    xlib.remove_focus(wm.focus_w);
     wm.focus_w = ww.window();
 
     match ww.get_dec() {
