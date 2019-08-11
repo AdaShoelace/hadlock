@@ -95,16 +95,15 @@ impl WindowManager {
     }
 
     pub fn setup_window(&mut self, w: Window) {
-
         if self.lib.get_window_type(w) == WindowType::Dock {
             self.dock_area = match self.lib.get_window_strut_array(w) {
                 Some(dock) => {
                     let dock = DockArea::from(dock);
-                    println!("dock geometry: {:?}", dock.as_rect(self.lib.get_screen()).expect("No fekking dock area!"));
+                    //println!("dock geometry: {:?}", dock.as_rect(self.lib.get_screen()).expect("No fekking dock area!"));
                     dock
                 }
                 None => {
-                    println!("Say what?!");
+                    //println!("Say what?!");
                     return
                 }
             }
@@ -145,7 +144,7 @@ impl WindowManager {
 
         let screen = self.lib.get_screen();
         if let Some(dock_rect) = self.dock_area.as_rect(self.lib.get_screen()) {
-            println!("DockArea: {:?}", dock_rect);
+            //println!("DockArea: {:?}", dock_rect);
             let new_width = (screen.width - (screen.width / 10)) as u32;
             let new_height = ((screen.height - dock_rect.get_size().height as i32) - (screen.height / 10)) as u32;
 
@@ -240,7 +239,7 @@ impl WindowManager {
                 ww.set_position(Position { x, y });
             }
         }
-        println!("Window pos: {:?}", ww.get_position());
+        //println!("Window pos: {:?}", ww.get_position());
     }
 
     pub fn pointer_is_inside(&self, w: Window) -> bool {
@@ -261,7 +260,7 @@ impl WindowManager {
         let window_size = ww.get_size();
         let window_pos = ww.get_position();
 
-        println!("Pointer_pos: {:?}, Window_pos: {:?}", pointer_pos, window_pos);
+        //println!("Pointer_pos: {:?}, Window_pos: {:?}", pointer_pos, window_pos);
 
         let inside_height = pointer_pos.y > window_pos.y &&
             pointer_pos.y < window_pos.y + window_size.height as i32;

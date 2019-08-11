@@ -28,6 +28,7 @@ impl Runner {
         ret.call_table.insert(EventType::EnterNotify, Box::new(enter_notify::enter_notify));
         ret.call_table.insert(EventType::ButtonPress, Box::new(button_press::button_press));
         ret.call_table.insert(EventType::KeyPress, Box::new(key_press::key_press));
+        ret.call_table.insert(EventType::ButtonRelease, Box::new(button_release::button_release));
 
 
         ret

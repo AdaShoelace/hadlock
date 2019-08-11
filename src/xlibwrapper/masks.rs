@@ -7,6 +7,7 @@ pub const SubstructureNotifyMask: i64 = xlib::SubstructureNotifyMask;
 pub const EnterWindowMask: i64 = xlib::EnterWindowMask;
 pub const LeaveWindowMask: i64 = xlib::LeaveWindowMask;
 pub const ExposureMask: i64 = xlib::ExposureMask;
+pub const StructureNotifyMask: i64 = xlib::StructureNotifyMask;
 
 // Mouse buttons
 pub const Button1: u32 = xlib::Button1;
