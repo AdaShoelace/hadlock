@@ -40,7 +40,7 @@ pub enum EventPayload {
     ButtonRelease(Window, Window, u32, u32, u32, u32),
     KeyPress(Window, u32, u32),
     MotionNotify(Window, i32, i32, u32),
-    EnterNotify(Window),
+    EnterNotify(Window, Window),
     LeaveNotify(Window),
     Expose(Window),
     DestroyWindow(Window),

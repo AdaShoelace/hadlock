@@ -20,7 +20,7 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
     match wm.clients.get(&wm.focus_w) {
         Some(ww) => {
             let keycode = keycode as u8;
-            if ((state | !Shift) & Mod4Mask) != 0 && xlib.str_to_keycode("Return").unwrap() == keycode {
+            if ((state & !Shift) & Mod4Mask) != 0 && xlib.str_to_keycode("Return").unwrap() == keycode {
                 println!("just mod and enter");
                 spawn_terminal();
             }

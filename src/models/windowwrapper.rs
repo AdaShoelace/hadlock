@@ -75,6 +75,10 @@ impl WindowWrapper {
     pub fn window(&self) -> Window {
         self.window
     }
+
+    pub fn dec_window(&self) -> Option<Window> {
+        self.dec
+    }
     
     pub fn set_inner_size(&mut self, size: Size) {
         self.window_rect = Rect::new(self.window_rect.get_position(), size);
