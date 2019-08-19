@@ -20,12 +20,12 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
     match wm.clients.get(&wm.focus_w) {
         Some(ww) => {
             let keycode = keycode as u8;
-            if ((state & !Shift) & Mod4Mask) != 0 && xlib.str_to_keycode("Return").unwrap() == keycode {
+            if (state & (Mod4Mask | Shift)) == Mod4Mask && xlib.str_to_keycode("Return").unwrap() == keycode {
                 println!("just mod and enter");
                 spawn_terminal();
             }
 
-            if (state & (Mod4Mask | Shift)) != 0 {
+            if (state & (Mod4Mask | Shift)) == Mod4Mask | Shift {
                 println!("For some godforsaken reason we are here to...");
                 let w = ww.window();
                 let width = ww.get_width();
@@ -50,9 +50,10 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                 if xlib.str_to_keycode("q").unwrap() == keycode {
                     wm.kill_window(w);
                 }
-            }          },
+            }
+        },
             None if w == xlib.get_root() => {
-                if (state & Mod4Mask) != 0 {
+                if (state & (Mod4Mask | Shift)) == Mod4Mask {
                     let keycode = keycode as u8;
                     if xlib.str_to_keycode("Return").unwrap() == keycode {
                         spawn_terminal();
