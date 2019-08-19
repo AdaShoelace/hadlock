@@ -121,13 +121,14 @@ impl XlibWrapper {
                 .iter()
                 .map(|key| { keysym_lookup::into_keysym(key).expect("Core: no such key") })
                 .for_each(|key_sym| { self.grab_keys(self.get_root(), key_sym, xlib::Mod4Mask | xlib::ShiftMask) });
+
         }
         self.sync(false);
     }
 
     pub fn init_desktops_hints(&self) {
         //set the number of desktop
-        let data = vec![1 as u32];
+        let data = vec![12 as u32];
         self.set_desktop_prop(&data, self.xatom.NetNumberOfDesktops);
         //set a current desktop
         let data = vec![0 as u32, xlib::CurrentTime as u32];
@@ -135,7 +136,7 @@ impl XlibWrapper {
         //set desktop names
         let mut text: xlib::XTextProperty = unsafe { std::mem::uninitialized() };
         unsafe {
-            let mut clist_tags: Vec<*mut c_char> = vec!["First"]
+            let mut clist_tags: Vec<*mut c_char> = vec![1,2,3,4,5,6,7,8,9,10,11,12]
                 .iter()
                 .map(|x| CString::new(x.to_string().clone()).unwrap().into_raw())
                 .collect();
