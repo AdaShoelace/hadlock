@@ -1,9 +1,3 @@
-extern crate x11;
-extern crate x11_dl;
-extern crate libc;
-extern crate simplelog;
-extern crate lazy_static;
-
 mod windowmanager;
 //mod windowmanager_bup;
 mod xlibwrapper;
@@ -17,8 +11,21 @@ use windowmanager::*;
 use runner::*;
 use xlibwrapper::core::*;
 use std::rc::Rc;
+use std::env;
 
 fn main() {
+    
+    let args: Vec<String> = env::args().collect(); 
+    
+    match args.len() {
+        2 => {
+            println!("Path to config: {}", args.get(1).unwrap())
+        },
+
+        x => {
+            println!("Wrong number of arguments:{}\nDefault config will be applied", x)
+        }
+    }
 
     let xlib = Rc::new(XlibWrapper::new());
     let window_manager = WindowManager::new(xlib.clone());
