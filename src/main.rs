@@ -10,6 +10,7 @@ mod xlibwrapper;
 mod models;
 mod runner;
 mod callbacks;
+mod config;
 
 //use windowmanager_bup as windowmanager;
 use windowmanager::*;
