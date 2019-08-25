@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 use libc::{c_int, c_uint};
 use std::collections::HashMap;
+
+use crate::config::*;
 use crate::xlibwrapper::{
     masks::*,
     core::*,
@@ -16,10 +18,6 @@ use crate::models::{
 };
 
 use std::rc::Rc;
-
-pub const DecorationHeight: i32 = 20;
-pub const BorderWidth: i32 = 2;
-pub const InnerBorderWidth: i32 = 0;
 
 #[derive(PartialEq, Eq)]
 pub enum Mode {
@@ -61,17 +59,17 @@ impl WindowManager {
 
     fn decorate_window(&self, w: &mut WindowWrapper) {
         let window_geom = self.lib.get_geometry(w.window());
-        let position = Position { x: window_geom.x - InnerBorderWidth - BorderWidth,
-        y: window_geom.y - InnerBorderWidth - BorderWidth - DecorationHeight };
+        let position = Position { x: window_geom.x - CONFIG.inner_border_width - CONFIG.border_width,
+        y: window_geom.y - CONFIG.inner_border_width - CONFIG.border_width - CONFIG.decoration_height };
 
-        let size = Size { width: window_geom.width + (2 * InnerBorderWidth as u32), height: window_geom.height + (2 * InnerBorderWidth as u32) + DecorationHeight as u32 };
+        let size = Size { width: window_geom.width + (2 * CONFIG.inner_border_width as u32), height: window_geom.height + (2 * CONFIG.inner_border_width as u32) + CONFIG.decoration_height as u32 };
         let dec_window = self.lib.create_simple_window(
             self.lib.get_root(),
             position.clone(),
             size.clone(),
-            BorderWidth as u32,
-            Color::SolarizedPurple,
-            Color::SolarizedPurple
+            CONFIG.border_width as u32,
+            CONFIG.background_color,
+            CONFIG.background_color
         );
 
         self.lib.select_input(dec_window, ExposureMask);
@@ -119,8 +117,8 @@ impl WindowManager {
 
         let geom = self.lib.get_geometry(w);
         let mut ww = WindowWrapper::new(w, Rect::from(geom));
-        self.lib.set_border_width(w, InnerBorderWidth as u32);
-        self.lib.set_border_color(w, Color::SolarizedPurple);
+        self.lib.set_border_width(w, CONFIG.inner_border_width as u32);
+        self.lib.set_border_color(w, CONFIG.border_color);
         self.decorate_window(&mut ww);
         self.lib.add_to_save_set(w);
         self.lib.add_to_root_net_client_list(w);
@@ -224,8 +222,8 @@ impl WindowManager {
                 );
                 self.lib.move_window(
                     ww.window(),
-                    x + InnerBorderWidth + BorderWidth,
-                    y + InnerBorderWidth + BorderWidth + DecorationHeight
+                    x + CONFIG.inner_border_width + CONFIG.border_width,
+                    y + CONFIG.inner_border_width + CONFIG.border_width + CONFIG.decoration_height
                 );
                 let new_pos = Position { x, y };
                 ww.set_position(new_pos);
@@ -316,8 +314,8 @@ impl WindowManager {
         };
 
         if let Some(dec_rect) = ww.get_dec_rect() {
-            let mut dec_w = width - (2 * BorderWidth as u32);
-            let mut dec_h = height - (2 * BorderWidth as u32);
+            let mut dec_w = width - (2 * CONFIG.border_width as u32);
+            let mut dec_h = height - (2 * CONFIG.border_width as u32);
 
             if width == dec_rect.get_size().width {
                 dec_w = width;
@@ -332,8 +330,8 @@ impl WindowManager {
         }
 
         let window_rect = ww.get_inner_rect();
-        let mut d_width = width - (2* InnerBorderWidth as u32) - (2 * BorderWidth as u32);
-        let mut d_height = height - (2* InnerBorderWidth as u32) - (2 * BorderWidth as u32) - DecorationHeight as u32;
+        let mut d_width = width - (2* CONFIG.inner_border_width as u32) - (2 * CONFIG.border_width as u32);
+        let mut d_height = height - (2* CONFIG.inner_border_width as u32) - (2 * CONFIG.border_width as u32) - CONFIG.decoration_height as u32;
 
         if width == window_rect.get_size().width {
             d_width = width;

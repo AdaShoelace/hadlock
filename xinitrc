@@ -17,4 +17,4 @@ mousepad &
 polybar --config="./polyconf" example 2>/dev/null &
 
 # 2. Start our window manager.
-exec ./target/debug/hadlock
+exec ./target/debug/hadlock ~/Programming/rust/hobby/hadlock/config/hadlok.json

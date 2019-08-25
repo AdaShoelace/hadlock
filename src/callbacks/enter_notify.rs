@@ -2,6 +2,7 @@ use crate::windowmanager::WindowManager;
 use crate::xlibwrapper::core::*;
 use crate::xlibwrapper::event::*;
 use crate::xlibwrapper::util::Color;
+use crate::config::*;
 use std::rc::Rc;
 
 pub fn enter_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
@@ -33,10 +34,10 @@ pub fn enter_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
 
     match ww.get_dec() {
         Some(dec) => {
-            xlib.set_border_color(dec, Color::SolarizedCyan);
+            xlib.set_border_color(dec, CONFIG.border_color);
         },
         None => {
-            xlib.set_border_color(w, Color::SolarizedPurple);
+            xlib.set_border_color(w, CONFIG.background_color);
         }
     }
     // need to rethink focus for non floating modes

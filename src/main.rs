@@ -12,20 +12,17 @@ use runner::*;
 use xlibwrapper::core::*;
 use std::rc::Rc;
 use std::env;
+use crate::config::*;
+use crate::config::config_data::*;
 
 fn main() {
-    
-    let args: Vec<String> = env::args().collect(); 
-    
-    match args.len() {
-        2 => {
-            println!("Path to config: {}", args.get(1).unwrap())
-        },
 
-        x => {
-            println!("Wrong number of arguments:{}\nDefault config will be applied", x)
-        }
-    }
+
+    /*println!("BorderWidth: {}", CONFIG.border_width);
+      println!("DecorationHeight: {}", CONFIG.decoration_height);
+      println!("InnerBorderWidth: {}", CONFIG.inner_border_width);
+      println!("Workspaces: {:?}", CONFIG.workspaces);
+      */
 
     let xlib = Rc::new(XlibWrapper::new());
     let window_manager = WindowManager::new(xlib.clone());

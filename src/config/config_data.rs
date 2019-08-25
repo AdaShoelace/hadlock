@@ -1,13 +1,28 @@
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
+use crate::xlibwrapper::util::Color;
 
-#[derive(Serialize, Deserialize)]
-pub(super) struct ConfigData {
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ConfigData {
+    
+    #[serde(rename="decorationHeight")]
     pub decoration_height: i32,
+
+    #[serde(rename="borderWidth")]
     pub border_width: i32,
+
+    #[serde(rename="innerBorderWidth")]
     pub inner_border_width: i32,
-    pub workspaces: HashMap<u8, String>,
+
+    #[serde(rename="borderColor")]
+    pub border_color: Color,
+
+    #[serde(rename="backgroundColor")]
+    pub background_color: Color,
+
+    #[serde(rename="workspaces")]
+    pub workspaces: BTreeMap<u8, String>,
 }
 
 impl Default for ConfigData {
@@ -16,7 +31,15 @@ impl Default for ConfigData {
             decoration_height: 20,
             border_width: 2,
             inner_border_width: 0,
-            workspaces: Default::default()
+            border_color: Color::SolarizedCyan,
+            background_color: Color::SolarizedPurple,
+            workspaces: {
+                let mut workspaces: BTreeMap<u8, String> = BTreeMap::new();
+                let _ = (1..=12).for_each(|ws| {
+                    workspaces.insert(ws, ws.to_string());
+                });
+                workspaces
+            }
         }
     }
 }

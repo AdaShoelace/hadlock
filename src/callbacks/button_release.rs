@@ -24,13 +24,13 @@ pub fn button_release(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Even
 
     let ww = wm.clients.get(&window).expect("ButtonPressed: No such window in client list");
 
-    match ww.get_dec() {
+    /*match ww.get_dec() {
         Some(dec) => {
             xlib.raise_window(dec);
             xlib.raise_window(ww.window());
         },
         None => xlib.raise_window(ww.window())
-    }
+    }*/
 
     //xlib.take_focus(ww.window());
 }
