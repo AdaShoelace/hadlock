@@ -1,6 +1,6 @@
 pub mod keysym_lookup;
 
-
+use serde::{Deserialize, Serialize};
 use std::os::raw::*;
 
 #[derive(Copy, Clone, Debug)]
@@ -9,6 +9,7 @@ pub struct Position { pub x: i32, pub y: i32 }
 #[derive(Copy, Clone, Debug)]
 pub struct Size { pub width: u32, pub height: u32 }
 
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum Color {
     Red,
     Blue,
@@ -17,7 +18,8 @@ pub enum Color {
     SolarizedBlue,
     SolarizedPurple,
     SolarizedDarkPurple,
-    SolarizedDarkGray
+    SolarizedDarkGray,
+    Custom(u64)
 }
 
 impl Color {
@@ -30,7 +32,8 @@ impl Color {
             Color::SolarizedBlue => 0x7389ae,
             Color::SolarizedPurple => 0x624cab,
             Color::SolarizedDarkPurple => 0xaba9bf,
-            Color::SolarizedDarkGray => 0xe0e0e2
+            Color::SolarizedDarkGray => 0xe0e0e2,
+            Color::Custom(value) => value
         }
     }
 }

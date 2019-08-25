@@ -29,14 +29,12 @@ pub fn button_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
     wm.drag_start_frame_size = (geometry.width, geometry.height);
 
 
-    /*
-       match ww.get_dec() {
-       Some(dec) => {
-       xlib.raise_window(dec);
-       xlib.raise_window(ww.window());
-       },
-       None => xlib.raise_window(ww.window())
-       }
-    //xlib.take_focus(ww.window());
-    */
+
+    match ww.get_dec() {
+        Some(dec) => {
+            xlib.raise_window(dec);
+            xlib.raise_window(ww.window());
+        },
+        None => xlib.raise_window(ww.window())
+    }
 }

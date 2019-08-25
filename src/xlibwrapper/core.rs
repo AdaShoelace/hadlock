@@ -11,6 +11,8 @@ use super::{
     event::*,
 };
 
+use crate::config::*;
+
 use crate::models::{
     screen::Screen,
     dockarea::DockArea,
@@ -82,13 +84,13 @@ impl XlibWrapper {
     fn init(&mut self) {
         let root_event_mask: i64 = xlib::SubstructureRedirectMask
             | xlib::SubstructureNotifyMask
-            //| xlib::ButtonPressMask
+            | xlib::ButtonPressMask
             | xlib::KeyPressMask
-            //| xlib::PointerMotionMask
+            | xlib::PointerMotionMask
             | xlib::EnterWindowMask
             | xlib::LeaveWindowMask
-            | xlib::StructureNotifyMask;
-            //| xlib::PropertyChangeMask;
+            | xlib::StructureNotifyMask
+            | xlib::PropertyChangeMask;
         self.select_input(self.root, root_event_mask);
 
         unsafe {
@@ -136,8 +138,8 @@ impl XlibWrapper {
         //set desktop names
         let mut text: xlib::XTextProperty = unsafe { std::mem::uninitialized() };
         unsafe {
-            let mut clist_tags: Vec<*mut c_char> = vec![1,2,3,4,5,6,7,8,9,10,11,12]
-                .iter()
+            let mut clist_tags: Vec<*mut c_char> = CONFIG.workspaces
+                .values()
                 .map(|x| CString::new(x.to_string().clone()).unwrap().into_raw())
                 .collect();
             let ptr = clist_tags.as_mut_ptr();
