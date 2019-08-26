@@ -2,6 +2,8 @@ use crate::windowmanager::WindowManager;
 use crate::xlibwrapper::xlibmodels::*;
 use crate::xlibwrapper::core::*;
 use crate::xlibwrapper::event::*;
+
+use x11_dl::xlib;
 use std::rc::Rc;
 
 
@@ -15,6 +17,8 @@ pub fn configure_request(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: E
             } => (w, window_changes, value_mask),
             _ => { return; }
         };
+
+    if value_mask & (xlib::CWX | xlib::CWY) as u64 == (xlib::CWX | xlib::CWY) as u64 { return }
 
     let changes = WindowChanges {
         x: window_changes.x,

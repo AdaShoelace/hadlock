@@ -84,7 +84,7 @@ impl XlibWrapper {
     fn init(&mut self) {
         let root_event_mask: i64 = xlib::SubstructureRedirectMask
             | xlib::SubstructureNotifyMask
-            | xlib::ButtonPressMask
+            //| xlib::ButtonPressMask
             | xlib::KeyPressMask
             | xlib::PointerMotionMask
             | xlib::EnterWindowMask
@@ -181,40 +181,40 @@ impl XlibWrapper {
             let window = self.get_atom("WINDOW");
 
             (self.lib.XChangeProperty)(self.display,
-                                  ewmh as c_ulong,
-                                  self.xatom.NetSupportingWmCheck as c_ulong,
-                                  window as c_ulong,
-                                  32,
-                                  0,
-                                  child_ptr as *mut c_uchar,
-                                  1);
+                                       ewmh as c_ulong,
+                                       self.xatom.NetSupportingWmCheck as c_ulong,
+                                       window as c_ulong,
+                                       32,
+                                       0,
+                                       child_ptr as *mut c_uchar,
+                                       1);
 
             (self.lib.XChangeProperty)(self.display,
-                                  ewmh as c_ulong,
-                                  self.xatom.NetWMName as c_ulong,
-                                  self.xatom.NetUtf8String as c_ulong,
-                                  8,
-                                  0,
-                                  "Hadlok".as_ptr() as *mut c_uchar,
-                                  5);
+                                       ewmh as c_ulong,
+                                       self.xatom.NetWMName as c_ulong,
+                                       self.xatom.NetUtf8String as c_ulong,
+                                       8,
+                                       0,
+                                       "Hadlok".as_ptr() as *mut c_uchar,
+                                       5);
 
             (self.lib.XChangeProperty)(self.display,
-                                  self.root,
-                                  self.xatom.NetSupportingWmCheck as c_ulong,
-                                  window as c_ulong,
-                                  32,
-                                  0,
-                                  child_ptr as *mut c_uchar,
-                                  1);
+                                       self.root,
+                                       self.xatom.NetSupportingWmCheck as c_ulong,
+                                       window as c_ulong,
+                                       32,
+                                       0,
+                                       child_ptr as *mut c_uchar,
+                                       1);
 
             (self.lib.XChangeProperty)(self.display,
-                                  self.root,
-                                  self.xatom.NetWMName as c_ulong,
-                                  self.xatom.NetUtf8String as c_ulong,
-                                  8,
-                                  0,
-                                  "Hadlok".as_ptr() as *mut c_uchar,
-                                  5);
+                                       self.root,
+                                       self.xatom.NetWMName as c_ulong,
+                                       self.xatom.NetUtf8String as c_ulong,
+                                       8,
+                                       0,
+                                       "Hadlok".as_ptr() as *mut c_uchar,
+                                       5);
         }
 
         //set the WM NAME
@@ -236,6 +236,15 @@ impl XlibWrapper {
         unsafe {
             match CString::new(s) {
                 Ok(b) => (self.lib.XInternAtom)(self.display, b.as_ptr() as *const c_char, 0) as u64,
+                _ => panic!("Invalid atom! {}", s),
+            }
+        }
+    }
+
+    pub fn get_atom_if_exists(&self, s: &str) -> u64 {
+        unsafe {
+            match CString::new(s) {
+                Ok(b) => (self.lib.XInternAtom)(self.display, b.as_ptr() as *const c_char, 1) as u64,
                 _ => panic!("Invalid atom! {}", s),
             }
         }
@@ -312,7 +321,7 @@ impl XlibWrapper {
             (self.lib.XAddToSaveSet)(self.display, w);
         }
     }
-    
+
     pub fn remove_focus(&self, w: Window) {
         unsafe {
             (self.lib.XDeleteProperty)(
@@ -827,6 +836,13 @@ impl XlibWrapper {
                     let payload = EventPayload::KeyPress(event.window, event.state, event.keycode);
                     Event::new(EventType::KeyPress, Some(payload))
                 },
+
+                xlib::KeyRelease => {
+                    let event = xlib::XKeyEvent::from(event);
+                    let payload = EventPayload::KeyRelease(event.window, event.state, event.keycode);
+                    Event::new(EventType::KeyRelease, Some(payload))
+                },
+
                 xlib::MotionNotify => {
                     let event = xlib::XMotionEvent::from(event);
                     let payload = EventPayload::MotionNotify(
@@ -835,7 +851,7 @@ impl XlibWrapper {
                         event.y_root,
                         event.state
                     );
-                    println!("motion_notify for window: {}", event.window);
+                    //println!("motion_notify for window: {}", event.window);
                     Event::new(EventType::MotionNotify, Some(payload))
                 },
                 xlib::EnterNotify => {
@@ -862,11 +878,9 @@ impl XlibWrapper {
                 },
                 xlib::PropertyNotify => {
                     let event = xlib::XPropertyEvent::from(event);
-                    unsafe {
-                        let ret = CString::from_raw((self.lib.XGetAtomName)(self.display, event.atom));
-                        ret.to_str().unwrap();
-                        println!("Property changed {:?}", ret);
-                    };
+                    let ret = CString::from_raw((self.lib.XGetAtomName)(self.display, event.atom));
+                    ret.to_str().unwrap();
+                    println!("Property changed {:?}", ret);
                     Event::new(EventType::UnknownEvent, None)
                 },
                 xlib::ClientMessage => {

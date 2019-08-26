@@ -101,7 +101,6 @@ impl WindowManager {
                     dock
                 }
                 None => {
-                    //println!("Say what?!");
                     return
                 }
             }
@@ -122,16 +121,13 @@ impl WindowManager {
         self.decorate_window(&mut ww);
         self.lib.add_to_save_set(w);
         self.lib.add_to_root_net_client_list(w);
-        self.lib.ungrab_all_buttons(w);
-        self.lib.ungrab_keys(w);
         self.subscribe_to_events(w);
-        self.grab_buttons(w);
-        self.grab_keys(w);
         self.clients.insert(w, ww);
         self.window_initial_size(w);
         self.center_window(w);
         self.lib.map_window(w);
         self.lib.raise_window(w);
+        println!("atom: {}", self.lib.get_atom_if_exists("_NET_WM_ACTION_MOVE"));
     }
 
     fn window_initial_size(&mut self, w: Window) {

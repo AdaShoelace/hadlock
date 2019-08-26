@@ -32,6 +32,11 @@ pub fn enter_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
     xlib.remove_focus(wm.focus_w);
     wm.focus_w = ww.window();
 
+    xlib.ungrab_all_buttons(w);
+    wm.grab_buttons(w);
+    xlib.ungrab_keys(w);
+    wm.grab_keys(w);
+
     match ww.get_dec() {
         Some(dec) => {
             xlib.set_border_color(dec, CONFIG.border_color);
