@@ -2,9 +2,11 @@
 	"decorationHeight": 20,
 	"borderWidth": 1,
 	"innerBorderWidth": 0,
-	"borderColor": "Red",
+	"borderColor": {
+		"Custom": 34912
+	},
 	"backgroundColor": { 
-		"Custom" : 0
+		"Custom" : 16374044
 	},
 	"workspaces": {
 		"1": "One",

@@ -19,8 +19,6 @@ pub fn motion_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event
     if !wm.clients.contains_key(&w) {
         return;
     }
-    println!("motion_notify on window {}", w);
-    
 
     let drag_pos = Position { x: x_root, y: y_root };
     let (delta_x, delta_y) =  (drag_pos.x - wm.drag_start_pos.0,
@@ -28,8 +26,7 @@ pub fn motion_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event
     let dest_pos = Position{ x: wm.drag_start_frame_pos.0 + delta_x,
     y: wm.drag_start_frame_pos.1 + delta_y};
 
-    if (state & Button1Mask) != 0 {
-        //let ww = wm.clients.get_mut(&w).unwrap();
+    if (state & (Button1Mask | Mod4Mask)) == Button1Mask | Mod4Mask {
         wm.move_window(w, dest_pos.x, dest_pos.y);
     }
 }
