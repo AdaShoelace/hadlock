@@ -3,7 +3,7 @@ xrdb -load Xresources
 
 #compton --config="./compton.conf" &
 # 0. Set wallpaper using feh
-feh --bg-scale ./wallpaper.jpg &
+#feh --bg-scale ./wallpaper.jpg &
 
 # 1. Start some programs to play with.
 #xterm &
