@@ -7,7 +7,7 @@ use std::rc::Rc;
 use std::process::Command;
 
 pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
-    println!("keypress registered");
+    //println!("keypress registered");
     let (w, state, keycode) =
         match event {
             Event {
@@ -50,16 +50,31 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                 if xlib.str_to_keycode("q").unwrap() == keycode {
                     wm.kill_window(w);
                 }
+
             }
-        },
-            None if w == xlib.get_root() => {
-                if (state & (Mod4Mask | Shift)) == Mod4Mask {
-                    let keycode = keycode as u8;
-                    if xlib.str_to_keycode("Return").unwrap() == keycode {
-                        spawn_terminal();
-                    }
+            if (state & Mod4Mask) == Mod4Mask {
+                println!("Number pressed");
+                let ws_keys: Vec<u8> = (1..=9).map(|x| {
+                    xlib.str_to_keycode(&x.to_string()).unwrap()
+                }).collect();
+
+                match ws_keys.contains(&keycode) {
+                    true  => {
+                        let ws_num = ((keycode - 10) % 10) + 1;
+                        wm.set_current_ws(ws_num as u32);
+                    },
+                    _ => {}
                 }
             }
+        },
+        None if w == xlib.get_root() => {
+            if (state & (Mod4Mask | Shift)) == Mod4Mask {
+                let keycode = keycode as u8;
+                if xlib.str_to_keycode("Return").unwrap() == keycode {
+                    spawn_terminal();
+                }
+            }
+        }
         None => { return; }
     };
 }

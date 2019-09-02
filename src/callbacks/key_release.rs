@@ -5,7 +5,7 @@ use crate::xlibwrapper::masks::*;
 use std::rc::Rc;
 
 pub fn key_release(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
-    println!("keyrelease registered");
+    //println!("keyrelease registered");
     let (w, state, keycode) =
         match event {
             Event {
@@ -20,7 +20,7 @@ pub fn key_release(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) 
             let keycode = keycode as u8;
 
             if (state & (Mod4Mask | Shift)) == Mod4Mask | Shift {
-                println!("For some godforsaken reason we are here to...");
+                //println!("For some godforsaken reason we are here to...");
                 if xlib.str_to_keycode("q").unwrap() == keycode {
                     wm.kill_window(w);
                 }

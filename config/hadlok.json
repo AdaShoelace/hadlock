@@ -3,10 +3,10 @@
 	"borderWidth": 1,
 	"innerBorderWidth": 0,
 	"borderColor": {
-		"Custom": 34912
+		"Custom": 3670114
 	},
 	"backgroundColor": {
-		"Custom" : 16374044
+		"Custom" : 1245217
 	},
 	"workspaces": {
 		"1": "One",
@@ -17,10 +17,7 @@
 		"6": "Six",
 		"7": "Seven",
 		"8": "Eight",
-		"9": "Nine",
-		"10": "Ten",
-		"11": "Eleven",
-		"12": "Twelve"
+		"9": "Nine"
 	},
 	"commands": [
 		{

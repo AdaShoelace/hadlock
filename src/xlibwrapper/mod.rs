@@ -4,3 +4,4 @@ pub mod util;
 pub mod xatom;
 pub mod event;
 pub mod xlibmodels;
+pub mod cursor;

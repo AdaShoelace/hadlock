@@ -33,7 +33,8 @@ pub struct WindowManager {
     pub clients: HashMap<u64, WindowWrapper>,
     pub drag_start_pos: (c_int, c_int),
     pub drag_start_frame_pos: (c_int, c_int),
-    pub drag_start_frame_size: (c_uint, c_uint)
+    pub drag_start_frame_size: (c_uint, c_uint),
+    pub current_ws: u32
 }
 
 impl WindowManager {
@@ -53,7 +54,8 @@ impl WindowManager {
             clients: HashMap::new(),
             drag_start_pos: (0, 0),
             drag_start_frame_pos: (0, 0),
-            drag_start_frame_size: (0, 0)
+            drag_start_frame_size: (0, 0),
+            current_ws: 1
         }
     }
 
@@ -115,7 +117,7 @@ impl WindowManager {
         }
 
         let geom = self.lib.get_geometry(w);
-        let mut ww = WindowWrapper::new(w, Rect::from(geom));
+        let mut ww = WindowWrapper::new(w, Rect::from(geom), self.current_ws);
         self.lib.set_border_width(w, CONFIG.inner_border_width as u32);
         self.lib.set_border_color(w, CONFIG.border_color);
         self.decorate_window(&mut ww);
@@ -127,7 +129,62 @@ impl WindowManager {
         self.center_window(w);
         self.lib.map_window(w);
         self.lib.raise_window(w);
-        println!("atom: {}", self.lib.get_atom_if_exists("_NET_WM_ACTION_MOVE"));
+    }
+
+    pub fn set_current_ws(&mut self, ws: u32) {
+        println!("Desktop changed to: {}", ws);
+
+        //TODO: hide all clients on current desktop
+        //unhide all clients (if any) on new desktop
+    
+
+        let to_hide: Vec<Window> = self.clients.iter()
+            .filter(|(key, val)| {
+                val.get_desktop() == self.current_ws
+            }).map(|(key, _val)| {
+                *key
+            }).collect();
+
+        to_hide.iter()
+            .for_each(|win| {
+                match self.clients.get_mut(win) {
+                    Some(ww) => {
+                        ww.save_restore_position();
+                        let ww_pos = ww.get_position();
+                        self.move_window(*win, self.lib.get_screen().width * 3, ww_pos.y)
+                    },
+                    None => {}
+                }
+            });
+
+        self.current_ws = ws;
+
+        let to_show: Vec<Window> = self.clients.iter()
+            .filter(|(key, val)| {
+                val.get_desktop() == self.current_ws
+            }).map(|(key, _val)| {
+                *key
+            }).collect();
+        
+        to_show.iter()
+            .for_each(|win| {
+                match self.clients.get_mut(win) {
+                    Some(ww) => {
+                        let pos = ww.get_restore_position();
+                        ww.set_position(pos);
+                        self.move_window(*win, pos.x, pos.y)
+                    },
+                    None => {}
+                }
+            });
+
+
+        self.lib.ewmh_current_desktop(ws);
+    }
+
+    fn client_hide(&mut self, ww: &mut WindowWrapper) {
+        ww.save_restore_position();
+        self.move_window(ww.window(), self.lib.get_screen().width * 2, ww.get_position().y)
     }
 
     fn window_initial_size(&mut self, w: Window) {
@@ -203,10 +260,10 @@ impl WindowManager {
             Some(dock) => {
                 if y < dock.get_size().height as i32 {
                     y = dock.get_size().height as i32;
-                } 
+                }
             }
             None => {}
-        }        
+        }
 
 
         match ww.get_dec() {
@@ -352,7 +409,13 @@ impl WindowManager {
 
     pub fn grab_keys(&self, w: Window) {
 
-        let _keys = vec!["q", "Left", "Up", "Right", "Down", "Return"]
+        let _keys = vec!["q",
+        "Left",
+        "Up",
+        "Right",
+        "Down",
+        "Return",
+        "1", "2", "3", "4", "5", "6", "7", "8", "9"]
             .iter()
             .map(|key| { keysym_lookup::into_keysym(key).expect("Core: no such key") })
             .for_each(|key_sym| { self.lib.grab_keys(w, key_sym, Mod4Mask | Shift) });

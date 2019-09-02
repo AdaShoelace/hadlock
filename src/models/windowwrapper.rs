@@ -9,16 +9,20 @@ pub struct WindowWrapper {
     window: Window,
     window_rect: Rect,
     dec_rect: Option<Rect>,
+    desktop: u32,
+    restore_position: Position
 }
 
 impl WindowWrapper {
-    pub fn new(window: Window, window_rect: Rect) -> Self {
+    pub fn new(window: Window, window_rect: Rect, desktop: u32) -> Self {
         Self {
             is_floating: false,
             dec: None,
             window,
             window_rect,
-            dec_rect: None
+            dec_rect: None,
+            desktop: desktop,
+            restore_position: Position { x: 0, y: 0 }
         }
     }
     
@@ -123,5 +127,16 @@ impl WindowWrapper {
         }
     }
     
+    pub fn save_restore_position(&mut self) {
+        self.restore_position = self.get_position();
+    }
+
+    pub fn get_restore_position(&self) -> Position {
+        self.restore_position.clone()
+    }
+
+    pub fn get_desktop(&self) -> u32 {
+        self.desktop
+    }
 
 }
