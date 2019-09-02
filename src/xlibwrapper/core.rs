@@ -11,6 +11,8 @@ use super::{
     event::*,
 };
 
+use super::cursor::Cursor;
+
 use crate::config::*;
 
 use crate::models::{
@@ -41,12 +43,13 @@ pub struct XlibWrapper {
     pub xatom: XAtom,
     display: *mut Display,
     root: Window,
-    screen: Screen
+    screen: Screen,
+    cursors: Cursor
 }
 
 impl XlibWrapper {
     pub fn new() -> Self {
-        let (disp, root, lib, xatom, screen) = unsafe {
+        let (disp, root, lib, xatom, screen, cursors) = unsafe {
             let lib = xlib::Xlib::open().unwrap();
             let disp = (lib.XOpenDisplay)(std::ptr::null_mut());
 
@@ -64,8 +67,9 @@ impl XlibWrapper {
             let display_width = (lib.XDisplayWidth)(disp, screen_id);
             let display_height = (lib.XDisplayHeight)(disp, screen_id);
             let screen = Screen::new(root, display_width, display_height, 0, 0);
+            let cursors = Cursor::new(&lib, disp);
 
-            (disp, root, lib, xatom, screen)
+            (disp, root, lib, xatom, screen, cursors)
         };
 
 
@@ -74,7 +78,8 @@ impl XlibWrapper {
             xatom,
             display: disp,
             root,
-            screen
+            screen,
+            cursors
         };
         ret.init();
         ret.init_desktops_hints();
@@ -91,6 +96,20 @@ impl XlibWrapper {
             | xlib::LeaveWindowMask
             | xlib::StructureNotifyMask
             | xlib::PropertyChangeMask;
+
+        let mut attrs: xlib::XSetWindowAttributes = unsafe { std::mem::uninitialized() };
+        attrs.cursor = self.cursors.normal_cursor;
+        attrs.event_mask = root_event_mask;
+
+        unsafe {
+            (self.lib.XChangeWindowAttributes)(
+                self.display,
+                self.root,
+                xlib::CWEventMask | xlib::CWCursor,
+                &mut attrs,
+                );
+        }
+
         self.select_input(self.root, root_event_mask);
 
         unsafe {
@@ -116,7 +135,8 @@ impl XlibWrapper {
                 "Up",
                 "Down",
                 "Return",
-                "q"
+                "q",
+                "1", "2", "3", "4", "5", "6", "7", "8", "9"
             ];
 
             let _ = keys
@@ -127,10 +147,15 @@ impl XlibWrapper {
         }
         self.sync(false);
     }
+    
+    pub fn ewmh_current_desktop(&self, desktop: u32) {
+        let data = vec![desktop, xlib::CurrentTime as u32];
+        self.set_desktop_prop(&data, self.xatom.NetCurrentDesktop);
+    }
 
     pub fn init_desktops_hints(&self) {
         //set the number of desktop
-        let data = vec![12 as u32];
+        let data = vec![9 as u32];
         self.set_desktop_prop(&data, self.xatom.NetNumberOfDesktops);
         //set a current desktop
         let data = vec![0 as u32, xlib::CurrentTime as u32];
@@ -230,6 +255,26 @@ impl XlibWrapper {
         let data = vec![0 as u32, 0 as u32];
         self.set_desktop_prop(&data, self.xatom.NetDesktopViewport);
 
+    }
+
+    pub fn set_cursor_normal(&self) {
+        unsafe {
+            (self.lib.XDefineCursor)(
+                self.display,
+                self.root,
+                self.cursors.normal_cursor
+            );
+        }
+    }
+    
+    pub fn set_cursor_move(&self) {
+        unsafe {
+            (self.lib.XDefineCursor)(
+                self.display,
+                self.root,
+                self.cursors.move_cursor
+            );
+        }
     }
 
     fn get_atom(&self, s: &str) -> u64 {
@@ -856,13 +901,13 @@ impl XlibWrapper {
                 },
                 xlib::EnterNotify => {
                     let event = xlib::XCrossingEvent::from(event);
-                    println!("{:?}", event);
+                    //println!("{:?}", event);
                     let payload = EventPayload::EnterNotify(event.window, event.subwindow);
                     Event::new(EventType::EnterNotify, Some(payload))
                 },
                 xlib::LeaveNotify => {
                     let event = xlib::XCrossingEvent::from(event);
-                    println!("{:?}", event);
+                    //println!("{:?}", event);
                     let payload = EventPayload::LeaveNotify(event.window);
                     Event::new(EventType::LeaveNotify, Some(payload))
                 },
@@ -880,12 +925,12 @@ impl XlibWrapper {
                     let event = xlib::XPropertyEvent::from(event);
                     let ret = CString::from_raw((self.lib.XGetAtomName)(self.display, event.atom));
                     ret.to_str().unwrap();
-                    println!("Property changed {:?}", ret);
+                    //println!("Property changed {:?}", ret);
                     Event::new(EventType::UnknownEvent, None)
                 },
                 xlib::ClientMessage => {
                     let event = xlib::XClientMessageEvent::from(event);
-                    println!("{:?}", event);
+                    //println!("{:?}", event);
                     Event::new(EventType::UnknownEvent, None)
                 },
                 _ => Event::new(EventType::UnknownEvent, None)
