@@ -333,6 +333,13 @@ impl WindowManager {
 
     }
 
+    pub fn center_cursor(&self, w: Window) {
+        match self.clients.get(&w) {
+            Some(ww) => self.lib.center_cursor(&ww),
+            None => { return }
+        }
+    }
+
     pub fn kill_window(&mut self, w: Window) {
         if !self.clients.contains_key(&w) || w == self.lib.get_root() {
             return;
