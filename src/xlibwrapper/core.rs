@@ -18,7 +18,8 @@ use crate::config::*;
 use crate::models::{
     screen::Screen,
     dockarea::DockArea,
-    window_type::WindowType
+    window_type::WindowType,
+    windowwrapper::WindowWrapper
 };
 
 
@@ -471,6 +472,25 @@ impl XlibWrapper {
                 &mut mask
             );
             Position { x: root_x, y: root_y }
+        }
+    }
+    
+    pub fn center_cursor(&self, ww: &WindowWrapper) {
+        let size = ww.get_size();
+        let pos = Position{ x: (size.width / 2) as i32 , y: (size.height / 2) as i32};
+        unsafe {
+            (self.lib.XWarpPointer)(
+                self.display,
+                0,
+                ww.window(),
+                0,
+                0,
+                0,
+                0,
+                pos.x,
+                pos.y
+            );
+            (self.lib.XFlush)(self.display);
         }
     }
 

@@ -30,6 +30,7 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                 let w = ww.window();
                 let width = ww.get_width();
                 let height = ww.get_height();
+                wm.center_cursor(w);
 
                 if xlib.str_to_keycode("Right").unwrap() == keycode {
                     wm.resize_window(w, width + 10, height);
@@ -50,8 +51,8 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                 if xlib.str_to_keycode("q").unwrap() == keycode {
                     wm.kill_window(w);
                 }
-
             }
+
             if (state & Mod4Mask) == Mod4Mask {
                 println!("Number pressed");
                 let ws_keys: Vec<u8> = (1..=9).map(|x| {
