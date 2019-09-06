@@ -8,6 +8,9 @@
 	"backgroundColor": {
 		"Custom" : 1245217
 	},
+	"focusedBackgroundColor": {
+		"Custom" : 4915330
+	},
 	"workspaces": {
 		"1": "One",
 		"2": "Two",
