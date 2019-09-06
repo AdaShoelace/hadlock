@@ -1,3 +1,4 @@
+#![allow(unused_variables, dead_code)]
 
 use std::ffi::CString;
 use x11_dl::xlib;

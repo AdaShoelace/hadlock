@@ -98,7 +98,7 @@ impl WindowWrapper {
      */
     pub fn set_size(&mut self, size: Size) {
         match self.dec_rect {
-            Some(rect) => self.set_dec_size(size),
+            Some(_rect) => self.set_dec_size(size),
             None => self.set_inner_size(size)
         }
     }

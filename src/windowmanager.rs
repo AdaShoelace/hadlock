@@ -138,7 +138,7 @@ impl WindowManager {
     
 
         let to_hide: Vec<Window> = self.clients.iter()
-            .filter(|(key, val)| {
+            .filter(|(_key, val)| {
                 val.get_desktop() == self.current_ws
             }).map(|(key, _val)| {
                 *key
@@ -159,7 +159,7 @@ impl WindowManager {
         self.current_ws = ws;
 
         let to_show: Vec<Window> = self.clients.iter()
-            .filter(|(key, val)| {
+            .filter(|(_key, val)| {
                 val.get_desktop() == self.current_ws
             }).map(|(key, _val)| {
                 *key
@@ -216,7 +216,7 @@ impl WindowManager {
         };
         let screen = self.lib.get_screen();
 
-        let mut dw = (screen.width - ww.get_width() as i32).abs() / 2;
+        let dw = (screen.width - ww.get_width() as i32).abs() / 2;
         let mut dh = (screen.height - ww.get_height() as i32).abs() / 2;
 
         if let Some(dock_rect) = self.dock_area.as_rect(self.lib.get_screen()) {
@@ -355,7 +355,7 @@ impl WindowManager {
             self.clients.remove(&w);
             let clients: Vec<Window> = self.clients
                 .iter()
-                .map(|(c, w)| {
+                .map(|(c, _w)| {
                     *c
                 }).collect();
             self.lib.update_net_client_list(clients);

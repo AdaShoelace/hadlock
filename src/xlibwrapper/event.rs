@@ -1,3 +1,5 @@
+#![allow(unused_variables, dead_code)]
+
 use super::xlibmodels::*;
 
 #[derive(Debug, Hash, PartialEq, Eq)]

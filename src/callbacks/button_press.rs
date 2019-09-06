@@ -2,11 +2,11 @@ use crate::windowmanager::WindowManager;
 use crate::xlibwrapper::core::*;
 use crate::xlibwrapper::event::*;
 use std::rc::Rc;
-use crate::xlibwrapper::masks::*;
+
 
 pub fn button_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
-    let (window, x_root, y_root, state) =
+    let (window, x_root, y_root, _state) =
         match event {
             Event {
                 event_type: EventType::ButtonPress,

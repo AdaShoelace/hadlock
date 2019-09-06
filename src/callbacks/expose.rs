@@ -5,6 +5,6 @@ use crate::xlibwrapper::event::*;
 use std::rc::Rc;
 
 
-pub fn expose(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
+pub fn expose(_xlib: Rc<XlibWrapper>, _wm: &mut WindowManager, _event: Event) {
 
 }

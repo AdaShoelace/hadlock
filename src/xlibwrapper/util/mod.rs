@@ -1,7 +1,7 @@
 pub mod keysym_lookup;
 
 use serde::{Deserialize, Serialize};
-use std::os::raw::*;
+
 
 #[derive(Copy, Clone, Debug)]
 pub struct Position { pub x: i32, pub y: i32 }
@@ -36,13 +36,6 @@ impl Color {
             Color::Custom(value) => value
         }
     }
-}
-
-pub enum Direction {
-    Up,
-    Down,
-    Left,
-    Right
 }
 
 pub fn from_c_bool(b: i32) -> bool {
