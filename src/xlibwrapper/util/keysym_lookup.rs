@@ -1,3 +1,4 @@
+#![allow(unused_variables, dead_code)]
 
 use x11_dl::keysym::*;
 use x11_dl::xlib;

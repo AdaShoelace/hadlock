@@ -5,7 +5,7 @@ use crate::xlibwrapper::util::Position;
 use crate::xlibwrapper::masks::*;
 use std::rc::Rc;
 
-pub fn motion_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
+pub fn motion_notify(_xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
     let (w, x_root, y_root, state) =
         match event.event_type {

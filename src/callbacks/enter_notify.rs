@@ -1,7 +1,7 @@
 use crate::windowmanager::WindowManager;
 use crate::xlibwrapper::core::*;
 use crate::xlibwrapper::event::*;
-use crate::xlibwrapper::util::Color;
+
 use crate::config::*;
 use std::rc::Rc;
 

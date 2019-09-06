@@ -1,3 +1,4 @@
+#![allow(unused_variables, dead_code)]
 use x11_dl::xlib;
 use std::os::raw::*;
 use std::ffi::CString;
@@ -368,7 +369,7 @@ impl XlibWrapper {
         }
     }
 
-    pub fn remove_focus(&self, w: Window) {
+    pub fn remove_focus(&self, _w: Window) {
         unsafe {
             (self.lib.XDeleteProperty)(
                 self.display,
@@ -602,7 +603,7 @@ impl XlibWrapper {
 
         unsafe {
             let mut attr: xlib::XWindowAttributes = mem::uninitialized();
-            let status = (self.lib.XGetWindowAttributes)(self.display, w, &mut attr);
+            let _status = (self.lib.XGetWindowAttributes)(self.display, w, &mut attr);
 
             Geometry {
                 x: attr.x,
@@ -654,7 +655,7 @@ impl XlibWrapper {
         }
     }
 
-    pub fn ungrab_keys(&self, w: Window) {
+    pub fn ungrab_keys(&self, _w: Window) {
         unsafe {
             (self.lib.XUngrabKey)(
                 self.display,
@@ -763,7 +764,7 @@ impl XlibWrapper {
         }
     }
 
-    pub fn grab_keys(&self, w: Window, keysym: u32, modifiers: u32) {
+    pub fn grab_keys(&self, _w: Window, keysym: u32, modifiers: u32) {
         let code = self.key_sym_to_keycode(keysym as u64);
 
         let mods: Vec<u32> = vec![
@@ -949,7 +950,7 @@ impl XlibWrapper {
                     Event::new(EventType::UnknownEvent, None)
                 },
                 xlib::ClientMessage => {
-                    let event = xlib::XClientMessageEvent::from(event);
+                    let _event = xlib::XClientMessageEvent::from(event);
                     //println!("{:?}", event);
                     Event::new(EventType::UnknownEvent, None)
                 },

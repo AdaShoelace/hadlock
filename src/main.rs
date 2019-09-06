@@ -12,9 +12,9 @@ use runner::*;
 use xlibwrapper::core::*;
 use std::rc::Rc;
 use std::process::Command;
-use std::env;
+
 use crate::config::*;
-use crate::config::config_data::*;
+
 
 fn main() {
 
@@ -35,12 +35,12 @@ fn main() {
 // rewrite to accomodate multiple command structs
 fn call_commands() {
     
-    let mut commands = match &CONFIG.commands {
+    let commands = match &CONFIG.commands {
         Some(commands) => commands.clone(),
         None => { return }
     };
 
-    let mut commands: Vec<Command> = commands
+    let commands: Vec<Command> = commands
         .iter()
         .map(|cmd| {
             let mut tmp_cmd = Command::new(cmd.program.clone());

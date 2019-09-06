@@ -3,7 +3,7 @@ pub mod config_data;
 
 
 use lazy_static::*;
-use loader::*;
+
 use config_data::*;
 use serde::{Deserialize, Serialize};
 

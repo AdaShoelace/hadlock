@@ -4,7 +4,7 @@ use crate::xlibwrapper::event::*;
 use std::rc::Rc;
 
 
-pub fn destroy_window(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
+pub fn destroy_window(_xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
     let w = match event {
         Event {
