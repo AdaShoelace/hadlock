@@ -1,6 +1,10 @@
 # hadlock
 X window manager
 
+---
+![](hadlock.gif)
+---
+
 ## Progress
 
 - [ ] Floating mode
