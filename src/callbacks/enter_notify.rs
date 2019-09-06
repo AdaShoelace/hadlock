@@ -20,13 +20,7 @@ pub fn enter_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
         println!("Calling window {} not in client list", w);
         return;
     }
-    /*if w == xlib.get_root() {
-        xlib.remove_focus(wm.focus_w);
-        wm.focus_w = xlib.get_root();
-        xlib.take_focus(wm.focus_w);
-        return;
-    }*/
-    
+
     let ww = wm.clients.get(&w).expect("OnEnter: No such window in client list");
 
     xlib.remove_focus(wm.focus_w);

@@ -12,7 +12,6 @@ use crate::xlibwrapper::{
 use crate::models::{
     windowwrapper::*,
     rect::*,
-    screen::*,
     dockarea::*,
     window_type::*,
 };

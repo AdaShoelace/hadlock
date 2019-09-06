@@ -21,6 +21,9 @@ pub struct ConfigData {
     #[serde(rename="backgroundColor")]
     pub background_color: Color,
 
+    #[serde(rename="focusedBackgroundColor")]
+    pub focused_background_color: Color,
+
     #[serde(rename="workspaces")]
     pub workspaces: BTreeMap<u8, String>,
     
@@ -35,7 +38,8 @@ impl Default for ConfigData {
             border_width: 2,
             inner_border_width: 0,
             border_color: Color::SolarizedCyan,
-            background_color: Color::SolarizedPurple,
+            background_color: Color::SolarizedDarkPurple,
+            focused_background_color: Color::SolarizedPurple,
             workspaces: {
                 let mut workspaces: BTreeMap<u8, String> = BTreeMap::new();
                 let _ = (1..=12).for_each(|ws| {
