@@ -177,7 +177,14 @@ impl WindowManager {
                 }
             });
 
-
+        if to_show.is_empty() {
+            self.focus_w = self.lib.get_root();
+            self.lib.take_focus(self.lib.get_root());
+        } else {
+            let w = *(to_show.get(0).unwrap());
+            self.focus_w = w;
+            self.lib.take_focus(w);
+        }
         self.lib.ewmh_current_desktop(ws);
     }
 
