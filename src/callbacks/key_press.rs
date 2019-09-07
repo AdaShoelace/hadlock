@@ -18,15 +18,18 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
         };
 
 
+    let mod_not_shift = (state & (Mod4Mask | Shift)) == Mod4Mask;
+    let mod_and_shift = (state & (Mod4Mask | Shift)) == Mod4Mask | Shift;
+
     match wm.clients.get(&wm.focus_w) {
         Some(ww) => {
             let keycode = keycode as u8;
-            if (state & (Mod4Mask | Shift)) == Mod4Mask && xlib.str_to_keycode("Return").unwrap() == keycode {
+            if mod_not_shift && xlib.str_to_keycode("Return").unwrap() == keycode {
                 println!("just mod and enter");
                 spawn_terminal();
             }
 
-            if (state & (Mod4Mask | Shift)) == Mod4Mask | Shift {
+            if mod_and_shift {
                 println!("For some godforsaken reason we are here to...");
                 let w = ww.window();
                 let width = ww.get_width();
@@ -54,7 +57,7 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                 }
             }
 
-            if (state & Mod4Mask) == Mod4Mask {
+            if mod_not_shift {
                 println!("Number pressed");
                 let ws_keys: Vec<u8> = (1..=9).map(|x| {
                     xlib.str_to_keycode(&x.to_string()).unwrap()
@@ -70,15 +73,12 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
             }
         },
         None if w == xlib.get_root() => {
-            if (state & (Mod4Mask | Shift)) == Mod4Mask {
+            if mod_not_shift {
                 let keycode = keycode as u8;
                 if xlib.str_to_keycode("Return").unwrap() == keycode {
                     spawn_terminal();
                 }
-            }
 
-            if (state & Mod4Mask) == Mod4Mask {
-                let keycode = keycode as u8;
                 let ws_keys: Vec<u8> = (1..=9).map(|x| {
                     xlib.str_to_keycode(&x.to_string()).unwrap()
                 }).collect();
@@ -91,6 +91,7 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                     _ => {}
                 }
             }
+
         }
         None => { return; }
     };
