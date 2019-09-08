@@ -13,7 +13,7 @@ use super::{
 };
 
 use super::cursor::Cursor;
-
+use super::util::Position;
 use crate::config::*;
 
 use crate::models::{
@@ -829,10 +829,10 @@ impl XlibWrapper {
         }
     }
 
-
-    pub fn move_window(&self, w: Window, dest_x: i32, dest_y: i32) {
+    pub fn move_window(&self, w: Window, position: Position) {
+        let Position{x, y} = position;
         unsafe {
-            (self.lib.XMoveWindow)(self.display, w, dest_x, dest_y);
+            (self.lib.XMoveWindow)(self.display, w, x, y);
         }
     }
 

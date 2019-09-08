@@ -11,7 +11,8 @@ xrdb -load Xresources
 #albert &
 #xeyes &
 #pcmanfm &
-mousepad &
+alacritty &
+#mousepad &
 
 # polybar
 polybar --config="./polyconf" example 2>/dev/null &

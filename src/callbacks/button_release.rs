@@ -20,7 +20,7 @@ pub fn button_release(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Even
         return
     }
     
-    
+    println!("Focused window: {}", wm.focus_w);
 
     //println!("Button released at: {}", window);
 
