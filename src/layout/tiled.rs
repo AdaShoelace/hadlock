@@ -22,7 +22,7 @@ impl Layout for Tiled {
         Position{x: 0, y: 0})
     }
 
-    fn resize_window(&self, wm: &WindowManager, w: Window, width: u32, height: u32) -> (Size, Size) {
+    fn resize_window(&self, _wm: &WindowManager, _w: Window, _width: u32, _height: u32) -> (Size, Size) {
         unimplemented!();
     }
 }

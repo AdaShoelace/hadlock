@@ -18,7 +18,7 @@ pub trait Layout {
         unimplemented!();
     }
 
-    fn resize_window(&self, wm: &WindowManager, w: Window, width: u32, height: u32) -> (Size, Size) {
+    fn resize_window(&self, _wm: &WindowManager, _w: Window, _width: u32, _height: u32) -> (Size, Size) {
         unimplemented!();
     }
 }
