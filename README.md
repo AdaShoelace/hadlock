@@ -1,6 +1,7 @@
-# hadlock
-X window manager  
-Still in very early alpha and riddled with bugs  
+# hadlock  
+
+Hadlock is a (soon to be) tiling window manager for X.  
+Built for learning purposes.  
 
 ---
 ![](hadlock.gif)
@@ -40,8 +41,6 @@ xorg-xclock
 xorg-xeyes
 xterm
 ```
-## Contributors
-If you would like to contribute please as to join the [trello](https://trello.com/hadlock/home) on which we track tasks.
 
 ## Honorable mentions
 During the development of Hadlock I've found alot of inspiration in other projects and gotten help and insight from people far more experienced than myself.
