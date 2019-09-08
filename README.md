@@ -1,5 +1,6 @@
 # hadlock
-X window manager
+X window manager  
+Still in very early alpha and riddled with bugs  
 
 ---
 ![](hadlock.gif)
@@ -7,7 +8,7 @@ X window manager
 
 ## Progress
 
-- [ ] Floating mode
+- [x] Floating mode
 - [ ] Tiled mode 
 - [x] Move windows (Floating)  
 - [ ] Move windows (Tiled) 
@@ -18,7 +19,7 @@ X window manager
 - [ ] Snapping widows (Floating) 
 - [x] Close window 
 - [x] Start terminal 
-- [ ] Workspaces 
+- [x] Workspaces 
 - [ ] Multimonitor support 
 - [x] Window decorations 
 - [ ] Undecorated windows 
