@@ -8,5 +8,6 @@ xinit ./xinitrc -- \
         :99 \
         -ac \
 		-screen 1280x720 \
+		+xinerama
 		-host-cursor
         #-screen 2560x1440 \

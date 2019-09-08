@@ -1,12 +1,11 @@
 mod windowmanager;
-//mod windowmanager_bup;
 mod xlibwrapper;
 mod models;
 mod runner;
 mod callbacks;
 mod config;
+mod layout;
 
-//use windowmanager_bup as windowmanager;
 use windowmanager::*;
 use runner::*;
 use xlibwrapper::core::*;
@@ -17,13 +16,6 @@ use crate::config::*;
 
 
 fn main() {
-
-
-    /*println!("BorderWidth: {}", CONFIG.border_width);
-      println!("DecorationHeight: {}", CONFIG.decoration_height);
-      println!("InnerBorderWidth: {}", CONFIG.inner_border_width);
-      println!("Workspaces: {:?}", CONFIG.workspaces);
-      */
 
     let xlib = Rc::new(XlibWrapper::new());
     let window_manager = WindowManager::new(xlib.clone());
