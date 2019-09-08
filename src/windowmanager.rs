@@ -3,6 +3,7 @@ use libc::{c_int, c_uint};
 use std::collections::HashMap;
 
 use crate::config::*;
+use crate::layout::*;
 use crate::xlibwrapper::{
     masks::*,
     core::*,
@@ -18,7 +19,7 @@ use crate::models::{
 
 use std::rc::Rc;
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub enum Mode {
     Floating,
     Tiled
@@ -29,6 +30,7 @@ pub struct WindowManager {
     pub mode: Mode,
     pub focus_w: Window,
     pub dock_area: DockArea,
+    pub layout: Box<dyn Layout>,
     pub clients: HashMap<u64, WindowWrapper>,
     pub drag_start_pos: (c_int, c_int),
     pub drag_start_frame_pos: (c_int, c_int),
@@ -45,16 +47,22 @@ impl WindowManager {
      */
     pub fn new (lib: Rc<XlibWrapper>) -> Self {
         let root = lib.get_root();
+        let mode = Mode::Floating;
+        let _screen = lib.get_screen();
         Self {
             lib: lib,
-            mode: Mode::Floating,
+            mode,
             focus_w: root,
             dock_area: Default::default(),
             clients: HashMap::new(),
             drag_start_pos: (0, 0),
             drag_start_frame_pos: (0, 0),
             drag_start_frame_size: (0, 0),
-            current_ws: 1
+            current_ws: 1,
+            layout: match mode {
+                Mode::Floating => Box::new(floating::Floating),
+                Mode::Tiled => Box::new(tiled::Tiled)
+            },
         }
     }
 
@@ -125,17 +133,13 @@ impl WindowManager {
         self.subscribe_to_events(w);
         self.clients.insert(w, ww);
         self.window_initial_size(w);
-        self.center_window(w);
+        self.place_window(w);
         self.lib.map_window(w);
         self.lib.raise_window(w);
     }
 
     pub fn set_current_ws(&mut self, ws: u32) {
         println!("Desktop changed to: {}", ws);
-
-        //TODO: hide all clients on current desktop
-        //unhide all clients (if any) on new desktop
-    
 
         let to_hide: Vec<Window> = self.clients.iter()
             .filter(|(_key, val)| {
@@ -164,7 +168,7 @@ impl WindowManager {
             }).map(|(key, _val)| {
                 *key
             }).collect();
-        
+
         to_show.iter()
             .for_each(|win| {
                 match self.clients.get_mut(win) {
@@ -177,7 +181,14 @@ impl WindowManager {
                 }
             });
 
-
+        if to_show.is_empty() {
+            self.focus_w = self.lib.get_root();
+            self.lib.take_focus(self.lib.get_root());
+        } else {
+            let w = *(to_show.get(0).unwrap());
+            self.focus_w = w;
+            self.lib.take_focus(w);
+        }
         self.lib.ewmh_current_desktop(ws);
     }
 
@@ -209,27 +220,13 @@ impl WindowManager {
         }
     }
 
-    fn center_window(&mut self, w: Window) {
-        let ww = match self.clients.get_mut(&w) {
-            Some(ww) => ww,
-            None => { return }
-        };
-        let screen = self.lib.get_screen();
-
-        let dw = (screen.width - ww.get_width() as i32).abs() / 2;
-        let mut dh = (screen.height - ww.get_height() as i32).abs() / 2;
-
-        if let Some(dock_rect) = self.dock_area.as_rect(self.lib.get_screen()) {
-            dh = ((screen.height + dock_rect.get_size().height as i32) - ww.get_height() as i32).abs() / 2;
+    fn place_window(&mut self, w: Window) {
+        if !self.clients.contains_key(&w) {
+            return
         }
 
-        /*println!("Screen width: {} Screen height: {}", screen.width, screen.height);
-          println!("Window width: {} Window height: {}", ww.get_width(), ww.get_height());
-
-          println!("dw: {}, dh: {}", dw, dh);*/
-        //self.move_window(ww, new_x, new_y);
-
-        self.move_window(w, dw, dh);
+        let pos = self.layout.place_window(&self, w);
+        self.move_window(w, pos.x, pos.y);
     }
 
     pub fn should_be_managed(&self, w: Window) -> bool {
@@ -250,43 +247,32 @@ impl WindowManager {
     }
 
     pub fn move_window(&mut self, w: Window, x: i32, y: i32) {
-        let ww = match self.clients.get_mut(&w) {
+        let ww = match self.clients.get(&w) {
             Some(ww) => ww,
             None => { return }
         };
-        let mut y = y;
-        match self.dock_area.as_rect(self.lib.get_screen()) {
-            Some(dock) => {
-                if y < dock.get_size().height as i32 {
-                    y = dock.get_size().height as i32;
-                }
-            }
-            None => {}
-        }
-
+        let (outer_pos, inner_pos) = self.layout.move_window(&self, w, x, y);
 
         match ww.get_dec() {
             Some(dec) => {
                 self.lib.move_window(
                     dec,
-                    x,
-                    y
+                    outer_pos
                 );
                 self.lib.move_window(
                     ww.window(),
-                    x + CONFIG.inner_border_width + CONFIG.border_width,
-                    y + CONFIG.inner_border_width + CONFIG.border_width + CONFIG.decoration_height
+                    inner_pos
                 );
-                let new_pos = Position { x, y };
-                ww.set_position(new_pos);
+                let ww = self.clients.get_mut(&w).unwrap();
+                ww.set_position(outer_pos);
             },
             None => {
                 self.lib.move_window(
                     ww.window(),
-                    x,
-                    y
+                    outer_pos
                 );
-                ww.set_position(Position { x, y });
+                let ww = self.clients.get_mut(&w).unwrap();
+                ww.set_position(outer_pos);
             }
         }
         //println!("Window pos: {:?}", ww.get_position());
@@ -364,46 +350,22 @@ impl WindowManager {
     }
 
     pub fn resize_window(&mut self, w: Window, width: u32, height: u32) {
+        if !self.clients.contains_key(&w) { 
+            return 
+        }
 
-        let ww = match self.clients.get_mut(&w) {
-            Some(ww) => ww,
-            None => {
-                return;
-            }
-        };
+        let (dec_size, window_size) = self.layout.resize_window(&self, w, width, height);
 
-        if let Some(dec_rect) = ww.get_dec_rect() {
-            let mut dec_w = width - (2 * CONFIG.border_width as u32);
-            let mut dec_h = height - (2 * CONFIG.border_width as u32);
+        let ww = self.clients.get_mut(&w).unwrap();
 
-            if width == dec_rect.get_size().width {
-                dec_w = width;
-            } else if height == dec_rect.get_size().height {
-                dec_h = height;
-            }
-
-            let dec_size = Size { width: dec_w, height: dec_h };
+        if let Some(_) = ww.get_dec_rect() {
             ww.set_dec_size(dec_size);
             self.lib.resize_window(ww.get_dec().unwrap(), dec_size.width, dec_size.height);
 
         }
 
-        let window_rect = ww.get_inner_rect();
-        let mut d_width = width - (2* CONFIG.inner_border_width as u32) - (2 * CONFIG.border_width as u32);
-        let mut d_height = height - (2* CONFIG.inner_border_width as u32) - (2 * CONFIG.border_width as u32) - CONFIG.decoration_height as u32;
-
-        if width == window_rect.get_size().width {
-            d_width = width;
-        } else if height == window_rect.get_size().height {
-            d_height = height;
-        }
-
-        let window_size = Size { width: d_width, height: d_height };
-
         ww.set_inner_size(window_size);
         self.lib.resize_window(ww.window(), window_size.width, window_size.height);
-
-        //println!("Window width: {}, height: {}", ww.get_width(), ww.get_height());
     }
 
     fn subscribe_to_events(&mut self, w: Window) {

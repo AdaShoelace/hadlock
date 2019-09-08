@@ -9,7 +9,7 @@ Built for learning purposes.
 
 ## Progress
 
-- [ ] Floating mode
+- [x] Floating mode
 - [ ] Tiled mode 
 - [x] Move windows (Floating)  
 - [ ] Move windows (Tiled) 
@@ -20,7 +20,7 @@ Built for learning purposes.
 - [ ] Snapping widows (Floating) 
 - [x] Close window 
 - [x] Start terminal 
-- [ ] Workspaces 
+- [x] Workspaces 
 - [ ] Multimonitor support 
 - [x] Window decorations 
 - [ ] Undecorated windows 

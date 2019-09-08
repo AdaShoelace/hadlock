@@ -1,17 +1,20 @@
 use crate::windowmanager::WindowManager;
-use crate::xlibwrapper::core::*;
-use crate::xlibwrapper::event::*;
+use crate::xlibwrapper::{
+    core::*,
+    event::*,
+    masks::*,
+};
 use std::rc::Rc;
 
 
 pub fn button_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
-    let (window, x_root, y_root, _state) =
+    let (window, x_root, y_root, _state, button) =
         match event {
             Event {
                 event_type: EventType::ButtonPress,
-                payload: Some(EventPayload::ButtonPress(window, _sub_window, _button, x_root, y_root, state))
-            } => (window, x_root, y_root, state),
+                payload: Some(EventPayload::ButtonPress(window, _sub_window, button, x_root, y_root, state))
+            } => (window, x_root, y_root, state, button),
             _ => { return; }
         };
 
@@ -28,12 +31,15 @@ pub fn button_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
     wm.drag_start_pos = (x_root as i32 , y_root as i32);
     wm.drag_start_frame_pos = (geometry.x,geometry.y);
     wm.drag_start_frame_size = (geometry.width, geometry.height);
-    
-    match ww.get_dec() {
-        Some(dec) => {
-            xlib.raise_window(dec);
-            xlib.raise_window(ww.window());
-        },
-        None => xlib.raise_window(ww.window())
+
+    if button == Button1 {
+        println!("Button1 pressed");
+        match ww.get_dec() {
+            Some(dec) => {
+                xlib.raise_window(dec);
+                xlib.raise_window(ww.window());
+            },
+            None => xlib.raise_window(ww.window())
+        }
     }
 }

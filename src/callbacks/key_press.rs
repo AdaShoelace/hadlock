@@ -17,16 +17,18 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
             _ => { return; }
         };
 
+
+    let mod_not_shift = (state & (Mod4Mask | Shift)) == Mod4Mask;
+    let mod_and_shift = (state & (Mod4Mask | Shift)) == Mod4Mask | Shift;
+
     match wm.clients.get(&wm.focus_w) {
         Some(ww) => {
             let keycode = keycode as u8;
-            if (state & (Mod4Mask | Shift)) == Mod4Mask && xlib.str_to_keycode("Return").unwrap() == keycode {
-                println!("just mod and enter");
+            if mod_not_shift && xlib.str_to_keycode("Return").unwrap() == keycode {
                 spawn_terminal();
             }
 
-            if (state & (Mod4Mask | Shift)) == Mod4Mask | Shift {
-                println!("For some godforsaken reason we are here to...");
+            if mod_and_shift {
                 let w = ww.window();
                 let width = ww.get_width();
                 let height = ww.get_height();
@@ -53,7 +55,7 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                 }
             }
 
-            if (state & Mod4Mask) == Mod4Mask {
+            if mod_not_shift {
                 println!("Number pressed");
                 let ws_keys: Vec<u8> = (1..=9).map(|x| {
                     xlib.str_to_keycode(&x.to_string()).unwrap()
@@ -69,16 +71,30 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
             }
         },
         None if w == xlib.get_root() => {
-            if (state & (Mod4Mask | Shift)) == Mod4Mask {
+            if mod_not_shift {
                 let keycode = keycode as u8;
                 if xlib.str_to_keycode("Return").unwrap() == keycode {
                     spawn_terminal();
                 }
+
+                let ws_keys: Vec<u8> = (1..=9).map(|x| {
+                    xlib.str_to_keycode(&x.to_string()).unwrap()
+                }).collect();
+
+                match ws_keys.contains(&keycode) {
+                    true  => {
+                        let ws_num = ((keycode - 10) % 10) + 1;
+                        wm.set_current_ws(ws_num as u32);
+                    },
+                    _ => {}
+                }
             }
+
         }
         None => { return; }
     };
 }
+
 
 fn spawn_terminal() {
     match Command::new("alacritty").spawn() {
