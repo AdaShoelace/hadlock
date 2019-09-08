@@ -192,6 +192,16 @@ impl WindowManager {
         self.lib.ewmh_current_desktop(ws);
     }
 
+    pub fn move_to_ws(&mut self, w: Window, ws: u8) {
+        match self.clients.get_mut(&w) {
+            Some(ww) => {
+                ww.save_restore_position();
+                ww.set_desktop(ws as u32);
+            },
+            _ => ()
+        }
+    }
+
     fn client_hide(&mut self, ww: &mut WindowWrapper) {
         ww.save_restore_position();
         self.move_window(ww.window(), self.lib.get_screen().width * 2, ww.get_position().y)
@@ -350,8 +360,8 @@ impl WindowManager {
     }
 
     pub fn resize_window(&mut self, w: Window, width: u32, height: u32) {
-        if !self.clients.contains_key(&w) { 
-            return 
+        if !self.clients.contains_key(&w) {
+            return
         }
 
         let (dec_size, window_size) = self.layout.resize_window(&self, w, width, height);

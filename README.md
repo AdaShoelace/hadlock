@@ -13,7 +13,7 @@ Built for learning purposes.
 - [ ] Tiled mode 
 - [x] Move windows (Floating)  
 - [ ] Move windows (Tiled) 
-- [ ] Move windows between workspaces(Floating)  
+- [x] Move windows between workspaces(Floating)  
 - [ ] Move windows between workspaces(Tiled) 
 - [x] Resize windows (Floating) 
 - [ ] Resize windows (Tiled) 
