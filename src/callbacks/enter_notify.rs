@@ -24,7 +24,6 @@ pub fn enter_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
     let ww = wm.clients.get(&w).expect("OnEnter: No such window in client list");
 
     xlib.remove_focus(wm.focus_w);
-    wm.focus_w = ww.window();
 
     xlib.ungrab_all_buttons(w);
     wm.grab_buttons(w);
@@ -40,5 +39,6 @@ pub fn enter_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
         }
     }
     // need to rethink focus for non floating modes
+    wm.focus_w = ww.window();
     xlib.take_focus(w);
 }

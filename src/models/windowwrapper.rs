@@ -135,6 +135,10 @@ impl WindowWrapper {
     pub fn get_restore_position(&self) -> Position {
         self.restore_position.clone()
     }
+    
+    pub fn set_desktop(&mut self, desktop: u32) {
+        self.desktop = desktop;
+    }
 
     pub fn get_desktop(&self) -> u32 {
         self.desktop

@@ -21,6 +21,10 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
     let mod_not_shift = (state & (Mod4Mask | Shift)) == Mod4Mask;
     let mod_and_shift = (state & (Mod4Mask | Shift)) == Mod4Mask | Shift;
 
+    let ws_keys: Vec<u8> = (1..=9).map(|x| {
+        xlib.str_to_keycode(&x.to_string()).unwrap()
+    }).collect();
+
     match wm.clients.get(&wm.focus_w) {
         Some(ww) => {
             let keycode = keycode as u8;
@@ -53,14 +57,20 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                 if xlib.str_to_keycode("q").unwrap() == keycode {
                     wm.kill_window(w);
                 }
+
+                match ws_keys.contains(&keycode) {
+                    true  => {
+                        let ws_num = ((keycode - 10) % 10) + 1;
+                        wm.move_to_ws(w, ws_num);
+                        wm.set_current_ws(ws_num as u32);
+                    },
+                    _ => {}
+                }
+
             }
 
             if mod_not_shift {
                 println!("Number pressed");
-                let ws_keys: Vec<u8> = (1..=9).map(|x| {
-                    xlib.str_to_keycode(&x.to_string()).unwrap()
-                }).collect();
-
                 match ws_keys.contains(&keycode) {
                     true  => {
                         let ws_num = ((keycode - 10) % 10) + 1;
@@ -77,10 +87,6 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                     spawn_terminal();
                 }
 
-                let ws_keys: Vec<u8> = (1..=9).map(|x| {
-                    xlib.str_to_keycode(&x.to_string()).unwrap()
-                }).collect();
-
                 match ws_keys.contains(&keycode) {
                     true  => {
                         let ws_num = ((keycode - 10) % 10) + 1;
@@ -94,7 +100,6 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
         None => { return; }
     };
 }
-
 
 fn spawn_terminal() {
     match Command::new("alacritty").spawn() {
