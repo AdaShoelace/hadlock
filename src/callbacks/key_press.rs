@@ -25,12 +25,10 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
         Some(ww) => {
             let keycode = keycode as u8;
             if mod_not_shift && xlib.str_to_keycode("Return").unwrap() == keycode {
-                println!("just mod and enter");
                 spawn_terminal();
             }
 
             if mod_and_shift {
-                println!("For some godforsaken reason we are here to...");
                 let w = ww.window();
                 let width = ww.get_width();
                 let height = ww.get_height();

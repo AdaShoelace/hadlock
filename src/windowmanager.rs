@@ -48,7 +48,7 @@ impl WindowManager {
     pub fn new (lib: Rc<XlibWrapper>) -> Self {
         let root = lib.get_root();
         let mode = Mode::Floating;
-        let screen = lib.get_screen();
+        let _screen = lib.get_screen();
         Self {
             lib: lib,
             mode,
@@ -221,10 +221,10 @@ impl WindowManager {
     }
 
     fn place_window(&mut self, w: Window) {
-        let ww = match self.clients.get_mut(&w) {
-            Some(ww) => ww,
-            None => { return }
-        };
+        if !self.clients.contains_key(&w) {
+            return
+        }
+
         let pos = self.layout.place_window(&self, w);
         self.move_window(w, pos.x, pos.y);
     }
@@ -350,46 +350,22 @@ impl WindowManager {
     }
 
     pub fn resize_window(&mut self, w: Window, width: u32, height: u32) {
+        if !self.clients.contains_key(&w) { 
+            return 
+        }
 
-        let ww = match self.clients.get_mut(&w) {
-            Some(ww) => ww,
-            None => {
-                return;
-            }
-        };
+        let (dec_size, window_size) = self.layout.resize_window(&self, w, width, height);
 
-        if let Some(dec_rect) = ww.get_dec_rect() {
-            let mut dec_w = width - (2 * CONFIG.border_width as u32);
-            let mut dec_h = height - (2 * CONFIG.border_width as u32);
+        let ww = self.clients.get_mut(&w).unwrap();
 
-            if width == dec_rect.get_size().width {
-                dec_w = width;
-            } else if height == dec_rect.get_size().height {
-                dec_h = height;
-            }
-
-            let dec_size = Size { width: dec_w, height: dec_h };
+        if let Some(_) = ww.get_dec_rect() {
             ww.set_dec_size(dec_size);
             self.lib.resize_window(ww.get_dec().unwrap(), dec_size.width, dec_size.height);
 
         }
 
-        let window_rect = ww.get_inner_rect();
-        let mut d_width = width - (2* CONFIG.inner_border_width as u32) - (2 * CONFIG.border_width as u32);
-        let mut d_height = height - (2* CONFIG.inner_border_width as u32) - (2 * CONFIG.border_width as u32) - CONFIG.decoration_height as u32;
-
-        if width == window_rect.get_size().width {
-            d_width = width;
-        } else if height == window_rect.get_size().height {
-            d_height = height;
-        }
-
-        let window_size = Size { width: d_width, height: d_height };
-
         ww.set_inner_size(window_size);
         self.lib.resize_window(ww.window(), window_size.width, window_size.height);
-
-        //println!("Window width: {}, height: {}", ww.get_width(), ww.get_height());
     }
 
     fn subscribe_to_events(&mut self, w: Window) {

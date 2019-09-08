@@ -3,6 +3,7 @@ use super::*;
 use crate::config::*;
 use crate::xlibwrapper::util::{
     Position,
+    Size
 };
 use crate::xlibwrapper::xlibmodels::*;
 
@@ -40,5 +41,38 @@ impl Layout for Floating {
         (Position{x, y},
          Position{ x: x + CONFIG.inner_border_width + CONFIG.border_width,
          y: y + CONFIG.inner_border_width + CONFIG.border_width + CONFIG.decoration_height})
+    }
+
+    fn resize_window(&self, wm: &WindowManager, w: Window, width: u32, height: u32) -> (Size, Size) {
+
+        let ww = wm.clients.get(&w).unwrap();
+
+        let dec_size = if let Some(dec_rect) = ww.get_dec_rect() {
+            let mut dec_w = width - (2 * CONFIG.border_width as u32);
+            let mut dec_h = height - (2 * CONFIG.border_width as u32);
+
+            if width == dec_rect.get_size().width {
+                dec_w = width;
+            } else if height == dec_rect.get_size().height {
+                dec_h = height;
+            }
+
+            let dec_size = Size { width: dec_w, height: dec_h };
+            dec_size
+        } else { Size { width: 0, height: 0 } };
+
+        let window_rect = ww.get_inner_rect();
+        let mut d_width = width - (2* CONFIG.inner_border_width as u32) - (2 * CONFIG.border_width as u32);
+        let mut d_height = height - (2* CONFIG.inner_border_width as u32) - (2 * CONFIG.border_width as u32) - CONFIG.decoration_height as u32;
+
+        if width == window_rect.get_size().width {
+            d_width = width;
+        } else if height == window_rect.get_size().height {
+            d_height = height;
+        }
+
+        let window_size = Size { width: d_width, height: d_height };
+
+        (dec_size, window_size)
     }
 }
