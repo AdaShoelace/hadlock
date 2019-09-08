@@ -2,6 +2,7 @@ use crate::windowmanager::WindowManager;
 use crate::xlibwrapper::core::*;
 use crate::xlibwrapper::event::*;
 use crate::xlibwrapper::masks::*;
+use crate::config::*;
 
 use std::rc::Rc;
 use std::process::Command;
@@ -102,7 +103,7 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 }
 
 fn spawn_terminal() {
-    match Command::new("alacritty").spawn() {
+    match Command::new(CONFIG.term.as_str()).spawn() {
         Ok(_) => {},
         Err(e) => eprintln!("Failed to open terminal. Error: {}", e)
     }
