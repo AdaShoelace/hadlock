@@ -27,6 +27,9 @@ pub struct ConfigData {
     #[serde(rename="workspaces")]
     pub workspaces: BTreeMap<u8, String>,
     
+    #[serde(rename="terminal")]
+    pub term: String,
+
     #[serde(rename="commands")]
     pub commands: Option<Vec<super::Command>>
 }
@@ -47,6 +50,7 @@ impl Default for ConfigData {
                 });
                 workspaces
             },
+            term: "xterm".to_string(),
             commands: None
         }
     }
