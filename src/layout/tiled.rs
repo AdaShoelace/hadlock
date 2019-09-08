@@ -1,25 +1,28 @@
 use super::*;
 use crate::xlibwrapper::util::{
-    Position
+    Position,
+    Size
 };
-use crate::models::{
-    windowwrapper::WindowWrapper,
-};
+
 use crate::xlibwrapper::xlibmodels::Window;
 
 
 pub struct Tiled;
 
 impl Layout for Tiled {
-    fn place_window(&self, wm: &WindowManager, w: Window) -> Position {
+    fn place_window(&self, _wm: &WindowManager, _w: Window) -> Position {
 
         
 
         Position{x: 0, y: 0}
     }
 
-    fn move_window(&self, wm: &WindowManager, w: Window, x: i32, y: i32) -> (Position, Position) {
+    fn move_window(&self, _wm: &WindowManager, _w: Window, _x: i32, _y: i32) -> (Position, Position) {
         (Position{x: 0, y: 0},
         Position{x: 0, y: 0})
+    }
+
+    fn resize_window(&self, wm: &WindowManager, w: Window, width: u32, height: u32) -> (Size, Size) {
+        unimplemented!();
     }
 }
