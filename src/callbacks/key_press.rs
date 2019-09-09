@@ -72,6 +72,11 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
             if mod_not_shift {
                 println!("Number pressed");
+
+                if xlib.str_to_keycode("f").expect("Dafuq?!?!") == keycode {
+                    wm.toggle_maximize(wm.focus_w);
+                }
+
                 match ws_keys.contains(&keycode) {
                     true  => {
                         let ws_num = ((keycode - 10) % 10) + 1;

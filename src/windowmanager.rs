@@ -15,6 +15,7 @@ use crate::models::{
     rect::*,
     dockarea::*,
     window_type::*,
+    WindowState
 };
 
 use std::rc::Rc;
@@ -135,7 +136,20 @@ impl WindowManager {
         self.window_initial_size(w);
         self.place_window(w);
         self.lib.map_window(w);
-        self.lib.raise_window(w);
+        self.raise_window(&ww);
+    }
+
+    pub fn get_windows_in_current_ws(&self) -> Vec<Window> {
+        self.get_windows_by_ws(self.current_ws)
+    }
+
+    pub fn get_windows_by_ws(&self, ws: u32) -> Vec<Window> {
+        self.clients.iter()
+            .filter(|(_key, val)| {
+                val.get_desktop() == ws
+            }).map(|(key, _val)| {
+                *key
+            }).collect::<Vec<Window>>()
     }
 
     pub fn set_current_ws(&mut self, ws: u32) {
@@ -214,7 +228,7 @@ impl WindowManager {
         }
 
         let screen = self.lib.get_screen();
-        if let Some(dock_rect) = self.dock_area.as_rect(self.lib.get_screen()) {
+        if let Some(dock_rect) = self.dock_area.as_rect(&self.lib.get_screen()) {
             //println!("DockArea: {:?}", dock_rect);
             let new_width = (screen.width - (screen.width / 10)) as u32;
             let new_height = ((screen.height - dock_rect.get_size().height as i32) - (screen.height / 10)) as u32;
@@ -230,13 +244,49 @@ impl WindowManager {
         }
     }
 
+    pub fn toggle_maximize(&mut self, w: Window) {
+        // TODO: cleanup this mess...
+        if !self.clients.contains_key(&w) {
+            eprintln!("toggle_maximize: Window not in client list: {}", w);
+            println!("Client list:");
+            self.clients.keys()
+                .for_each(|key| {
+                    println!("Client: {}", key)
+                });
+            return
+        }
+
+        let state = self.clients.get(&w).unwrap().get_window_state();
+        let restore_pos = self.clients.get(&w).unwrap().get_restore_position();
+        match state {
+            WindowState::Maximized => {
+                self.move_window(w, restore_pos.x, restore_pos.y);
+                let ww = self.clients.get_mut(&w).expect("How can it not be in list?!");
+                ww.restore_prev_state();
+                let size = ww.get_restore_size();
+                self.resize_window(w, size.width, size.height);
+            },
+            _ => {
+                self.clients.get_mut(&w).expect("Not in list?!").save_restore_position();
+                self.move_window(w, 0 + CONFIG.border_width, 0);
+                let size = self.layout.maximize(&self, w);
+                let ww = self.clients.get_mut(&w).expect("Not in list?!");
+                ww.set_window_state(WindowState::Maximized);
+                ww.save_restore_size();
+                self.resize_window(w, size.width, size.height);
+            }
+        }
+    }
+
     fn place_window(&mut self, w: Window) {
         if !self.clients.contains_key(&w) {
             return
         }
-
+         
         let pos = self.layout.place_window(&self, w);
         self.move_window(w, pos.x, pos.y);
+        let ww = self.clients.get_mut(&w).unwrap();
+        ww.set_position(pos);
     }
 
     pub fn should_be_managed(&self, w: Window) -> bool {
@@ -255,7 +305,7 @@ impl WindowManager {
         }
         true
     }
-    
+
     pub fn raise_window(&self, ww: &WindowWrapper) {
         match ww.get_dec() {
             Some(dec) => {
@@ -372,11 +422,11 @@ impl WindowManager {
 
         let (dec_size, window_size) = self.layout.resize_window(&self, w, width, height);
 
-        let ww = self.clients.get_mut(&w).unwrap();
+        let ww = self.clients.get_mut(&w).expect("Client not found in resize_window");
 
         if let Some(_) = ww.get_dec_rect() {
             ww.set_dec_size(dec_size);
-            self.lib.resize_window(ww.get_dec().unwrap(), dec_size.width, dec_size.height);
+            self.lib.resize_window(ww.get_dec().expect("resize_window: no dec"), dec_size.width, dec_size.height);
         }
 
         ww.set_inner_size(window_size);
@@ -398,6 +448,7 @@ impl WindowManager {
         "Right",
         "Down",
         "Return",
+        "f",
         "1", "2", "3", "4", "5", "6", "7", "8", "9"]
             .iter()
             .map(|key| { keysym_lookup::into_keysym(key).expect("Core: no such key") })

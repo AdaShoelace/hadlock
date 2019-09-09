@@ -1,3 +1,5 @@
+#![allow(unused_variables)]
+
 pub mod floating;
 pub mod tiled;
 
@@ -10,15 +12,19 @@ use crate::xlibwrapper::xlibmodels::Window;
 
 
 pub trait Layout {
-    fn place_window(&self, _wm: &WindowManager, _w: Window) -> Position {
+    fn place_window(&self, wm: &WindowManager, w: Window) -> Position {
         unimplemented!();
     }
 
-    fn move_window(&self, _wm: &WindowManager, _w: Window, _x: i32, _y: i32) -> (Position, Position) {
+    fn move_window(&self, wm: &WindowManager, w: Window, x: i32, y: i32) -> (Position, Position) {
         unimplemented!();
     }
 
-    fn resize_window(&self, _wm: &WindowManager, _w: Window, _width: u32, _height: u32) -> (Size, Size) {
+    fn resize_window(&self, wm: &WindowManager, w: Window, width: u32, height: u32) -> (Size, Size) {
+        unimplemented!();
+    }
+
+    fn maximize(&self, wm: &WindowManager, w: Window) -> Size {
         unimplemented!();
     }
 }

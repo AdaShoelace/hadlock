@@ -2,35 +2,54 @@
 use crate::xlibwrapper::util::*;
 use crate::xlibwrapper::xlibmodels::*;
 use super::rect::*;
+use super::WindowState;
 
 #[derive(Copy, Clone)]
 pub struct WindowWrapper {
-    is_floating: bool,
     dec: Option<Window>,
     window: Window,
     window_rect: Rect,
     dec_rect: Option<Rect>,
     desktop: u32,
-    restore_position: Position
+    restore_position: Position,
+    restore_size: Size,
+    current_state: WindowState,
+    previous_state: WindowState,
+    
 }
 
 impl WindowWrapper {
     pub fn new(window: Window, window_rect: Rect, desktop: u32) -> Self {
+        let restore_size = window_rect.get_size();
         Self {
-            is_floating: false,
             dec: None,
             window,
             window_rect,
             dec_rect: None,
             desktop: desktop,
-            restore_position: Position { x: 0, y: 0 }
+            restore_position: Position { x: 0, y: 0 },
+            restore_size,
+            current_state: WindowState::Free,
+            previous_state: WindowState::Free,
         }
     }
     
-    pub fn floating(&self) -> bool {
-        self.is_floating
+    
+    pub fn get_window_state(&self) -> WindowState {
+        self.current_state.clone()
+    }
+
+    pub fn set_window_state(&mut self, state: WindowState) {
+        self.previous_state = self.current_state;
+        self.current_state = state;
     }
     
+    pub fn restore_prev_state(&mut self) {
+        let temp = self.current_state.clone();
+        self.current_state = self.previous_state;
+        self.previous_state = temp; 
+    }
+
     pub fn decorated(&self) -> bool {
         match self.dec {
             Some(_) => true,
@@ -134,6 +153,14 @@ impl WindowWrapper {
 
     pub fn get_restore_position(&self) -> Position {
         self.restore_position.clone()
+    }
+
+    pub fn save_restore_size(&mut self) {
+        self.restore_size = self.get_size();
+    }
+
+    pub fn get_restore_size(&self) -> Size {
+        self.restore_size.clone()
     }
     
     pub fn set_desktop(&mut self, desktop: u32) {

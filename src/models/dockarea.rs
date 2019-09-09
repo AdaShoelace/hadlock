@@ -42,7 +42,7 @@ impl From<&[i64]> for DockArea {
 }
 
 impl DockArea {
-    pub fn as_rect(&self, s: Screen) -> Option<Rect> {
+    pub fn as_rect(&self, s: &Screen) -> Option<Rect> {
         let screen_width = s.width as i32;
         let screen_height = s.height as i32;
 

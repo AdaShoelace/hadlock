@@ -12,7 +12,7 @@ pub struct Floating;
 
 impl Layout for Floating {
     fn place_window(&self, wm: &WindowManager, w: Window) -> Position {
-        
+
         let ww = wm.clients.get(&w).unwrap();
 
         let screen = wm.lib.get_screen();
@@ -20,7 +20,7 @@ impl Layout for Floating {
         let dw = (screen.width - ww.get_width() as i32).abs() / 2;
         let mut dh = (screen.height - ww.get_height() as i32).abs() / 2;
 
-        if let Some(dock_rect) = wm.dock_area.as_rect(wm.lib.get_screen()) {
+        if let Some(dock_rect) = wm.dock_area.as_rect(&wm.lib.get_screen()) {
             dh = ((screen.height + dock_rect.get_size().height as i32) - ww.get_height() as i32).abs() / 2;
         }
         Position{x: dw, y: dh}
@@ -29,7 +29,7 @@ impl Layout for Floating {
     fn move_window(&self, wm: &WindowManager, w: Window, x: i32, y: i32) -> (Position, Position) {
 
         let mut y = y;
-        match wm.dock_area.as_rect(wm.lib.get_screen()) {
+        match wm.dock_area.as_rect(&wm.lib.get_screen()) {
             Some(dock) => {
                 if y < dock.get_size().height as i32 {
                     y = dock.get_size().height as i32;
@@ -74,5 +74,19 @@ impl Layout for Floating {
         let window_size = Size { width: d_width, height: d_height };
 
         (dec_size, window_size)
+    }
+
+    fn maximize(&self, wm: &WindowManager, w: Window) -> Size {
+        let screen = wm.lib.get_screen();
+        let width = (screen.width as u32) - 2 * CONFIG.border_width as u32;
+        let height = (screen.height as u32) - 2 * CONFIG.border_width as u32;
+        match wm.dock_area.as_rect(&screen) {
+            Some(dock) => {
+                self.resize_window(&wm, w, width, height - dock.get_size().height).0
+            },
+            None => {
+                self.resize_window(&wm, w, width, height).0
+            }
+        }
     }
 }

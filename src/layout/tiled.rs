@@ -25,4 +25,8 @@ impl Layout for Tiled {
     fn resize_window(&self, _wm: &WindowManager, _w: Window, _width: u32, _height: u32) -> (Size, Size) {
         unimplemented!();
     }
+
+    fn maximize(&self, wm: &WindowManager, w: Window) -> Size {
+        unimplemented!();
+    }
 }
