@@ -400,18 +400,22 @@ impl WindowManager {
     }
 
     pub fn grab_buttons(&self, w: Window) {
+        let modifiers = vec![0, Mod4Mask];
         vec![Button1, Button3]
             .into_iter()
             .for_each(|button| {
-                self.lib.grab_button(
-                    button,
-                    Mod4Mask,
-                    w,
-                    false,
-                    (ButtonPressMask | ButtonReleaseMask | ButtonMotionMask) as u32,
-                    GrabModeAsync,
-                    GrabModeAsync,
-                    0,0);
+                modifiers.iter()
+                    .for_each(|modifier| {
+                        self.lib.grab_button(
+                            button,
+                            *modifier,
+                            w,
+                            false,
+                            (ButtonPressMask | ButtonReleaseMask | ButtonMotionMask) as u32,
+                            GrabModeAsync,
+                            GrabModeAsync,
+                            0,0);
+                    })
             })
     }
 }
