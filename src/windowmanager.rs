@@ -255,6 +255,16 @@ impl WindowManager {
         }
         true
     }
+    
+    pub fn raise_window(&self, ww: &WindowWrapper) {
+        match ww.get_dec() {
+            Some(dec) => {
+                self.lib.raise_window(dec);
+                self.lib.raise_window(ww.window());
+            },
+            None => self.lib.raise_window(ww.window())
+        }
+    }
 
     pub fn move_window(&mut self, w: Window, x: i32, y: i32) {
         let ww = match self.clients.get(&w) {
@@ -285,7 +295,6 @@ impl WindowManager {
                 ww.set_position(outer_pos);
             }
         }
-        //println!("Window pos: {:?}", ww.get_position());
     }
 
     pub fn pointer_is_inside(&self, w: Window) -> bool {
@@ -306,8 +315,6 @@ impl WindowManager {
         let window_size = ww.get_size();
         let window_pos = ww.get_position();
 
-        //println!("Pointer_pos: {:?}, Window_pos: {:?}", pointer_pos, window_pos);
-
         let inside_height = pointer_pos.y > window_pos.y &&
             pointer_pos.y < window_pos.y + window_size.height as i32;
 
@@ -325,7 +332,6 @@ impl WindowManager {
             },
             None => {}
         }
-
     }
 
     pub fn center_cursor(&self, w: Window) {
@@ -371,7 +377,6 @@ impl WindowManager {
         if let Some(_) = ww.get_dec_rect() {
             ww.set_dec_size(dec_size);
             self.lib.resize_window(ww.get_dec().unwrap(), dec_size.width, dec_size.height);
-
         }
 
         ww.set_inner_size(window_size);
