@@ -18,7 +18,6 @@ pub fn button_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
             _ => { return; }
         };
 
-
     if !wm.clients.contains_key(&window) || window == xlib.get_root() {
         return
     }
@@ -34,12 +33,6 @@ pub fn button_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
 
     if button == Button1 {
         println!("Button1 pressed");
-        match ww.get_dec() {
-            Some(dec) => {
-                xlib.raise_window(dec);
-                xlib.raise_window(ww.window());
-            },
-            None => xlib.raise_window(ww.window())
-        }
+        wm.raise_window(&ww);
     }
 }
