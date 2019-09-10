@@ -1,7 +1,10 @@
 use crate::windowmanager::WindowManager;
-use crate::xlibwrapper::core::*;
-use crate::xlibwrapper::event::*;
-use crate::xlibwrapper::masks::*;
+use crate::xlibwrapper::{
+    core::*,
+    event::*,
+    masks::*
+};
+use crate::models::Direction;
 use crate::config::*;
 
 use std::rc::Rc;
@@ -76,7 +79,27 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                 if xlib.str_to_keycode("f").expect("Dafuq?!?!") == keycode {
                     wm.toggle_maximize(wm.focus_w);
                 }
-
+                if xlib.str_to_keycode("Right").unwrap() == keycode {
+                    wm.shift_window(wm.focus_w, Direction::East);
+                    wm.center_cursor(w);
+                    return;
+                }
+                if xlib.str_to_keycode("Left").unwrap() == keycode {
+                    wm.shift_window(wm.focus_w, Direction::West);
+                    wm.center_cursor(w);
+                    return;
+                }
+                if xlib.str_to_keycode("Down").unwrap() == keycode {
+                    wm.shift_window(wm.focus_w, Direction::South);
+                    wm.center_cursor(w);
+                    return;
+                }
+                if xlib.str_to_keycode("Up").unwrap() == keycode {
+                    println!("Snap up");
+                    wm.shift_window(wm.focus_w, Direction::North);
+                    wm.center_cursor(w);
+                    return;
+                }
                 match ws_keys.contains(&keycode) {
                     true  => {
                         let ws_num = ((keycode - 10) % 10) + 1;

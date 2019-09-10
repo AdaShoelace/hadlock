@@ -11,9 +11,6 @@ pub struct Tiled;
 
 impl Layout for Tiled {
     fn place_window(&self, _wm: &WindowManager, _w: Window) -> Position {
-
-        
-
         Position{x: 0, y: 0}
     }
 

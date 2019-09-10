@@ -8,6 +8,7 @@ use crate::xlibwrapper::util::{
     Position,
     Size
 };
+use crate::models::Direction;
 use crate::xlibwrapper::xlibmodels::Window;
 
 
@@ -25,6 +26,10 @@ pub trait Layout {
     }
 
     fn maximize(&self, wm: &WindowManager, w: Window) -> Size {
+        unimplemented!();
+    }
+
+    fn shift_window(&self, wm: &WindowManager, w: Window, direction: Direction) -> (Position, Size) {
         unimplemented!();
     }
 }

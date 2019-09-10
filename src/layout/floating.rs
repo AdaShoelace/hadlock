@@ -5,6 +5,7 @@ use crate::xlibwrapper::util::{
     Position,
     Size
 };
+use crate::models::Direction;
 use crate::xlibwrapper::xlibmodels::*;
 
 
@@ -86,6 +87,33 @@ impl Layout for Floating {
             },
             None => {
                 self.resize_window(&wm, w, width, height).0
+            }
+        }
+    }
+
+    fn shift_window(&self, wm: &WindowManager, w: Window, direction: Direction) -> (Position, Size) {
+        let screen = wm.lib.get_screen();
+        let ww = wm.clients.get(&w).unwrap();
+        match direction {
+            Direction::North => {
+                let pos = self.move_window(wm, w, 0, 0).0;
+                let size = self.resize_window(wm, w, screen.width as u32, (screen.height as u32) / 2).0;
+                (pos, size)
+            },
+            Direction::East => {
+                let pos = self.move_window(wm, w, screen.width / 2, 0).0;
+                let size = self.resize_window(wm, w, (screen.width as u32) / 2, screen.height as u32).0;
+                (pos, size)
+            },
+            Direction::West => {
+                let pos = self.move_window(wm, w, 0, 0).0;
+                let size = self.resize_window(wm, w, (screen.width as u32) / 2, screen.height as u32).0;
+                (pos, size)
+            },
+            Direction::South => {
+                let pos = self.move_window(wm, w, 0, screen.height / 2).0;
+                let size = self.resize_window(wm, w, screen.width as u32, (screen.height as u32) / 2).0;
+                (pos, size)
             }
         }
     }

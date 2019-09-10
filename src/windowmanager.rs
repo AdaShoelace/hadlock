@@ -15,7 +15,8 @@ use crate::models::{
     rect::*,
     dockarea::*,
     window_type::*,
-    WindowState
+    WindowState,
+    Direction
 };
 
 use std::rc::Rc;
@@ -276,6 +277,17 @@ impl WindowManager {
                 self.resize_window(w, size.width, size.height);
             }
         }
+    }
+    
+    pub fn shift_window(&mut self, w: Window, direction: Direction) {
+        if !self.clients.contains_key(&w) {
+            return
+        }
+        
+        let (pos, size) = self.layout.shift_window(&self, w, direction);
+        self.move_window(w, pos.x, pos.y);
+        self.resize_window(w, size.width, size.height);
+        self.clients.get_mut(&w).unwrap().set_window_state(WindowState::Snapped);
     }
 
     fn place_window(&mut self, w: Window) {
