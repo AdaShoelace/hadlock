@@ -101,13 +101,13 @@ impl Layout for Floating {
                 (pos, size)
             },
             Direction::East => {
-                let pos = self.move_window(wm, w, screen.width / 2, 0).0;
-                let size = self.resize_window(wm, w, (screen.width as u32) / 2, screen.height as u32).0;
+                let pos = self.move_window(wm, w, screen.width / 2 + CONFIG.border_width, 0).0;
+                let size = self.resize_window(wm, w, (screen.width as u32) / 2, (screen.height as u32) - CONFIG.decoration_height as u32 - CONFIG.border_width as u32).0;
                 (pos, size)
             },
             Direction::West => {
                 let pos = self.move_window(wm, w, 0, 0).0;
-                let size = self.resize_window(wm, w, (screen.width as u32) / 2, screen.height as u32).0;
+                let size = self.resize_window(wm, w, (screen.width as u32) / 2, (screen.height as u32) - CONFIG.decoration_height as u32 - CONFIG.border_width as u32).0;
                 (pos, size)
             },
             Direction::South => {
