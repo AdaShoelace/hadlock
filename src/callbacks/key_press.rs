@@ -61,6 +61,9 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                 if xlib.str_to_keycode("q").unwrap() == keycode {
                     wm.kill_window(w);
                 }
+                if xlib.str_to_keycode("e").unwrap() == keycode {
+                    xlib.exit();
+                }
 
                 match ws_keys.contains(&keycode) {
                     true  => {

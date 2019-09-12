@@ -461,6 +461,7 @@ impl WindowManager {
         "Down",
         "Return",
         "f",
+        "e",
         "1", "2", "3", "4", "5", "6", "7", "8", "9"]
             .iter()
             .map(|key| { keysym_lookup::into_keysym(key).expect("Core: no such key") })

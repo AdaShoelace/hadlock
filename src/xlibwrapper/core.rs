@@ -138,6 +138,7 @@ impl XlibWrapper {
                 "Down",
                 "Return",
                 "q",
+                "e",
                 "1", "2", "3", "4", "5", "6", "7", "8", "9"
             ];
 
@@ -1148,6 +1149,12 @@ impl XlibWrapper {
     pub fn unmap_window(&self, w: Window) {
         unsafe {
             (self.lib.XUnmapWindow)(self.display, w);
+        }
+    }
+
+    pub fn exit(&self) {
+        unsafe {
+            (self.lib.XCloseDisplay)(self.display);
         }
     }
 
