@@ -277,6 +277,7 @@ impl WindowManager {
                 self.resize_window(w, size.width, size.height);
             }
         }
+        self.center_cursor(w);
     }
     
     pub fn shift_window(&mut self, w: Window, direction: Direction) {
@@ -287,6 +288,7 @@ impl WindowManager {
         let (pos, size) = self.layout.shift_window(&self, w, direction);
         self.move_window(w, pos.x, pos.y);
         self.resize_window(w, size.width, size.height);
+        self.center_cursor(w);
         self.clients.get_mut(&w).unwrap().set_window_state(WindowState::Snapped);
     }
 

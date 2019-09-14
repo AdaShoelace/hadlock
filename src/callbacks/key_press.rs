@@ -40,22 +40,25 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                 let w = ww.window();
                 let width = ww.get_width();
                 let height = ww.get_height();
-                wm.center_cursor(w);
 
                 if xlib.str_to_keycode("Right").unwrap() == keycode {
                     wm.resize_window(w, width + 10, height);
+                    wm.center_cursor(w);
                     return;
                 }
                 if xlib.str_to_keycode("Left").unwrap() == keycode {
                     wm.resize_window(w, width - 10, height);
+                    wm.center_cursor(w);
                     return;
                 }
                 if xlib.str_to_keycode("Down").unwrap() == keycode {
                     wm.resize_window(w, width, height + 10);
+                    wm.center_cursor(w);
                     return;
                 }
                 if xlib.str_to_keycode("Up").unwrap() == keycode {
                     wm.resize_window(w, width, height - 10);
+                    wm.center_cursor(w);
                     return;
                 }
                 if xlib.str_to_keycode("q").unwrap() == keycode {
@@ -113,8 +116,8 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
             }
         },
         None if w == xlib.get_root() => {
+            let keycode = keycode as u8;
             if mod_not_shift {
-                let keycode = keycode as u8;
                 if xlib.str_to_keycode("Return").unwrap() == keycode {
                     spawn_terminal();
                 }
@@ -125,6 +128,11 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                         wm.set_current_ws(ws_num as u32);
                     },
                     _ => {}
+                }
+            }
+            if mod_and_shift {
+                if xlib.str_to_keycode("e").unwrap() == keycode {
+                    xlib.exit();
                 }
             }
 

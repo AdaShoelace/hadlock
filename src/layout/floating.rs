@@ -58,8 +58,7 @@ impl Layout for Floating {
                 dec_h = height;
             }
 
-            let dec_size = Size { width: dec_w, height: dec_h };
-            dec_size
+            Size { width: dec_w, height: dec_h }
         } else { Size { width: 0, height: 0 } };
 
         let window_rect = ww.get_inner_rect();
@@ -97,24 +96,39 @@ impl Layout for Floating {
         match direction {
             Direction::North => {
                 let pos = self.move_window(wm, w, 0, 0).0;
-                let size = self.resize_window(wm, w, screen.width as u32, (screen.height as u32) / 2).0;
+                let mut size = self.resize_window(wm, w, screen.width as u32, (screen.height as u32) / 2).0;
+                if let Some(dock) = wm.dock_area.as_rect(&screen) {
+                    size.height -= dock.get_size().height / 2;
+                }
                 (pos, size)
             },
             Direction::East => {
                 let pos = self.move_window(wm, w, screen.width / 2 + CONFIG.border_width, 0).0;
-                let size = self.resize_window(wm, w, (screen.width as u32) / 2, (screen.height as u32) - CONFIG.decoration_height as u32 - CONFIG.border_width as u32).0;
+                let mut size = self.resize_window(wm, w, (screen.width as u32) / 2, (screen.height as u32) - CONFIG.border_width as u32).0;
+                if let Some(dock) = wm.dock_area.as_rect(&screen) {
+                    size.height -= dock.get_size().height;
+                }
                 (pos, size)
             },
             Direction::West => {
                 let pos = self.move_window(wm, w, 0, 0).0;
-                let size = self.resize_window(wm, w, (screen.width as u32) / 2, (screen.height as u32) - CONFIG.decoration_height as u32 - CONFIG.border_width as u32).0;
+                let mut size = self.resize_window(wm, w, (screen.width as u32) / 2, (screen.height as u32) - CONFIG.border_width as u32).0;
+                if let Some(dock) = wm.dock_area.as_rect(&screen) {
+                    size.height -= dock.get_size().height;
+                }
                 (pos, size)
             },
             Direction::South => {
-                let pos = self.move_window(wm, w, 0, screen.height / 2).0;
-                let size = self.resize_window(wm, w, screen.width as u32, (screen.height as u32) / 2).0;
+                let mut pos = self.move_window(wm, w, 0, screen.height / 2).0;
+                let mut size = self.resize_window(wm, w, screen.width as u32, (screen.height as u32) / 2).0;
+                if let Some(dock) = wm.dock_area.as_rect(&screen) {
+                    let offset = dock.get_size().height / 2;
+                    size.height -= offset;
+                    pos.y += offset as i32;
+                }
                 (pos, size)
             }
         }
     }
 }
+
