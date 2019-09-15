@@ -15,7 +15,7 @@ alacritty &
 #mousepad &
 
 # polybar
-polybar --config="./polyconf" example 2>/dev/null &
+polybar --config="./polyconf" example 2>polylog &
 
 # 2. Start our window manager.
 exec ./target/debug/hadlock ~/Programming/rust/hobby/hadlock/config/hadlok.json
