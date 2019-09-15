@@ -60,7 +60,7 @@ impl WindowManager {
             drag_start_pos: (0, 0),
             drag_start_frame_pos: (0, 0),
             drag_start_frame_size: (0, 0),
-            current_ws: 1,
+            current_ws: 0,
             layout: match mode {
                 Mode::Floating => Box::new(floating::Floating),
                 Mode::Tiled => Box::new(tiled::Tiled)
@@ -151,6 +151,14 @@ impl WindowManager {
             }).map(|(key, _val)| {
                 *key
             }).collect::<Vec<Window>>()
+    }
+
+    pub fn get_ws_by_window(&self, w: Window) -> Option<u32> {
+        if !self.clients.contains_key(&w) {
+            return None;
+        }
+
+        Some(self.clients.get(&w).unwrap().get_desktop())
     }
 
     pub fn set_current_ws(&mut self, ws: u32) {
