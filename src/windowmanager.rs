@@ -78,7 +78,7 @@ impl WindowManager {
             self.lib.get_root(),
             position.clone(),
             size.clone(),
-            CONFIG.border_width as u32,
+            0,//CONFIG.border_width as u32,
             CONFIG.background_color,
             CONFIG.background_color
         );
@@ -238,13 +238,14 @@ impl WindowManager {
         self.grab_buttons(self.focus_w);
         self.lib.ungrab_keys(self.focus_w);
         self.grab_keys(self.focus_w);
-
         match ww.get_dec() {
             Some(dec) => {
+                self.lib.set_border_width(dec, CONFIG.border_width as u32);
                 self.lib.set_border_color(dec, CONFIG.border_color);
                 self.lib.set_window_background_color(dec, CONFIG.focused_background_color)
             },
             None => {
+                self.lib.set_border_width(w, CONFIG.inner_border_width as u32);
                 self.lib.set_border_color(w, CONFIG.background_color);
             }
         }
@@ -259,10 +260,14 @@ impl WindowManager {
         };
         match ww.get_dec() {
             Some(dec) => {
+                self.lib.set_border_width(dec, 0);
                 self.lib.set_border_color(dec, CONFIG.background_color);
                 self.lib.set_window_background_color(dec, CONFIG.background_color);
             },
-            None => self.lib.set_border_color(ww.window(), CONFIG.background_color)
+            None => {
+                self.lib.set_border_width(w, 0);
+                self.lib.set_border_color(ww.window(), CONFIG.background_color);
+            }
         }
         self.lib.remove_focus(w);
         self.lib.take_focus(self.lib.get_root());

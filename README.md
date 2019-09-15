@@ -4,7 +4,7 @@ Hadlock is a (soon to be) tiling window manager for X.
 Built for learning purposes.  
 
 ---
-![](hadlock.gif)
+![](hadlock-alpha.gif)
 ---
 
 ## Progress

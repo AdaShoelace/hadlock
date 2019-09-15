@@ -452,6 +452,7 @@ impl XlibWrapper {
             );
         }
     }
+    
 
     pub fn set_border_color(&self, w: Window, color: Color) {
         if w == self.root {
