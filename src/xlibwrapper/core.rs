@@ -433,6 +433,26 @@ impl XlibWrapper {
         false
     }
 
+    pub fn set_window_background_color(&self, w: Window, color: Color) {
+        if w == self.root {
+            return
+        }
+        let color = color.value();
+        unsafe {
+            let res = (self.lib.XSetWindowBackground)(
+                self.display,
+                w,
+                color
+            );
+            self.unmap_window(w);
+            self.map_window(w);
+            (self.lib.XSync)(
+                self.display,
+                0
+            );
+        }
+    }
+
     pub fn set_border_color(&self, w: Window, color: Color) {
         if w == self.root {
             return;

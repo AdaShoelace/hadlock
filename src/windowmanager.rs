@@ -225,6 +225,49 @@ impl WindowManager {
         }
     }
 
+    pub fn set_focus(&mut self, w: Window) {
+
+        let ww = match self.clients.get(&w) {
+            Some(ww) => ww,
+            None => { return }
+        };
+
+        self.lib.remove_focus(self.focus_w);
+        self.focus_w = ww.window();
+        self.lib.ungrab_all_buttons(self.focus_w);
+        self.grab_buttons(self.focus_w);
+        self.lib.ungrab_keys(self.focus_w);
+        self.grab_keys(self.focus_w);
+
+        match ww.get_dec() {
+            Some(dec) => {
+                self.lib.set_border_color(dec, CONFIG.border_color);
+                self.lib.set_window_background_color(dec, CONFIG.focused_background_color)
+            },
+            None => {
+                self.lib.set_border_color(w, CONFIG.background_color);
+            }
+        }
+        // need to rethink focus for non floating modes
+        self.lib.take_focus(self.focus_w);
+    }
+
+    pub fn unset_focus(&mut self, w: Window) {
+        let ww = match self.clients.get(&w) {
+            Some(ww) => ww,
+            None => { return }
+        };
+        match ww.get_dec() {
+            Some(dec) => {
+                self.lib.set_border_color(dec, CONFIG.background_color);
+                self.lib.set_window_background_color(dec, CONFIG.background_color);
+            },
+            None => self.lib.set_border_color(ww.window(), CONFIG.background_color)
+        }
+        self.lib.remove_focus(w);
+        self.lib.take_focus(self.lib.get_root());
+    }
+
     fn client_hide(&mut self, ww: &mut WindowWrapper) {
         ww.save_restore_position();
         self.move_window(ww.window(), self.lib.get_screen().width * 2, ww.get_position().y)
@@ -287,12 +330,12 @@ impl WindowManager {
         }
         self.center_cursor(w);
     }
-    
+
     pub fn shift_window(&mut self, w: Window, direction: Direction) {
         if !self.clients.contains_key(&w) {
             return
         }
-        
+
         let (pos, size) = self.layout.shift_window(&self, w, direction);
         self.move_window(w, pos.x, pos.y);
         self.resize_window(w, size.width, size.height);
@@ -304,7 +347,7 @@ impl WindowManager {
         if !self.clients.contains_key(&w) {
             return
         }
-         
+
         let pos = self.layout.place_window(&self, w);
         self.move_window(w, pos.x, pos.y);
         let ww = self.clients.get_mut(&w).unwrap();
