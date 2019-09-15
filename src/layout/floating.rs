@@ -40,8 +40,8 @@ impl Layout for Floating {
         }
 
         (Position{x, y},
-         Position{ x: x + CONFIG.inner_border_width + CONFIG.border_width,
-         y: y + CONFIG.inner_border_width + CONFIG.border_width + CONFIG.decoration_height})
+         Position{ x: x + CONFIG.border_width,
+         y: y + CONFIG.border_width + CONFIG.decoration_height})
     }
 
     fn resize_window(&self, wm: &WindowManager, w: Window, width: u32, height: u32) -> (Size, Size) {
