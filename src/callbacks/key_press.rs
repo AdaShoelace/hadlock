@@ -70,9 +70,9 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
                 match ws_keys.contains(&keycode) {
                     true  => {
-                        let ws_num = ((keycode - 10) % 10) + 1;
-                        wm.move_to_ws(w, ws_num);
-                        wm.set_current_ws(ws_num as u32);
+                        let ws_num = keycode_to_ws(keycode);
+                        wm.move_to_ws(w, ws_num as u8);
+                        wm.set_current_ws(ws_num);
                     },
                     _ => {}
                 }
@@ -108,8 +108,8 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                 }
                 match ws_keys.contains(&keycode) {
                     true  => {
-                        let ws_num = ((keycode - 10) % 10) + 1;
-                        wm.set_current_ws(ws_num as u32);
+                        let ws_num = keycode_to_ws(keycode);
+                        wm.set_current_ws(ws_num);
                     },
                     _ => {}
                 }
@@ -124,8 +124,8 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
                 match ws_keys.contains(&keycode) {
                     true  => {
-                        let ws_num = ((keycode - 10) % 10) + 1;
-                        wm.set_current_ws(ws_num as u32);
+                        let ws_num = keycode_to_ws(keycode);
+                        wm.set_current_ws(ws_num);
                     },
                     _ => {}
                 }
@@ -139,6 +139,10 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
         }
         None => { return; }
     };
+}
+
+fn keycode_to_ws(keycode: u8) -> u32 {
+    ((keycode - 10) % 10) as u32
 }
 
 fn spawn_terminal() {
