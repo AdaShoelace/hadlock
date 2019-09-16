@@ -158,7 +158,7 @@ impl XlibWrapper {
 
     pub fn init_desktops_hints(&self) {
         //set the number of desktop
-        let data = vec![9 as u32];
+        let data = vec![CONFIG.workspaces.len() as u32];
         self.set_desktop_prop(&data, self.xatom.NetNumberOfDesktops);
         //set a current desktop
         let data = vec![0 as u32, xlib::CurrentTime as u32];

@@ -229,6 +229,12 @@ impl WindowManager {
 
         let ww = match self.clients.get(&w) {
             Some(ww) => ww,
+            None if w == self.lib.get_root() => {
+                let root = self.lib.get_root();
+                self.focus_w = root;
+                self.lib.take_focus(self.focus_w);
+                return;
+            },
             None => { return }
         };
 
@@ -251,6 +257,7 @@ impl WindowManager {
         }
         // need to rethink focus for non floating modes
         self.lib.take_focus(self.focus_w);
+        println!("focus_w: {}", self.focus_w);
     }
 
     pub fn unset_focus(&mut self, w: Window) {
@@ -269,8 +276,8 @@ impl WindowManager {
                 self.lib.set_border_color(ww.window(), CONFIG.background_color);
             }
         }
-        self.lib.remove_focus(w);
-        self.lib.take_focus(self.lib.get_root());
+        //self.lib.remove_focus(w);
+        //self.lib.take_focus(self.lib.get_root());
     }
 
     fn client_hide(&mut self, ww: &mut WindowWrapper) {
