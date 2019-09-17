@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use crate::xlibwrapper::util::Color;
 
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ConfigData {
     
@@ -45,7 +46,7 @@ impl Default for ConfigData {
             focused_background_color: Color::SolarizedPurple,
             workspaces: {
                 let mut workspaces: BTreeMap<u8, String> = BTreeMap::new();
-                let _ = (1..=12).for_each(|ws| {
+                let _ = (1..=9).for_each(|ws| {
                     workspaces.insert(ws, ws.to_string());
                 });
                 workspaces
