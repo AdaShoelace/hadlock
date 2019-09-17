@@ -2,15 +2,9 @@
 	"decorationHeight": 20,
 	"borderWidth": 1,
 	"innerBorderWidth": 0,
-	"borderColor": {
-		"Custom": 158635879
-	},
-	"backgroundColor": {
-		"Custom" : 5913733
-	},
-	"focusedBackgroundColor": {
-		"Custom" : 10371437
-	},
+	"borderColor": 	"DefaultBorder",
+	"backgroundColor": "DefaultBackground",
+	"focusedBackgroundColor": "DefaultFocusedBackground",
 	"workspaces": {
 		"1": "1",
 		"2": "2",
@@ -25,10 +19,19 @@
 	"terminal" : "alacritty",
 	"commands": [
 		{
+			"execTime": "Pre",
 			"program": "feh",
 			"args": [
 				"--bg-scale",
 				"/home/pierre/Programming/rust/hobby/hadlock/wallpaper.jpg"
+			]
+		},
+		{
+			"execTime": "Post",
+			"program": "polybar",
+			"args": [
+				"--config=./polyconf",
+				"example"
 			]
 		}
 	]
