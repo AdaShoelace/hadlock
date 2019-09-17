@@ -11,21 +11,29 @@ use runner::*;
 use xlibwrapper::core::*;
 use std::rc::Rc;
 use std::process::Command;
+use std::thread;
+use std::sync::mpsc;
 
 use crate::config::*;
 
 
 fn main() {
+    
+    let (tx, rx) = mpsc::channel::<bool>();
 
     let xlib = Rc::new(XlibWrapper::new());
     let window_manager = WindowManager::new(xlib.clone());
-    call_commands();
-    Runner::new(xlib, window_manager).run();
-    loop {}
+    call_commands(ExecTime::Pre);
+    thread::spawn(move || {
+        match rx.recv() {
+            Ok(true) => call_commands(ExecTime::Post),
+            _ => { return }, 
+        }
+    });
+    Runner::new(xlib, window_manager).run(tx);
 }
 
-// rewrite to accomodate multiple command structs
-fn call_commands() {
+fn call_commands(exec_time: ExecTime) {
     
     let commands = match &CONFIG.commands {
         Some(commands) => commands.clone(),
@@ -34,6 +42,9 @@ fn call_commands() {
 
     let commands: Vec<Command> = commands
         .iter()
+        .filter(|cmd| {
+            cmd.exec_time == exec_time
+        })
         .map(|cmd| {
             let mut tmp_cmd = Command::new(cmd.program.clone());
             cmd.args

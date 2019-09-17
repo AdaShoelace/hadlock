@@ -19,6 +19,9 @@ pub enum Color {
     SolarizedPurple,
     SolarizedDarkPurple,
     SolarizedDarkGray,
+    DefaultBackground,
+    DefaultFocusedBackground,
+    DefaultBorder,
     Custom(u64)
 }
 
@@ -33,6 +36,9 @@ impl Color {
             Color::SolarizedPurple => 0x624cab,
             Color::SolarizedDarkPurple => 0xaba9bf,
             Color::SolarizedDarkGray => 0xe0e0e2,
+            Color::DefaultBackground => 0x5A3C85,
+            Color::DefaultFocusedBackground => 0x9E416D,
+            Color::DefaultBorder => 0x94c507,
             Color::Custom(value) => value
         }
     }

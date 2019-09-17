@@ -4,6 +4,7 @@ use super::callbacks::*;
 use super::xlibwrapper::event::*;
 use super::xlibwrapper::core::*;
 use std::rc::Rc;
+use std::sync::mpsc;
 
 pub struct Runner {
     call_table: HashMap<EventType, Callback>,
@@ -36,7 +37,7 @@ impl Runner {
     }
 
 
-    pub fn run(&mut self) {
+    pub fn run(&mut self, tx: mpsc::Sender<bool>) {
 
         self.lib.grab_server();
         let _ = self.lib.get_top_level_windows()
@@ -45,6 +46,8 @@ impl Runner {
                 self.wm.setup_window(*w)
             });
         self.lib.ungrab_server();
+        
+        tx.send(true);
 
         loop {
             let event = self.lib.next_event();
