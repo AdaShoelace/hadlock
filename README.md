@@ -1,5 +1,6 @@
 # hadlock  
 
+### Work in progress
 Hadlock is a (soon to be) tiling window manager for X.  
 Built for learning purposes.  
 
