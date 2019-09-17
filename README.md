@@ -1,4 +1,4 @@
-# hadlock  
+# Hadlock  
 
 ### Work in progress
 Hadlock is a (soon to be) tiling window manager for X.  
@@ -10,22 +10,25 @@ Built for learning purposes.
 
 ## Progress
 
+### Mode independent  
 - [x] Floating mode
-- [ ] Tiled mode 
-- [x] Move windows (Floating)  
-- [ ] Move windows (Tiled) 
-- [x] Move windows between workspaces(Floating)  
-- [ ] Move windows between workspaces(Tiled) 
-- [x] Resize windows (Floating) 
-- [ ] Resize windows (Tiled) 
-- [ ] Snapping widows (Floating) 
+- [ ] Tiled mode  
 - [x] Close window 
 - [x] Start terminal 
 - [x] Workspaces 
 - [ ] Multimonitor support 
 - [x] Window decorations 
 - [ ] Undecorated windows 
-- [ ] Text in decoration 
+- [ ] Text in decoration  
+### Floating  
+- [x] Move windows (Floating)  
+- [x] Move windows between workspaces(Floating)  
+- [x] Resize windows (Floating) 
+- [x] Snapping widows (Floating) 
+### Tiled  
+- [ ] Move windows (Tiled) 
+- [ ] Move windows between workspaces(Tiled) 
+- [ ] Resize windows (Tiled) 
 
 ## Installation
 _TBD_
