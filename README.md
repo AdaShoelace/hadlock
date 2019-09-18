@@ -41,10 +41,10 @@ In order to test/run hadlock some dependencies are needed:
 ```
 xorg-server-xephyr
 xorg-xinit
-xorg-xclock
-xorg-xeyes
-xterm
+libxinerama
 ```
+
+Run `./run.sh` to start a test session in a nested X server. The default `xinitrc` in this repo attempts to run `alacritty`, `compton`, and `polybar`. Install them or customize the `xinitrc` to your liking.
 
 ## Honorable mentions
 During the development of Hadlock I've found alot of inspiration in other projects and gotten help and insight from people far more experienced than myself.
