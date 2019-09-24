@@ -37,7 +37,8 @@ pub struct WindowManager {
     pub drag_start_pos: (c_int, c_int),
     pub drag_start_frame_pos: (c_int, c_int),
     pub drag_start_frame_size: (c_uint, c_uint),
-    pub current_ws: u32
+    pub current_ws: u32,
+    pub decorate: bool,
 }
 
 impl WindowManager {
@@ -65,6 +66,7 @@ impl WindowManager {
                 Mode::Floating => Box::new(floating::Floating),
                 Mode::Tiled => Box::new(tiled::Tiled)
             },
+            decorate: CONFIG.decorate
         }
     }
 
@@ -127,9 +129,10 @@ impl WindowManager {
 
         let geom = self.lib.get_geometry(w);
         let mut ww = WindowWrapper::new(w, Rect::from(geom), self.current_ws);
-        self.lib.set_border_width(w, CONFIG.inner_border_width as u32);
-        self.lib.set_border_color(w, CONFIG.border_color);
-        self.decorate_window(&mut ww);
+        if self.decorate {
+            self.decorate_window(&mut ww);
+
+        }
         self.lib.add_to_save_set(w);
         self.lib.add_to_root_net_client_list(w);
         self.subscribe_to_events(w);
