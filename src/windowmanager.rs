@@ -251,8 +251,9 @@ impl WindowManager {
                 self.lib.set_window_background_color(dec, CONFIG.focused_background_color)
             },
             None => {
-                self.lib.set_border_width(w, CONFIG.inner_border_width as u32);
-                self.lib.set_border_color(w, CONFIG.background_color);
+                self.lib.set_border_width(w, CONFIG.border_width as u32);
+                self.lib.set_border_color(w, CONFIG.border_color);
+                self.lib.raise_window(w);
             }
         }
         // need to rethink focus for non floating modes
@@ -343,6 +344,30 @@ impl WindowManager {
         self.center_cursor(w);
     }
 
+    pub fn resize_window(&mut self, w: Window, width: u32, height: u32) {
+        if !self.clients.contains_key(&w) {
+            return
+        }
+
+        let (dec_size, window_size) = self.layout.resize_window(&self, w, width, height);
+
+        let ww = self.clients.get_mut(&w).expect("Client not found in resize_window");
+
+        if let Some(_) = ww.get_dec_rect() {
+            ww.set_dec_size(dec_size);
+            self.lib.resize_window(ww.get_dec().expect("resize_window: no dec"), dec_size.width, dec_size.height);
+        }
+
+        ww.set_inner_size(window_size);
+        self.lib.resize_window(ww.window(), window_size.width, window_size.height);
+    }
+
+    fn subscribe_to_events(&mut self, w: Window) {
+        self.lib.select_input(
+            w,
+            EnterWindowMask | LeaveWindowMask | FocusChangeMask | PropertyChangeMask
+        );
+    }
     pub fn shift_window(&mut self, w: Window, direction: Direction) {
         if !self.clients.contains_key(&w) {
             return
@@ -478,7 +503,7 @@ impl WindowManager {
 
         if self.lib.kill_client(frame.window()) {
 
-            if frame.decorated() {
+            if frame.is_decorated() {
                 self.destroy_dec(*frame);
             }
             self.clients.remove(&w);
@@ -492,30 +517,6 @@ impl WindowManager {
         println!("Top level windows: {}", self.lib.top_level_window_count());
     }
 
-    pub fn resize_window(&mut self, w: Window, width: u32, height: u32) {
-        if !self.clients.contains_key(&w) {
-            return
-        }
-
-        let (dec_size, window_size) = self.layout.resize_window(&self, w, width, height);
-
-        let ww = self.clients.get_mut(&w).expect("Client not found in resize_window");
-
-        if let Some(_) = ww.get_dec_rect() {
-            ww.set_dec_size(dec_size);
-            self.lib.resize_window(ww.get_dec().expect("resize_window: no dec"), dec_size.width, dec_size.height);
-        }
-
-        ww.set_inner_size(window_size);
-        self.lib.resize_window(ww.window(), window_size.width, window_size.height);
-    }
-
-    fn subscribe_to_events(&mut self, w: Window) {
-        self.lib.select_input(
-            w,
-            EnterWindowMask | LeaveWindowMask | FocusChangeMask | PropertyChangeMask
-        );
-    }
 
     pub fn grab_keys(&self, w: Window) {
 
