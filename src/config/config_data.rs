@@ -6,7 +6,10 @@ use crate::xlibwrapper::util::Color;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ConfigData {
-    
+
+    #[serde(rename="decorate")]
+    pub decorate: Option<bool>,
+
     #[serde(rename="decorationHeight")]
     pub decoration_height: Option<i32>,
 
@@ -38,6 +41,7 @@ pub struct ConfigData {
 impl Default for ConfigData {
     fn default() -> Self {
         Self {
+            decorate: Some(true),
             decoration_height: Some(20),
             border_width: Some(2),
             inner_border_width: Some(0),

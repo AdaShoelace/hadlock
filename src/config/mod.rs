@@ -33,6 +33,7 @@ pub struct Command {
 
 #[derive(Debug)]
 pub struct Config {
+    pub decorate: bool,
     pub decoration_height: i32,
     pub border_width: i32,
     pub inner_border_width: i32,
@@ -48,6 +49,7 @@ impl From<ConfigData> for Config {
     fn from(config: ConfigData) -> Self {
         let def = ConfigData::default();
         Self {
+            decorate: config.decorate.unwrap_or(def.decorate.unwrap()),
             decoration_height: config.decoration_height.unwrap_or(def.decoration_height.unwrap()),
             border_width: config.border_width.unwrap_or(def.border_width.unwrap()),
             inner_border_width: config.inner_border_width.unwrap_or(def.inner_border_width.unwrap()),
