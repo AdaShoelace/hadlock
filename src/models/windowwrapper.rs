@@ -50,7 +50,7 @@ impl WindowWrapper {
         self.previous_state = temp; 
     }
 
-    pub fn decorated(&self) -> bool {
+    pub fn is_decorated(&self) -> bool {
         match self.dec {
             Some(_) => true,
             _ => false
@@ -123,7 +123,10 @@ impl WindowWrapper {
     }
     
     pub fn get_size(&self) -> Size {
-        Size { width: self.get_width(), height: self.get_height() }
+        match self.dec_rect {
+            Some(dec) => dec.get_size(),
+            None => self.window_rect.get_size()
+        }
     }
 
     pub fn get_width(&self) -> u32 {
