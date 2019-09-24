@@ -89,8 +89,16 @@ impl Layout for Floating {
 
     fn maximize(&self, wm: &WindowManager, w: Window) -> Size {
         let screen = wm.lib.get_screen();
-        let width = (screen.width as u32) - 2 * CONFIG.border_width as u32;
-        let height = (screen.height as u32) - 2 * CONFIG.border_width as u32;
+        let ww = wm.clients.get(&w).expect("Not in client list, called from Floating::maxmize");
+        let (width, height) = if !ww.is_decorated() {
+            let width = (screen.width as u32) - 3 * CONFIG.border_width as u32;
+            let height = (screen.height as u32) - CONFIG.border_width as u32;
+            (width, height)
+        } else {
+            let width = screen.width as u32;
+            let height = screen.height as u32;
+            (width, height)
+        };
         let ww = wm.clients.get(&w).expect("window missing in clients, call in Floating::maximize");
         match wm.dock_area.as_rect(&screen) {
             Some(dock) => {
@@ -110,7 +118,7 @@ impl Layout for Floating {
         match direction {
             Direction::North => {
                 let pos = if !ww.is_decorated() {
-                    self.move_window(wm, w, 0, 0).0
+                    self.move_window(wm, w, 0 + CONFIG.border_width, 0).0
                 } else {
                     self.move_window(wm, w, 0 + CONFIG.border_width, 0).0
                 };
@@ -126,9 +134,9 @@ impl Layout for Floating {
                 (pos, size)
             },
             Direction::East => {
-                let pos = self.move_window(wm, w, screen.width / 2, 0).0;
+                let pos = self.move_window(wm, w, screen.width / 2 + CONFIG.border_width, 0).0;
                 let size = if !ww.is_decorated() {
-                    Size{ width: (screen.width as u32) / 2 - (2 * CONFIG.border_width as u32), height: (screen.height as u32) - (2 * CONFIG.border_width) as u32 }
+                    Size{ width: (screen.width as u32) / 2 - (2 * CONFIG.border_width as u32), height: (screen.height as u32) - CONFIG.border_width as u32 }
                 } else {
                     Size{ width: (screen.width as u32) / 2, height: (screen.height as u32) }
                 };
@@ -140,9 +148,9 @@ impl Layout for Floating {
                 (pos, size)
             },
             Direction::West => {
-                let pos = self.move_window(wm, w, 0, 0).0;
+                let pos = self.move_window(wm, w, 0 + CONFIG.border_width, 0).0;
                 let size = if !ww.is_decorated() {
-                    Size{ width: (screen.width as u32) / 2, height: (screen.height as u32) - (2 * CONFIG.border_width) as u32 }
+                    Size{ width: (screen.width as u32) / 2, height: (screen.height as u32) - CONFIG.border_width as u32 }
                 } else {
                     Size{ width: (screen.width as u32) / 2, height: (screen.height as u32)}
                 };
@@ -155,7 +163,7 @@ impl Layout for Floating {
             },
             Direction::South => {
                 let mut pos = if !ww.is_decorated() {
-                    self.move_window(wm, w, 0, screen.height / 2).0
+                    self.move_window(wm, w, 0 + CONFIG.border_width, screen.height / 2 - CONFIG.border_width).0
                 } else {
                     self.move_window(wm, w, 0 + CONFIG.border_width, screen.height / 2).0
                 };

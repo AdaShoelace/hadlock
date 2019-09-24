@@ -256,6 +256,8 @@ impl WindowManager {
             None => {
                 self.lib.set_border_width(w, CONFIG.border_width as u32);
                 self.lib.set_border_color(w, CONFIG.border_color);
+                let pos = ww.get_position();
+                self.lib.move_window(w, Position{x: pos.x - CONFIG.border_width, y: pos.y - CONFIG.border_width});
                 self.lib.raise_window(w);
             }
         }
@@ -278,6 +280,7 @@ impl WindowManager {
             None => {
                 self.lib.set_border_width(w, 0);
                 self.lib.set_border_color(ww.window(), CONFIG.background_color);
+                self.lib.move_window(w, ww.get_position());
             }
         }
         //self.lib.remove_focus(w);
