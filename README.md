@@ -12,23 +12,24 @@ Built for learning purposes.
 
 ### Mode independent  
 - [x] Floating mode
-- [ ] Tiled mode  
-- [x] Close window 
-- [x] Start terminal 
-- [x] Workspaces 
+- [ ] Tiled mode
+- [x] Close window
+- [x] Start terminal
+- [x] Workspaces
 - [ ] Multimonitor support 
-- [x] Window decorations 
-- [ ] Undecorated windows 
+- [x] Window decorations
+- [x] Undecorated windows
 - [ ] Text in decoration  
 ### Floating  
-- [x] Move windows (Floating)  
-- [x] Move windows between workspaces(Floating)  
-- [x] Resize windows (Floating) 
-- [x] Snapping widows (Floating) 
+- [x] Move windows  
+- [x] Move windows between workspaces  
+- [x] Resize windows 
+- [x] Snapping widows
+- [ ] Cycle through windows
 ### Tiled  
-- [ ] Move windows (Tiled) 
-- [ ] Move windows between workspaces(Tiled) 
-- [ ] Resize windows (Tiled) 
+- [ ] Move windows 
+- [ ] Move windows between workspaces 
+- [ ] Resize windows 
 
 ## Installation
 _TBD_
