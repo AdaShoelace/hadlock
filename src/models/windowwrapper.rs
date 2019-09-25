@@ -112,6 +112,10 @@ impl WindowWrapper {
         self.window_rect.clone()
     }
 
+    pub fn set_inner_rect(&mut self, rect: Rect) {
+        self.window_rect = rect;
+    }
+
     /*
      * Will set total size of window, so the outmost boundaries (excluding window borders)
      */
