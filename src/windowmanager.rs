@@ -80,7 +80,7 @@ impl WindowManager {
             self.lib.get_root(),
             position.clone(),
             size.clone(),
-            0, //CONFIG.border_width as u32,
+            CONFIG.border_width as u32,
             CONFIG.background_color,
             CONFIG.background_color
         );
@@ -228,7 +228,6 @@ impl WindowManager {
     }
 
     pub fn set_focus(&mut self, w: Window) {
-        if w == self.focus_w { return }
         let ww = match self.clients.get(&w) {
             Some(ww) => ww,
             None if w == self.lib.get_root() => {
@@ -243,15 +242,8 @@ impl WindowManager {
         match ww.get_dec() {
             Some(dec) => {
                 if w != self.focus_w && w != dec {
-                    self.lib.raise_window(dec);
-                    self.lib.raise_window(w);
+                    self.raise_window(ww);
                 }
-                let size = ww.get_size();
-                self.lib.resize_window(dec, size.width - 2* CONFIG.border_width as u32, size.height - 2*CONFIG.border_width as u32);
-                self.lib.resize_window(w, size.width - 2*CONFIG.border_width as u32, size.height - CONFIG.decoration_height as u32 - CONFIG.border_width as u32);
-                let pos = ww.get_position();
-                self.lib.move_window(w, Position { x: pos.x + CONFIG.border_width, y: pos.y + CONFIG.decoration_height });
-                self.lib.set_border_width(dec, CONFIG.border_width as u32);
                 self.lib.set_border_color(dec, CONFIG.border_color);
                 self.lib.set_window_background_color(dec, CONFIG.focused_background_color);
             },
@@ -282,25 +274,16 @@ impl WindowManager {
         };
         match ww.get_dec() {
             Some(dec) => {
-                self.lib.set_border_width(dec, 0);
                 self.lib.set_border_color(dec, CONFIG.background_color);
                 self.lib.set_window_background_color(dec, CONFIG.background_color);
-                let size = ww.get_size();
-                self.lib.resize_window(dec, size.width, size.height);
-                self.lib.resize_window(w, size.width, size.height - CONFIG.decoration_height as u32);
-                let pos = ww.get_position();
-                self.lib.move_window(w, Position { x: pos.x, y: pos.y + CONFIG.decoration_height });
             },
             None => {
                 self.lib.set_border_width(w, 0);
                 self.lib.set_border_color(ww.window(), CONFIG.background_color);
                 let size = ww.get_size();
                 self.lib.resize_window(w, size.width, size.height);
-                //self.lib.move_window(w, ww.get_position());
             }
         }
-        //self.lib.remove_focus(w);
-        //self.lib.take_focus(self.lib.get_root());
     }
 
     fn client_hide(&mut self, ww: &mut WindowWrapper) {
