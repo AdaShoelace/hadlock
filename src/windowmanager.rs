@@ -139,7 +139,6 @@ impl WindowManager {
         self.window_initial_size(w);
         self.place_window(w);
         self.lib.map_window(w);
-        //self.set_focus(w);
         self.raise_window(&ww);
     }
 
@@ -250,9 +249,6 @@ impl WindowManager {
 
         match ww.get_dec() {
             Some(dec) => {
-                /*if w != self.focus_w && w != dec {
-                    self.raise_window(ww);
-                }*/
                 self.lib.set_border_color(dec, CONFIG.border_color);
                 self.lib.set_window_background_color(dec, CONFIG.focused_background_color);
             },
