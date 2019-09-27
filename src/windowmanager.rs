@@ -139,7 +139,8 @@ impl WindowManager {
         self.window_initial_size(w);
         self.place_window(w);
         self.lib.map_window(w);
-        self.set_focus(w);
+        //self.set_focus(w);
+        self.raise_window(&ww);
     }
 
     pub fn get_windows_in_current_ws(&self) -> Vec<Window> {
@@ -239,11 +240,19 @@ impl WindowManager {
             None => { return }
         };
 
+        self.lib.remove_focus(self.focus_w);
+        self.focus_w = ww.window();
+        self.lib.ungrab_all_buttons(self.focus_w);
+        self.grab_buttons(self.focus_w);
+        self.lib.ungrab_keys(self.focus_w);
+        self.grab_keys(self.focus_w);
+        self.lib.take_focus(self.focus_w);
+
         match ww.get_dec() {
             Some(dec) => {
-                if w != self.focus_w && w != dec {
+                /*if w != self.focus_w && w != dec {
                     self.raise_window(ww);
-                }
+                }*/
                 self.lib.set_border_color(dec, CONFIG.border_color);
                 self.lib.set_window_background_color(dec, CONFIG.focused_background_color);
             },
@@ -257,13 +266,6 @@ impl WindowManager {
             }
         }
         // need to rethink focus for non floating modes
-        self.lib.remove_focus(self.focus_w);
-        self.focus_w = ww.window();
-        self.lib.ungrab_all_buttons(self.focus_w);
-        self.grab_buttons(self.focus_w);
-        self.lib.ungrab_keys(self.focus_w);
-        self.grab_keys(self.focus_w);
-        self.lib.take_focus(self.focus_w);
         println!("focus_w: {}", self.focus_w);
     }
 
