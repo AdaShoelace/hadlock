@@ -80,7 +80,7 @@ impl WindowManager {
             self.lib.get_root(),
             position.clone(),
             size.clone(),
-            0, //CONFIG.border_width as u32,
+            CONFIG.border_width as u32,
             CONFIG.background_color,
             CONFIG.background_color
         );
@@ -131,7 +131,6 @@ impl WindowManager {
         let mut ww = WindowWrapper::new(w, Rect::from(geom), self.current_ws);
         if self.decorate {
             self.decorate_window(&mut ww);
-
         }
         self.lib.add_to_save_set(w);
         self.lib.add_to_root_net_client_list(w);
@@ -229,14 +228,13 @@ impl WindowManager {
     }
 
     pub fn set_focus(&mut self, w: Window) {
-
         let ww = match self.clients.get(&w) {
             Some(ww) => ww,
             None if w == self.lib.get_root() => {
                 let root = self.lib.get_root();
                 self.focus_w = root;
                 self.lib.take_focus(self.focus_w);
-                return;
+                return
             },
             None => { return }
         };
@@ -247,22 +245,24 @@ impl WindowManager {
         self.grab_buttons(self.focus_w);
         self.lib.ungrab_keys(self.focus_w);
         self.grab_keys(self.focus_w);
+        self.lib.take_focus(self.focus_w);
+
         match ww.get_dec() {
             Some(dec) => {
-                self.lib.set_border_width(dec, CONFIG.border_width as u32);
                 self.lib.set_border_color(dec, CONFIG.border_color);
-                self.lib.set_window_background_color(dec, CONFIG.focused_background_color)
+                self.lib.set_window_background_color(dec, CONFIG.focused_background_color);
             },
             None => {
                 self.lib.set_border_width(w, CONFIG.border_width as u32);
                 self.lib.set_border_color(w, CONFIG.border_color);
                 let pos = ww.get_position();
-                self.lib.move_window(w, Position{x: pos.x - CONFIG.border_width, y: pos.y - CONFIG.border_width});
+
+                let size = ww.get_size();
+                self.lib.resize_window(w, size.width - 2* CONFIG.border_width as u32, size.height - 2*CONFIG.border_width as u32);
                 self.lib.raise_window(w);
             }
         }
         // need to rethink focus for non floating modes
-        self.lib.take_focus(self.focus_w);
         println!("focus_w: {}", self.focus_w);
     }
 
@@ -273,18 +273,16 @@ impl WindowManager {
         };
         match ww.get_dec() {
             Some(dec) => {
-                self.lib.set_border_width(dec, 0);
                 self.lib.set_border_color(dec, CONFIG.background_color);
                 self.lib.set_window_background_color(dec, CONFIG.background_color);
             },
             None => {
                 self.lib.set_border_width(w, 0);
                 self.lib.set_border_color(ww.window(), CONFIG.background_color);
-                self.lib.move_window(w, ww.get_position());
+                let size = ww.get_size();
+                self.lib.resize_window(w, size.width, size.height);
             }
         }
-        //self.lib.remove_focus(w);
-        //self.lib.take_focus(self.lib.get_root());
     }
 
     fn client_hide(&mut self, ww: &mut WindowWrapper) {
@@ -339,7 +337,7 @@ impl WindowManager {
             },
             _ => {
                 self.clients.get_mut(&w).expect("Not in list?!").save_restore_position();
-                self.move_window(w, 0 + CONFIG.border_width, 0);
+                self.move_window(w, 0, 0);
                 let size = self.layout.maximize(&self, w);
                 let ww = self.clients.get_mut(&w).expect("Not in list?!");
                 ww.set_window_state(WindowState::Maximized);
@@ -347,6 +345,15 @@ impl WindowManager {
                 self.resize_window(w, size.width, size.height);
             }
         }
+        let ww = self.clients.get(&w).expect("Not in list? {WindowManager::maximize}");
+        match ww.get_dec() {
+            Some(dec) => {
+                self.lib.raise_window(dec);
+                self.lib.raise_window(w);
+            },
+            None => self.lib.raise_window(w)
+        }
+        self.set_focus(w);
         self.center_cursor(w);
     }
 
@@ -382,7 +389,7 @@ impl WindowManager {
         let (pos, size) = self.layout.shift_window(&self, w, direction);
         self.move_window(w, pos.x, pos.y);
         self.resize_window(w, size.width, size.height);
-        self.center_cursor(w);
+        self.set_focus(w);
         self.clients.get_mut(&w).unwrap().set_window_state(WindowState::Snapped);
     }
 

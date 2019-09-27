@@ -1,5 +1,5 @@
 {
-	"decorate": false,
+	"decorate": true,
 	"decorationHeight": 20,
 	"borderWidth": 2,
 	"innerBorderWidth": 0,
