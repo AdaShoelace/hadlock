@@ -76,6 +76,7 @@ impl Layout for Floating {
     fn maximize(&self, wm: &WindowManager, w: Window) -> Size {
         let screen = wm.lib.get_screen();
         let ww = wm.clients.get(&w).expect("Not in client list, called from Floating::maxmize");
+
         let ww = wm.clients.get(&w).expect("window missing in clients, call in Floating::maximize");
         match wm.dock_area.as_rect(&screen) {
             Some(dock) => {
@@ -90,8 +91,6 @@ impl Layout for Floating {
     fn shift_window(&self, wm: &WindowManager, w: Window, direction: Direction) -> (Position, Size) {
         let screen = wm.lib.get_screen();
         let ww = wm.clients.get(&w).unwrap();
-
-
         match direction {
             Direction::North => {
                 let pos = self.move_window(wm, w, 0, 0).0;
@@ -110,6 +109,7 @@ impl Layout for Floating {
                 let pos = self.move_window(wm, w, screen.width / 2, 0).0;
                 let size = if ww.is_decorated() {
                     Size{ width: (screen.width as u32) / 2 - 2 * CONFIG.border_width as u32, height: screen.height as u32 - CONFIG.border_width as u32}
+
                 } else {
                     Size{ width: (screen.width as u32) / 2, height: screen.height as u32}
                 };
@@ -138,6 +138,7 @@ impl Layout for Floating {
                     Size{ width: screen.width as u32 - 2 * CONFIG.border_width as u32, height: (screen.height as u32) / 2 - 2 * CONFIG.border_width as u32}
                 } else {
                     Size{ width: screen.width as u32 , height: (screen.height as u32) / 2}
+
                 };
                 let mut size = Floating::get_size(&ww, self.resize_window(wm, w, size.width, size.height));
                 if let Some(dock) = wm.dock_area.as_rect(&screen) {

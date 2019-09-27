@@ -45,7 +45,7 @@ impl Color {
 }
 
 pub fn from_c_bool(b: i32) -> bool {
-    if b > 0 || b < 0{
+    if b != 0 {
         true
     } else {
         false
@@ -53,7 +53,7 @@ pub fn from_c_bool(b: i32) -> bool {
 }
 
 pub fn to_c_bool(b: bool) -> i32 {
-    if b || !b {
+    if b {
         1
     } else {
         0
