@@ -13,6 +13,7 @@ use std::rc::Rc;
 use std::process::Command;
 use std::thread;
 use std::sync::mpsc;
+use nix::sys::signal::{self, SigHandler, Signal};
 
 use crate::config::*;
 
@@ -23,6 +24,8 @@ fn main() {
 
     let xlib = Rc::new(XlibWrapper::new());
     let window_manager = WindowManager::new(xlib.clone());
+    // Avoid zombies by ignoring SIGCHLD
+    unsafe { signal::signal(Signal::SIGCHLD, SigHandler::SigIgn) }.unwrap();
     call_commands(ExecTime::Pre);
     thread::spawn(move || {
         match rx.recv() {

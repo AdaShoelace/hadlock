@@ -15,4 +15,4 @@ lazy_static = "1.3.0"
 bitflags = "1.1.0"
 x11 = {version = "*", features = ["xlib", "xinerama"]}
 x11-dl = "2.18.3"
-
+nix = "0.15"
