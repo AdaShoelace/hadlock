@@ -15,6 +15,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - name: Install dependencies
+      run: |
+          sudo apt update
+          sudo apt install libxinerama-dev
     - name: Build
       run: cargo build --release
     - name: Run tests
