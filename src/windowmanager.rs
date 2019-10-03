@@ -255,8 +255,6 @@ impl WindowManager {
             None => {
                 self.lib.set_border_width(w, CONFIG.border_width as u32);
                 self.lib.set_border_color(w, CONFIG.border_color);
-                let pos = ww.get_position();
-
                 let size = ww.get_size();
                 self.lib.resize_window(w, size.width - 2* CONFIG.border_width as u32, size.height - 2*CONFIG.border_width as u32);
                 self.lib.raise_window(w);

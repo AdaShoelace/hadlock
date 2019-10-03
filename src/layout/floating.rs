@@ -10,7 +10,6 @@ use crate::models::{
     windowwrapper::WindowWrapper,
 };
 use crate::xlibwrapper::xlibmodels::*;
-use crate::xlibwrapper::util::*;
 
 
 pub struct Floating;

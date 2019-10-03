@@ -99,7 +99,7 @@ impl XlibWrapper {
             | xlib::StructureNotifyMask
             | xlib::PropertyChangeMask;
 
-        let mut attrs: xlib::XSetWindowAttributes = unsafe { std::mem::uninitialized() };
+        let mut attrs: xlib::XSetWindowAttributes = unsafe { mem::uninitialized() };
         attrs.cursor = self.cursors.normal_cursor;
         attrs.event_mask = root_event_mask;
 
@@ -128,7 +128,7 @@ impl XlibWrapper {
                 supp_ptr as *const u8,
                 size
             );
-            std::mem::forget(supported);
+            mem::forget(supported);
             (self.lib.XUngrabKey)(self.display, xlib::AnyKey, xlib::AnyModifier, self.root);
             (self.lib.XDeleteProperty)(self.display, self.root, self.xatom.NetClientList);
             let keys = vec![
@@ -164,7 +164,7 @@ impl XlibWrapper {
         let data = vec![0 as u32, xlib::CurrentTime as u32];
         self.set_desktop_prop(&data, self.xatom.NetCurrentDesktop);
         //set desktop names
-        let mut text: xlib::XTextProperty = unsafe { std::mem::uninitialized() };
+        let mut text: xlib::XTextProperty = unsafe { mem::uninitialized() };
         unsafe {
             let mut clist_tags: Vec<*mut c_char> = CONFIG.workspaces
                 .values()
@@ -178,7 +178,7 @@ impl XlibWrapper {
                 xlib::XUTF8StringStyle,
                 &mut text,
                 );
-            std::mem::forget(clist_tags);
+            mem::forget(clist_tags);
             (self.lib.XSetTextProperty)(
                 self.display,
                 self.root,
@@ -315,7 +315,7 @@ impl XlibWrapper {
                 data.as_ptr() as *const u8,
                 1 as i32,
                 );
-            std::mem::forget(data);
+            mem::forget(data);
         }
     }
 
@@ -332,7 +332,7 @@ impl XlibWrapper {
                     cstring.as_ptr() as *const u8,
                     value.len() as i32,
                     );
-                std::mem::forget(cstring);
+                mem::forget(cstring);
             }
         }
     }
@@ -350,13 +350,13 @@ impl XlibWrapper {
                 xdata.as_ptr() as *const u8,
                 data.len() as i32,
                 );
-            std::mem::forget(xdata);
+            mem::forget(xdata);
         }
     }
 
 
     pub fn get_window_attrs(&self, window: xlib::Window) -> Result<xlib::XWindowAttributes, ()> {
-        let mut attrs: xlib::XWindowAttributes = unsafe { std::mem::zeroed() };
+        let mut attrs: xlib::XWindowAttributes = unsafe { mem::zeroed() };
         let status = unsafe { (self.lib.XGetWindowAttributes)(self.display, window, &mut attrs) };
         if status == 0 {
             return Err(());
@@ -399,7 +399,7 @@ impl XlibWrapper {
                 list.as_ptr() as *const u8,
                 1
             );
-            std::mem::forget(list);
+            mem::forget(list);
         }
         self.send_xevent_atom(w, self.xatom.WMTakeFocus);
         self.sync(false);
@@ -419,7 +419,7 @@ impl XlibWrapper {
 
     fn send_xevent_atom(&self, window: Window, atom: xlib::Atom) -> bool {
         if self.expects_xevent_atom(window, atom) {
-            let mut msg: xlib::XClientMessageEvent = unsafe { std::mem::uninitialized() };
+            let mut msg: xlib::XClientMessageEvent = unsafe { mem::uninitialized() };
             msg.type_ = xlib::ClientMessage;
             msg.window = window;
             msg.message_type = self.xatom.WMProtocols;
@@ -761,7 +761,7 @@ impl XlibWrapper {
         let mut format_return: i32 = 0;
         let mut nitems_return: c_ulong = 0;
         let mut type_return: xlib::Atom = 0;
-        let mut prop_return: *mut c_uchar = unsafe { std::mem::uninitialized() };
+        let mut prop_return: *mut c_uchar = unsafe { mem::uninitialized() };
         unsafe {
             let status = (self.lib.XGetWindowProperty)(
                 self.display,
@@ -1050,7 +1050,7 @@ impl XlibWrapper {
         let mut nitems_return: c_ulong = 0;
         let mut type_return: xlib::Atom = 0;
         let mut bytes_after_return: xlib::Atom = 0;
-        let mut prop_return: *mut c_uchar = unsafe { std::mem::uninitialized() };
+        let mut prop_return: *mut c_uchar = unsafe { mem::uninitialized() };
         unsafe {
             let status = (self.lib.XGetWindowProperty)(
                 self.display,

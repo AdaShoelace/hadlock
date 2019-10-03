@@ -1,8 +1,6 @@
 use crate::windowmanager::WindowManager;
 use crate::xlibwrapper::core::*;
 use crate::xlibwrapper::event::*;
-
-use crate::config::*;
 use std::rc::Rc;
 
 pub fn enter_notify(_xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
