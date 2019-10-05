@@ -85,22 +85,22 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                 if xlib.str_to_keycode("f").expect("Dafuq?!?!") == keycode {
                     wm.toggle_maximize(wm.focus_w);
                 }
-                if xlib.str_to_keycode("Right").unwrap() == keycode {
+                if xlib.str_to_keycode("Right").unwrap() == keycode || xlib.str_to_keycode("l").unwrap() == keycode {
                     wm.shift_window(wm.focus_w, Direction::East);
                     wm.center_cursor(w);
                     return;
                 }
-                if xlib.str_to_keycode("Left").unwrap() == keycode {
+                if xlib.str_to_keycode("Left").unwrap() == keycode || xlib.str_to_keycode("h").unwrap() == keycode {
                     wm.shift_window(wm.focus_w, Direction::West);
                     wm.center_cursor(w);
                     return;
                 }
-                if xlib.str_to_keycode("Down").unwrap() == keycode {
+                if xlib.str_to_keycode("Down").unwrap() == keycode || xlib.str_to_keycode("j").unwrap() == keycode  {
                     wm.shift_window(wm.focus_w, Direction::South);
                     wm.center_cursor(w);
                     return;
                 }
-                if xlib.str_to_keycode("Up").unwrap() == keycode {
+                if xlib.str_to_keycode("Up").unwrap() == keycode || xlib.str_to_keycode("k").unwrap() == keycode  {
                     println!("Snap up");
                     wm.shift_window(wm.focus_w, Direction::North);
                     wm.center_cursor(w);

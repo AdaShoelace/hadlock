@@ -413,6 +413,7 @@ impl WindowManager {
         self.move_window(w, pos.x, pos.y);
         self.resize_window(w, size.width, size.height);
         self.set_focus(w);
+        self.center_cursor(w);
         self.clients.get_mut(&w).unwrap().set_window_state(WindowState::Snapped);
     }
 
@@ -564,6 +565,7 @@ impl WindowManager {
         "Return",
         "f",
         "e",
+        "h", "j", "k", "l",
         "1", "2", "3", "4", "5", "6", "7", "8", "9"]
             .iter()
             .map(|key| { keysym_lookup::into_keysym(key).expect("Core: no such key") })
