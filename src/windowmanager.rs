@@ -323,10 +323,23 @@ impl WindowManager {
             return
         }
 
-        let state = self.clients.get(&w).unwrap().get_window_state();
-        let restore_pos = self.clients.get(&w).unwrap().get_restore_position();
+        let ww = self.clients.get(&w).unwrap();
+        let (state, restore_pos) = (ww.get_window_state(), ww.get_restore_position());
+
         match state {
             WindowState::Maximized => {
+                let others = self.get_windows_in_current_ws()
+                    .into_iter()
+                    .filter(|win| *win != w)
+                    .filter(|win| self.clients.contains_key(&win))
+                    .collect::<Vec<Window>>();
+
+                others
+                    .into_iter()
+                    .for_each(|win| {
+                        let restore_pos = self.clients.get(&win).unwrap().get_restore_position();
+                        self.move_window(win, restore_pos.x, restore_pos.y);
+                    });
                 self.move_window(w, restore_pos.x, restore_pos.y);
                 let ww = self.clients.get_mut(&w).expect("How can it not be in list?!");
                 ww.restore_prev_state();
@@ -337,20 +350,32 @@ impl WindowManager {
                 self.clients.get_mut(&w).expect("Not in list?!").save_restore_position();
                 self.move_window(w, 0, 0);
                 let size = self.layout.maximize(&self, w);
+                let others = self.get_windows_in_current_ws()
+                    .into_iter()
+                    .filter(|win| *win != w)
+                    .filter(|win| self.clients.contains_key(&win))
+                    .collect::<Vec<Window>>();
+
+                others
+                    .into_iter()
+                    .for_each(|win| {
+                        self.clients.get_mut(&win).unwrap().save_restore_position();
+                        self.move_window(win, self.lib.get_screen().width * 4, 0);
+                    });
                 let ww = self.clients.get_mut(&w).expect("Not in list?!");
                 ww.set_window_state(WindowState::Maximized);
                 ww.save_restore_size();
                 self.resize_window(w, size.width, size.height);
             }
         }
-        let ww = self.clients.get(&w).expect("Not in list? {WindowManager::maximize}");
+        /*let ww = self.clients.get(&w).expect("Not in list? {WindowManager::maximize}");
         match ww.get_dec() {
             Some(dec) => {
                 self.lib.raise_window(dec);
                 self.lib.raise_window(w);
             },
             None => self.lib.raise_window(w)
-        }
+        }*/
         self.set_focus(w);
         self.center_cursor(w);
     }
