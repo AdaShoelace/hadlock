@@ -1,5 +1,6 @@
 use x11_dl::xlib::{Window, XWindowAttributes};
 use x11_dl::xinerama::XineramaScreenInfo as XSInfo;
+use crate::xlibwrapper::xlibmodels::{WindowAttributes as WinAttr};
 use std::convert::From;
 
 
@@ -36,8 +37,8 @@ impl From<&XSInfo> for Screen {
     }
 }
 
-impl From<&XWindowAttributes> for Screen {
-    fn from(root: &XWindowAttributes) -> Self {
+impl<'a> From<&WinAttr<'a>> for Screen {
+    fn from(root: &WinAttr) -> Self {
         Screen {
             root: root.root,
             height: root.height,

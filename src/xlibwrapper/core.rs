@@ -88,10 +88,62 @@ impl XlibWrapper {
         ret
     }
 
+    pub fn get_screens(&self) -> Vec<Screen> {
+        use x11_dl::xinerama::XineramaScreenInfo;
+        use x11_dl::xinerama::Xlib;
+
+        let xlib = Xlib::open().unwrap();
+        let xinerama = unsafe { (xlib.XineramaIsActive)(self.display) } > 0;
+
+        if xinerama {
+            let mut screen_count = 0;
+            let info_array_raw =
+                unsafe { (xlib.XineramaQueryScreens)(self.display, &mut screen_count) };
+            println!("screen count: {}", screen_count);
+            let xinerama_infos: &[XineramaScreenInfo] =
+                unsafe { std::slice::from_raw_parts(info_array_raw, screen_count as usize) };
+            xinerama_infos
+                .iter()
+                .map(|info| {
+                    let mut screen = Screen::from(info);
+                    screen.root = self.root;
+                    screen
+                })
+            .collect::<Vec<Screen>>()
+        } else {
+            let roots: Vec<WindowAttributes> = self
+                .get_roots()
+                .iter()
+                .map(|w| self.get_window_attributes(*w))
+                .collect();
+            roots.iter().map(Screen::from).collect()
+        }
+    }
+
+    fn get_non_xinerama_screens(&self) -> Vec<xlib::Screen> {
+        let mut screens = Vec::new();
+        let count = unsafe { (self.lib.XScreenCount)(self.display) };
+        let _ = (0..count)
+            .enumerate()
+            .for_each(|(i, x)| {
+                let screen = unsafe { *(self.lib.XScreenOfDisplay)(self.display, i as i32) };
+                screens.push(screen);
+            });
+        screens
+    }
+
+    fn get_roots(&self) -> Vec<Window> {
+        self.get_non_xinerama_screens()
+            .into_iter()
+            .map(|mut screen| {
+                unsafe { (self.lib.XRootWindowOfScreen)(&mut screen) }
+            }).collect()
+    }
+
     fn init(&mut self) {
         let root_event_mask: i64 = xlib::SubstructureRedirectMask
             | xlib::SubstructureNotifyMask
-            //| xlib::ButtonPressMask
+            | xlib::ButtonPressMask
             | xlib::KeyPressMask
             | xlib::PointerMotionMask
             | xlib::EnterWindowMask
@@ -150,7 +202,7 @@ impl XlibWrapper {
         }
         self.sync(false);
     }
-    
+
     pub fn ewmh_current_desktop(&self, desktop: u32) {
         let data = vec![desktop, xlib::CurrentTime as u32];
         self.set_desktop_prop(&data, self.xatom.NetCurrentDesktop);
@@ -260,6 +312,11 @@ impl XlibWrapper {
 
     }
 
+    pub fn set_viewport(&self, pos: Position) {
+        let data = vec![pos.x as u32, pos.y as u32];
+        self.set_desktop_prop(&data, self.xatom.NetDesktopViewport);
+    }
+
     pub fn set_cursor_normal(&self) {
         unsafe {
             (self.lib.XDefineCursor)(
@@ -269,7 +326,7 @@ impl XlibWrapper {
             );
         }
     }
-    
+
     pub fn set_cursor_move(&self) {
         unsafe {
             (self.lib.XDefineCursor)(
@@ -452,7 +509,7 @@ impl XlibWrapper {
             );
         }
     }
-    
+
 
     pub fn set_border_color(&self, w: Window, color: Color) {
         if w == self.root {
@@ -474,18 +531,18 @@ impl XlibWrapper {
         }
     }
 
-    pub fn pointer_root_pos(&self, w: Window) -> Position {
+    pub fn pointer_pos(&self) -> Position {
         unsafe {
-            let mut root_return = mem::uninitialized();
-            let mut child_return = mem::uninitialized();
+            let mut root_return = 0;
+            let mut child_return = 0;
             let mut root_x = 0i32;
             let mut root_y = 0i32;
             let mut win_x = 0i32;
             let mut win_y = 0i32;
             let mut mask = 0u32;
-            (self.lib.XQueryPointer)(
+            if (self.lib.XQueryPointer)(
                 self.display,
-                w,
+                self.root,
                 &mut root_return,
                 &mut child_return,
                 &mut root_x,
@@ -493,11 +550,13 @@ impl XlibWrapper {
                 &mut win_x,
                 &mut win_y,
                 &mut mask
-            );
+            ) == 0 {
+                println!("Query pointer retured false")
+            }
             Position { x: root_x, y: root_y }
         }
     }
-    
+
     pub fn center_cursor(&self, ww: &WindowWrapper) {
         let size = ww.get_size();
         let pos = Position{ x: (size.width / 2) as i32 , y: (size.height / 2) as i32};
@@ -1141,6 +1200,13 @@ impl XlibWrapper {
             }
         }
         WindowType::Normal
+    }
+    
+    pub fn get_upmost_window(&self) -> Option<Window> {
+        match self.get_top_level_windows().last() {
+            Some(x) => Some(*x),
+            None => None
+        }
     }
 
     pub fn get_top_level_windows(&self) -> Vec<Window> {

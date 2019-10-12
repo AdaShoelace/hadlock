@@ -33,6 +33,28 @@ pub fn button_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
 
     if button == Button1 {
         println!("Button1 pressed");
-        wm.raise_window(&ww);
+        /*{
+            use std::fs::{File, OpenOptions};
+            use std::io::{Write};
+            let path = "/home/pierre/hadlock.log";
+            match OpenOptions::new()
+                .write(true)
+                .create(true)
+                .append(true)
+                .open(path)
+                {
+                    Ok(mut x) => {
+                        let pointer_pos = xlib.pointer_pos();
+                        let output_text = &format!("Pointer location: {:?}, Screen from \"pointer_is_inside\":{:?}" , pointer_pos, wm.get_focused_screen());
+                        write!(x, "{}\n", output_text);
+                    },
+                    Err(e) => println!("{}", e)
+                };
+        }*/
+        println!("Pointer location: {:?}", xlib.pointer_pos());
+        match xlib.get_upmost_window() {
+            Some(x) if x != window => wm.raise_window(&ww),
+            _ => { return }
+        }
     }
 }
