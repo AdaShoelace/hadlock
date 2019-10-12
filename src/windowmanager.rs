@@ -233,7 +233,9 @@ impl WindowManager {
                     self.workspaces.get_mut(&self.current_ws).unwrap().remove_window(w);
                     self.workspaces.get_mut(&ws.into()).unwrap().add_window(w);
                 } else {
+                    self.workspaces.get_mut(&self.current_ws).unwrap().remove_window(w);
                     let mut workspace = Workspace::new(ws.into(), self.get_current_ws().screen.clone());
+                    workspace.add_window(w);
                     self.workspaces.insert(ws.into(), workspace);
                 }
             },
