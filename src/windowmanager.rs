@@ -128,7 +128,6 @@ impl WindowManager {
             self.dock_area = match self.lib.get_window_strut_array(w) {
                 Some(dock) => {
                     let dock = DockArea::from(dock);
-                    //println!("dock geometry: {:?}", dock.as_rect(self.lib.get_screen()).expect("No fekking dock area!"));
                     dock
                 }
                 None => {
@@ -288,7 +287,7 @@ impl WindowManager {
             }
         }
         // need to rethink focus for non floating modes
-        println!("focus_w: {}", self.focus_w);
+        info!("focus_w: {}", self.focus_w);
     }
 
     pub fn unset_focus(&mut self, w: Window) {
@@ -323,7 +322,6 @@ impl WindowManager {
 
         let screen = self.get_focused_screen();
         if let Some(dock_rect) = self.dock_area.as_rect(&screen) {
-            //println!("DockArea: {:?}", dock_rect);
             let new_width = (screen.width - (screen.width / 10)) as u32;
             let new_height = ((screen.height - dock_rect.get_size().height as i32) - (screen.height / 10)) as u32;
 
@@ -341,8 +339,8 @@ impl WindowManager {
     pub fn toggle_maximize(&mut self, w: Window) {
         // TODO: cleanup this mess...
         if !self.clients.contains_key(&w) {
-            eprintln!("toggle_maximize: Window not in client list: {}", w);
-            println!("Client list:");
+            debug!("toggle_maximize: Window not in client list: {}", w);
+            debug!("Client list:");
             self.clients.keys()
                 .for_each(|key| {
                     println!("Client: {}", key)
@@ -514,23 +512,20 @@ impl WindowManager {
     }
 
     pub fn get_focused_screen(&self) -> Screen {
-        /*self.lib.get_screens()
-            .iter()
-            .for_each(|scr| println!("screen stats: {:?}", scr));*/
         let screens = self.lib.get_screens()
             .into_iter()
             .filter(|screen| self.pointer_is_inside(screen))
             .collect::<Vec<Screen>>();
 
 
-        println!("focused screens len: {}", screens.len());
+        debug!("focused screens len: {}", screens.len());
         let focused = screens.get(0).unwrap().clone();
         focused
     }
 
     pub fn pointer_is_inside(&self, screen: &Screen) -> bool {
         let pointer_pos = self.lib.pointer_pos();
-        println!("pointer pos: {:?}", pointer_pos);
+        debug!("pointer pos: {:?}", pointer_pos);
         let inside_height = pointer_pos.y > screen.y &&
             pointer_pos.y < screen.y + screen.height as i32;
 
@@ -577,7 +572,7 @@ impl WindowManager {
                 }).collect();
             self.lib.update_net_client_list(clients);
         }
-        println!("Top level windows: {}", self.lib.top_level_window_count());
+        info!("Top level windows: {}", self.lib.top_level_window_count());
     }
 
     pub fn grab_keys(&self, w: Window) {

@@ -34,7 +34,7 @@ pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xli
 
 pub(crate) unsafe extern "C" fn on_wm_detected(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> c_int {
     if (*e).error_code == xlib::BadAccess {
-        eprintln!("Other wm registered!");
+        error!("Other wm registered!");
         return 1;
     }
     0
@@ -551,7 +551,7 @@ impl XlibWrapper {
                 &mut win_y,
                 &mut mask
             ) == 0 {
-                println!("Query pointer retured false")
+                warn!("Query pointer retured false")
             }
             Position { x: root_x, y: root_y }
         }
@@ -921,9 +921,9 @@ impl XlibWrapper {
         unsafe {
             let mut event: xlib::XEvent = mem::uninitialized();
             (self.lib.XNextEvent)(self.display, &mut event);
-            //println!("Event: {:?}", event);
-            //println!("Event type: {:?}", event.get_type());
-            //println!("Pending events: {}", (self.lib.XPending)(self.display));
+            //debug!("Event: {:?}", event);
+            //debug!("Event type: {:?}", event.get_type());
+            //debug!("Pending events: {}", (self.lib.XPending)(self.display));
 
             match event.get_type() {
                 xlib::ConfigureRequest => {
@@ -946,13 +946,13 @@ impl XlibWrapper {
                     Event::new(EventType::ConfigurationRequest, Some(payload))
                 },
                 xlib::MapRequest => {
-                    //println!("MapRequest");
+                    //debug!("MapRequest");
                     let event = xlib::XMapRequestEvent::from(event);
                     let payload = EventPayload::MapRequest(event.window);
                     Event::new(EventType::MapRequest, Some(payload))
                 },
                 xlib::ButtonPress => {
-                    //println!("Button press");
+                    //debug!("Button press");
                     let event = xlib::XButtonEvent::from(event);
                     let payload = EventPayload::ButtonPress(
                         event.window,
@@ -965,7 +965,7 @@ impl XlibWrapper {
                     Event::new(EventType::ButtonPress, Some(payload))
                 },
                 xlib::ButtonRelease => {
-                    //println!("Button press");
+                    //debug!("Button press");
                     let event = xlib::XButtonEvent::from(event);
                     let payload = EventPayload::ButtonRelease(
                         event.window,
@@ -978,7 +978,7 @@ impl XlibWrapper {
                     Event::new(EventType::ButtonRelease, Some(payload))
                 },
                 xlib::KeyPress => {
-                    //println!("Keypress\tEvent: {:?}", event);
+                    //debug!("Keypress\tEvent: {:?}", event);
                     let event = xlib::XKeyEvent::from(event);
                     let payload = EventPayload::KeyPress(event.window, event.state, event.keycode);
                     Event::new(EventType::KeyPress, Some(payload))
@@ -998,18 +998,18 @@ impl XlibWrapper {
                         event.y_root,
                         event.state
                     );
-                    //println!("motion_notify for window: {}", event.window);
+                    //debug!("motion_notify for window: {}", event.window);
                     Event::new(EventType::MotionNotify, Some(payload))
                 },
                 xlib::EnterNotify => {
                     let event = xlib::XCrossingEvent::from(event);
-                    //println!("{:?}", event);
+                    //debug!("{:?}", event);
                     let payload = EventPayload::EnterNotify(event.window, event.subwindow);
                     Event::new(EventType::EnterNotify, Some(payload))
                 },
                 xlib::LeaveNotify => {
                     let event = xlib::XCrossingEvent::from(event);
-                    //println!("{:?}", event);
+                    //debug!("{:?}", event);
                     let payload = EventPayload::LeaveNotify(event.window);
                     Event::new(EventType::LeaveNotify, Some(payload))
                 },
@@ -1027,12 +1027,12 @@ impl XlibWrapper {
                     let event = xlib::XPropertyEvent::from(event);
                     let ret = CString::from_raw((self.lib.XGetAtomName)(self.display, event.atom));
                     ret.to_str().unwrap();
-                    //println!("Property changed {:?}", ret);
+                    //debug!("Property changed {:?}", ret);
                     Event::new(EventType::UnknownEvent, None)
                 },
                 xlib::ClientMessage => {
                     let _event = xlib::XClientMessageEvent::from(event);
-                    //println!("{:?}", event);
+                    //debug!("{:?}", event);
                     Event::new(EventType::UnknownEvent, None)
                 },
                 _ => Event::new(EventType::UnknownEvent, None)

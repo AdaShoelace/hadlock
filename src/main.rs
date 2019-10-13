@@ -28,7 +28,6 @@ fn main() {
     let xlib = Rc::new(XlibWrapper::new());
     let window_manager = WindowManager::new(xlib.clone());
     info!("Screens on startup: {:?}", xlib.get_screens());
-    warn!("debuglog");
     // Avoid zombies by ignoring SIGCHLD
     unsafe { signal::signal(Signal::SIGCHLD, SigHandler::SigIgn) }.unwrap();
     call_commands(ExecTime::Pre);
