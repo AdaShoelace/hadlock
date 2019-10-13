@@ -128,7 +128,7 @@ impl Layout for Floating {
                 (pos, size)
             },
             Direction::East => {
-                let pos = self.move_window(wm, w, screen.width / 2, screen.y).0;
+                let pos = self.move_window(wm, w, screen.x + screen.width / 2, screen.y).0;
                 let size = if ww.is_decorated() {
                     Size{ width: (screen.width as u32) / 2 - 2 * CONFIG.border_width as u32, height: screen.height as u32 - CONFIG.border_width as u32}
 

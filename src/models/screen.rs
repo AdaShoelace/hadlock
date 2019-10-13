@@ -4,7 +4,7 @@ use crate::xlibwrapper::xlibmodels::{WindowAttributes as WinAttr};
 use std::convert::From;
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Screen {
     pub root: Window,
     pub height: i32,

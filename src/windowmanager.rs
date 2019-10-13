@@ -2,6 +2,7 @@
 use libc::{c_int, c_uint};
 use std::collections::{
     HashMap,
+    HashSet,
     BTreeMap
 };
 use std::rc::Rc;
@@ -37,6 +38,8 @@ pub struct WindowManager {
     pub lib: Rc<XlibWrapper>,
     pub mode: Mode,
     pub focus_w: Window,
+    pub focus_screen: Screen,
+    //pub latent_ws: u32,
     pub dock_area: DockArea,
     pub clients: HashMap<u64, WindowWrapper>,
     pub drag_start_pos: (c_int, c_int),
@@ -57,16 +60,23 @@ impl WindowManager {
     pub fn new (lib: Rc<XlibWrapper>) -> Self {
         let root = lib.get_root();
         let mode = Mode::Floating;
-        let _screen = lib.get_screen();
+        let screen = lib.get_screens().get(0).unwrap().clone();
         let workspaces = {
             let mut workspaces = BTreeMap::new();
-            workspaces.insert(0, Workspace::new(0, lib.get_screens().get(0).unwrap().clone()));
+            let _ = lib.get_screens()
+                .iter()
+                .enumerate()
+                .for_each(|(i, val)| {
+                    workspaces.insert(i as u32, Workspace::new(i as u32, val.clone()));
+                });
+            //workspaces.insert(0, Workspace::new(0, lib.get_screens().get(0).unwrap().clone()));
             workspaces
         };
         Self {
             lib: lib,
             mode,
             focus_w: root,
+            focus_screen: screen,
             dock_area: Default::default(),
             clients: HashMap::new(),
             drag_start_pos: (0, 0),
@@ -171,13 +181,13 @@ impl WindowManager {
 
         Some(self.clients.get(&w).unwrap().get_desktop())
     }
-    
+
     pub fn get_current_ws(&self) -> &Workspace {
-        self.workspaces.get(&self.current_ws).unwrap()
+        self.workspaces.get(&self.current_ws).expect("WindowManager::get_current_ws")
     }
 
     pub fn set_current_ws(&mut self, ws: u32) {
-        println!("Desktop changed to: {}", ws);
+        info!("Desktop changed to: {}", ws);
 
         let to_hide = self.get_current_ws().windows.clone();
         to_hide
@@ -192,15 +202,16 @@ impl WindowManager {
                     None => {}
                 }
             });
-
+        
         self.current_ws = if self.workspaces.contains_key(&ws) {
             ws
         } else {
             self.workspaces.insert(ws, Workspace::new(ws, self.get_focused_screen()));
             ws
         };
-
+        debug!("before to_show");
         let to_show = self.get_current_ws().windows.clone();
+        debug!("after to_show");
         to_show.iter()
             .for_each(|win| {
                 match self.clients.get_mut(win) {
@@ -221,7 +232,7 @@ impl WindowManager {
             self.focus_w = w;
             self.lib.take_focus(w);
         }
-        self.lib.ewmh_current_desktop(ws);
+        self.lib.ewmh_current_desktop(self.current_ws);
     }
 
     pub fn move_to_ws(&mut self, w: Window, ws: u8) {
@@ -503,9 +514,9 @@ impl WindowManager {
     }
 
     pub fn get_focused_screen(&self) -> Screen {
-        self.lib.get_screens()
+        /*self.lib.get_screens()
             .iter()
-            .for_each(|scr| println!("screen stats: {:?}", scr));
+            .for_each(|scr| println!("screen stats: {:?}", scr));*/
         let screens = self.lib.get_screens()
             .into_iter()
             .filter(|screen| self.pointer_is_inside(screen))

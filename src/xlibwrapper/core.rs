@@ -99,7 +99,7 @@ impl XlibWrapper {
             let mut screen_count = 0;
             let info_array_raw =
                 unsafe { (xlib.XineramaQueryScreens)(self.display, &mut screen_count) };
-            println!("screen count: {}", screen_count);
+            info!("screen count: {}", screen_count);
             let xinerama_infos: &[XineramaScreenInfo] =
                 unsafe { std::slice::from_raw_parts(info_array_raw, screen_count as usize) };
             xinerama_infos
