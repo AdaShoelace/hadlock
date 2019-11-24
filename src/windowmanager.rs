@@ -20,6 +20,7 @@ use crate::{
         rect::*,
         dockarea::*,
         window_type::*,
+        monitor::Monitor,
         screen::*,
         workspace::*,
         WindowState,
@@ -37,15 +38,12 @@ pub struct WindowManager {
     pub lib: Rc<XlibWrapper>,
     pub mode: Mode,
     pub focus_w: Window,
-    pub focus_screen: Screen,
+    pub monitors: HashMap<u32, Monitor>,
+    pub current_monitor: u32,
     pub dock_area: DockArea,
-    pub clients: HashMap<u64, WindowWrapper>,
     pub drag_start_pos: (i32, i32),
     pub drag_start_frame_pos: (i32, i32),
     pub drag_start_frame_size: (u32, u32),
-    pub current_ws: u32,
-    pub visible_workspaces: HashSet<u32>,
-    pub workspaces: BTreeMap<u32, Workspace>,
     pub decorate: bool,
 }
 
@@ -59,39 +57,42 @@ impl WindowManager {
     pub fn new (lib: Rc<XlibWrapper>) -> Self {
         let root = lib.get_root();
         let mode = Mode::Floating;
-        let screen = lib.get_screens().get(0).unwrap().clone();
-        let (workspaces, visible_workspaces) = {
-            let mut workspaces = BTreeMap::new();
+        let monitors = {
+            let mut monitors = HashMap::default();
             let _ = lib.get_screens()
                 .iter()
                 .enumerate()
                 .for_each(|(i, val)| {
-                    workspaces.insert(i as u32, Workspace::new(i as u32, val.clone()));
+                    info!("Monitors in init: {}", i);
+                    monitors.insert(i as u32, Monitor::new(val.clone(), Workspace::new(i as u32)));
                 });
-
-            let visible_workspaces = workspaces
-                .keys()
-                .map(|tag| *tag)
-                .collect::<HashSet<u32>>();
-
-            (workspaces, visible_workspaces)
+            monitors
         };
 
         Self {
             lib: lib,
             mode,
             focus_w: root,
-            focus_screen: screen,
+            monitors,
+            current_monitor: 0,
             dock_area: Default::default(),
-            clients: HashMap::new(),
             drag_start_pos: (0, 0),
             drag_start_frame_pos: (0, 0),
             drag_start_frame_size: (0, 0),
-            current_ws: 0,
-            visible_workspaces: visible_workspaces,
-            workspaces,
             decorate: CONFIG.decorate
         }
+    }
+
+    pub fn current_monitor(&mut self) -> &mut Monitor {
+        self.monitors.get_mut(&self.current_monitor).unwrap()
+    }
+
+    pub fn set_current_monitor(&mut self) {
+        self.current_monitor = self.monitors
+            .iter()
+            .filter(|(_key, mon)| self.pointer_is_inside(&mon.screen))
+            .map(|(key, _mon)| *key)
+            .fold(0, |acc, key| acc + key);
     }
 
     fn decorate_window(&self, w: &mut WindowWrapper) {
@@ -131,10 +132,9 @@ impl WindowManager {
 
     pub fn setup_window(&mut self, w: Window) {
         if self.lib.get_window_type(w) == WindowType::Dock {
-            self.dock_area = match self.lib.get_window_strut_array(w) {
+            match self.lib.get_window_strut_array(w) {
                 Some(dock) => {
-                    let dock = DockArea::from(dock);
-                    dock
+                    self.current_monitor().set_dock_area(DockArea::from(dock));
                 }
                 None => {
                     return
@@ -146,108 +146,32 @@ impl WindowManager {
             return
         }
 
-        if self.clients.contains_key(&w) {
+        if self.monitors.get(&self.current_monitor).unwrap().contains_window(w) {
             return
         }
 
         let geom = self.lib.get_geometry(w);
-        let mut ww = WindowWrapper::new(w, Rect::from(geom), self.current_ws);
+        let mut ww = WindowWrapper::new(w, Rect::from(geom));
         if self.decorate {
             self.decorate_window(&mut ww);
         }
         self.lib.add_to_save_set(w);
         self.lib.add_to_root_net_client_list(w);
         self.subscribe_to_events(w);
-        self.clients.insert(w, ww);
-        self.workspaces.get_mut(&self.current_ws).unwrap().add_window(w);
+        self.monitors.get_mut(&self.current_monitor).unwrap().add_window(w, ww);
         self.window_initial_size(w);
         self.place_window(w);
         self.lib.map_window(w);
         self.raise_window(&ww);
     }
 
-    pub fn get_windows_in_current_ws(&self) -> Vec<Window> {
-        let current = self.workspaces.get(&self.current_ws).expect("WindowManager::get_windows_by_ws");
-        current.windows
-            .iter()
-            .map(|x| *x)
-            .collect::<Vec<u64>>()
-    }
-
-    pub fn get_windows_by_ws(&self, ws: u32) -> Vec<Window> {
-        self.clients.iter()
-            .filter(|(_key, val)| {
-                val.get_desktop() == ws
-            }).map(|(key, _val)| {
-                *key
-            }).collect::<Vec<Window>>()
-
-    }
-
-    pub fn get_ws_by_window(&self, w: Window) -> Option<u32> {
-        if !self.clients.contains_key(&w) {
-            return None;
-        }
-
-        Some(self.clients.get(&w).expect("WindowManager::get_ws_by_window").get_desktop())
-    }
-
-    fn get_visible_workspaces(&self) -> Vec<&Workspace> {
-        self.workspaces
-            .iter()
-            .filter(|(key, _val)| self.visible_workspaces.contains(key))
-            .map(|(_key, val)| val)
-            .collect::<Vec<&Workspace>>()
-    }
-
-    pub fn set_current_ws_by_screen(&mut self, screen: &Screen) {
-        {
-            use std::fs::{OpenOptions};
-            use std::io::{Write};
-            let path = "/home/pierre/hadlock.log";
-            match OpenOptions::new()
-                .write(true)
-                .create(true)
-                .append(true)
-                .open(path)
-                {
-                    Ok(mut x) => {
-                        let vec = self.get_visible_workspaces().iter().map(|ws| (format!("tag: {}",ws.tag), ws.screen.clone())).collect::<Vec<(String, Screen)>>();
-                        let output_text = if !vec.is_empty() {
-                            format!("setting current ws by screen: {:?}", vec)
-                        } else {
-                            format!("setting current ws by screen: {:?}", "empty")
-                        };
-                        let _ = write!(x, "{}\n", output_text);
-                    },
-                    Err(e) => println!("{}", e)
-                };
-        }
-        let ws = self.get_visible_workspaces()
-            .iter()
-            .filter(|val| val.screen == *screen)
-            .map(|val| val.tag)
-            .collect::<Vec<u32>>()
-            .first()
-            .map(|x| *x)
-            .expect("WindowManager::set_current_ws_by_screen");
-        if ws != self.current_ws {
-            self.current_ws = ws;
-        }
-    }
-
-    pub fn get_current_ws(&self) -> &Workspace {
-        self.workspaces.get(&self.current_ws).expect("WindowManager::get_current_ws")
-    }
-
 
     fn hide_client(&mut self, w: Window) {
-        let client = match self.clients.get_mut(&w) {
+        let client = match self.current_monitor().get_client_mut(w) {
             Some(client) => client,
             None => { return }
         };
         client.save_restore_position();
-        let client_pos = client.get_position();
         //self.move_window(w, self.lib.get_screen().width * 3, client_pos.y)
         match client.get_dec() {
             Some(dec) => {
@@ -259,7 +183,7 @@ impl WindowManager {
     }
 
     fn show_client(&mut self, w: Window) {
-        let client = match self.clients.get_mut(&w) {
+        let client = match self.current_monitor().get_client_mut(w) {
             Some(client) => client,
             None => { return }
         };
@@ -279,86 +203,39 @@ impl WindowManager {
     pub fn set_current_ws(&mut self, ws: u32) {
         info!("Desktop changed to: {}", ws);
 
-        if self.visible_workspaces.contains(&ws) {
-
-            let win = self.workspaces.get(&ws).expect("Strange af...").windows.iter().nth(0);
-
-            let win = match win {
-                Some(window) => {
-                    self.current_ws = ws;
-                    *window
-                },
-                None => {
-                    self.current_ws = ws;
-                    self.lib.get_root()
-                }
-            };
-            self.set_focus(win);
-            return
-        }
-
-        let _ = self
-            .get_windows_in_current_ws()
+        self.current_monitor()
+            .get_current_windows()
             .iter()
-            .for_each(|win| {
-                self.hide_client(*win)
-            });
+            .for_each(|win| self.hide_client(*win));
 
-        self.current_ws = if self.workspaces.contains_key(&ws) {
-            self.swap_visible_ws(self.current_ws, ws);
-            ws
-        } else {
-            self.workspaces.insert(ws, Workspace::new(ws, self.get_focused_screen()));
-            self.swap_visible_ws(self.current_ws, ws);
-            ws
-        };
-        debug!("before to_show");
-        let to_show = self.get_windows_in_current_ws();
-        debug!("after to_show");
-        to_show.iter()
-            .for_each(|win| {
-                self.show_client(*win)
-            });
+        self.current_monitor()
+            .set_current_ws(ws);
 
-        if to_show.is_empty() {
-            self.focus_w = self.lib.get_root();
-            self.set_focus(self.lib.get_root());
-        } else {
-            let w = *(to_show.into_iter().collect::<Vec<Window>>().iter().nth(0).expect("WindowManager::set_current_ws"));
-            self.focus_w = w;
-            self.set_focus(self.lib.get_root());
-        }
-        self.lib.ewmh_current_desktop(self.current_ws);
-    }
-
-    fn swap_visible_ws(&mut self, to_swap: u32, swap_to: u32) {
-        self.visible_workspaces.remove(&to_swap);
-        self.visible_workspaces.insert(swap_to);
+        self.current_monitor()
+            .get_current_windows()
+            .iter()
+            .for_each(|win| self.show_client(*win));
+        let current = self.current_monitor().current_ws;
+        self.lib.ewmh_current_desktop(current);
     }
 
     pub fn move_to_ws(&mut self, w: Window, ws: u8) {
-        match self.clients.get_mut(&w) {
+        match self.current_monitor().get_client_mut(w) {
             Some(ww) => {
-                ww.save_restore_position();
-                ww.set_desktop(ws.into());
-                if self.workspaces.contains_key(&ws.into()) {
-                    self.workspaces.get_mut(&self.current_ws).unwrap().remove_window(w);
-                    self.workspaces.get_mut(&ws.into()).unwrap().add_window(w);
-                } else {
-                    self.workspaces.get_mut(&self.current_ws).unwrap().remove_window(w);
-                    let mut workspace = Workspace::new(ws.into(), self.get_current_ws().screen.clone());
-                    workspace.add_window(w);
-                    self.workspaces.insert(ws.into(), workspace);
-                }
+                let ww_move = self.current_monitor().remove_window(w);
+                self.current_monitor().set_current_ws(ws.into());
+                self.current_monitor().add_window(w, ww_move);
             },
             _ => ()
         }
     }
 
     pub fn set_focus(&mut self, w: Window) {
-        let ww = match self.clients.get(&w) {
+        let root = self.lib.get_root();
+        let client = self.current_monitor().get_client(w).map(|x| *x).clone();
+        let ww = match client {
             Some(ww) => ww,
-            None if w == self.lib.get_root() => {
+            None if w == root => {
                 let root = self.lib.get_root();
                 self.focus_w = root;
                 self.lib.take_focus(self.focus_w);
@@ -393,7 +270,7 @@ impl WindowManager {
     }
 
     pub fn unset_focus(&mut self, w: Window) {
-        let ww = match self.clients.get(&w) {
+        let ww = match self.current_monitor().get_client(w).map(|x| *x).clone() {
             Some(ww) => ww,
             None => { return }
         };
@@ -435,57 +312,57 @@ impl WindowManager {
 
     pub fn toggle_maximize(&mut self, w: Window) {
         // TODO: cleanup this mess...
-        if !self.clients.contains_key(&w) {
+        if !self.current_monitor().contains_window(w) {
             debug!("toggle_maximize: Window not in client list: {}", w);
             debug!("Client list:");
-            self.clients.keys()
-                .for_each(|key| {
-                    println!("Client: {}", key)
-                });
+            /*self.clients.keys()
+              .for_each(|key| {
+              println!("Client: {}", key)
+              });*/
             return
         }
 
-        let ww = self.clients.get(&w).unwrap();
+        let ww = self.current_monitor().get_client(w).unwrap();
         let (state, restore_pos) = (ww.get_window_state(), ww.get_restore_position());
 
         match state {
             WindowState::Maximized => {
-                let others = self.get_windows_in_current_ws()
+                let others = self.current_monitor()
+                    .get_client_keys()
                     .into_iter()
                     .filter(|win| *win != w)
-                    .filter(|win| self.clients.contains_key(&win))
+                    .filter(|win| self.current_monitor().contains_window(*win))
                     .collect::<Vec<Window>>();
 
                 others
                     .into_iter()
                     .for_each(|win| {
-                        let restore_pos = self.clients.get(&win).unwrap().get_restore_position();
-                        self.move_window(win, restore_pos.x, restore_pos.y);
+                        self.show_client(win)
                     });
-                self.move_window(w, restore_pos.x, restore_pos.y);
-                let ww = self.clients.get_mut(&w).expect("How can it not be in list?!");
+                self.show_client(w);
+                let ww = self.current_monitor().get_client_mut(w).expect("How can it not be in list?!");
                 ww.restore_prev_state();
                 let size = ww.get_restore_size();
                 self.resize_window(w, size.width, size.height);
             },
             _ => {
-                self.clients.get_mut(&w).expect("Not in list?!").save_restore_position();
+                self.current_monitor().get_client_mut(w).expect("Not in list?!").save_restore_position();
                 let screen = self.get_focused_screen();
                 self.move_window(w, screen.x, screen.y);
-                let size = self.get_current_ws().layout.maximize(&self, w);
-                let others = self.get_windows_in_current_ws()
+                let size = self.current_monitor().maximize(w);
+                let others = self.current_monitor().get_client_keys()
                     .into_iter()
                     .filter(|win| *win != w)
-                    .filter(|win| self.clients.contains_key(&win))
+                    .filter(|win| self.current_monitor().contains_window(*win))
                     .collect::<Vec<Window>>();
 
                 others
                     .into_iter()
                     .for_each(|win| {
-                        self.clients.get_mut(&win).unwrap().save_restore_position();
+                        self.current_monitor().get_client_mut(win).unwrap().save_restore_position();
                         self.move_window(win, self.lib.get_screen().width * 4, 0);
                     });
-                let ww = self.clients.get_mut(&w).expect("Not in list?!");
+                let ww = self.current_monitor().get_client_mut(w).expect("Not in list?!");
                 ww.set_window_state(WindowState::Maximized);
                 ww.save_restore_size();
                 self.resize_window(w, size.width, size.height);
@@ -504,13 +381,13 @@ impl WindowManager {
     }
 
     pub fn resize_window(&mut self, w: Window, width: u32, height: u32) {
-        if !self.clients.contains_key(&w) {
+        if !self.current_monitor().contains_window(w) {
             return
         }
 
-        let (dec_size, window_size) = self.get_current_ws().layout.resize_window(&self, w, width, height);
+        let (dec_size, window_size) = self.current_monitor().resize_window(w, width, height);
 
-        let ww = self.clients.get_mut(&w).expect("Client not found in resize_window");
+        let mut ww = self.current_monitor().get_client_mut(w).expect("Client not found in resize_window").clone();
 
         if let Some(_) = ww.get_dec_rect() {
             ww.set_dec_size(dec_size);
@@ -528,26 +405,26 @@ impl WindowManager {
         );
     }
     pub fn shift_window(&mut self, w: Window, direction: Direction) {
-        if !self.clients.contains_key(&w) {
+        if !self.current_monitor().contains_window(w) {
             return
         }
 
-        let (pos, size) = self.get_current_ws().layout.shift_window(&self, w, direction);
+        let (pos, size) = self.current_monitor().shift_window(w, direction);
         self.move_window(w, pos.x, pos.y);
         self.resize_window(w, size.width, size.height);
         self.set_focus(w);
         self.center_cursor(w);
-        self.clients.get_mut(&w).unwrap().set_window_state(WindowState::Snapped);
+        self.current_monitor().get_client_mut(w).unwrap().set_window_state(WindowState::Snapped);
     }
 
     fn place_window(&mut self, w: Window) {
-        if !self.clients.contains_key(&w) {
+        if !self.current_monitor().contains_window(w) {
             return
         }
 
-        let pos = self.get_current_ws().layout.place_window(&self, w);
+        let pos = self.current_monitor().place_window(w);
         self.move_window(w, pos.x, pos.y);
-        let ww = self.clients.get_mut(&w).unwrap();
+        let ww = self.current_monitor().get_client_mut(w).unwrap();
         ww.set_position(pos);
     }
 
@@ -579,11 +456,11 @@ impl WindowManager {
     }
 
     pub fn move_window(&mut self, w: Window, x: i32, y: i32) {
-        let ww = match self.clients.get(&w) {
-            Some(ww) => ww,
+        let mut ww = match self.current_monitor().get_client(w) {
+            Some(ww) => ww.clone(),
             None => { return }
         };
-        let (outer_pos, inner_pos) = self.get_current_ws().layout.move_window(&self, w, x, y);
+        let (outer_pos, inner_pos) = self.current_monitor().move_window(w, x, y);
 
         match ww.get_dec() {
             Some(dec) => {
@@ -595,7 +472,7 @@ impl WindowManager {
                     ww.window(),
                     inner_pos
                 );
-                let ww = self.clients.get_mut(&w).unwrap();
+                let ww = self.current_monitor().get_client_mut(w).unwrap();
                 ww.set_position(outer_pos);
             },
             None => {
@@ -603,7 +480,7 @@ impl WindowManager {
                     ww.window(),
                     outer_pos
                 );
-                let ww = self.clients.get_mut(&w).unwrap();
+                let ww = self.current_monitor().get_client_mut(w).unwrap();
                 ww.set_position(outer_pos);
             }
         }
@@ -643,29 +520,30 @@ impl WindowManager {
         }
     }
 
-    pub fn center_cursor(&self, w: Window) {
-        match self.clients.get(&w) {
-            Some(ww) => self.lib.center_cursor(&ww),
+    pub fn center_cursor(&mut self, w: Window) {
+        let ww = match self.current_monitor().get_client(w) {
+            Some(ww) => ww.clone(),
             None => { return }
-        }
+        };
+        self.lib.center_cursor(&ww)
     }
 
     pub fn kill_window(&mut self, w: Window) {
-        if !self.clients.contains_key(&w) || w == self.lib.get_root() {
+        if !self.current_monitor().contains_window(w) || w == self.lib.get_root() {
             return;
         }
 
-        let frame = self.clients.get(&w).expect("KillWindow: No such window in client list");
+        let frame = self.current_monitor().get_client(w).expect("KillWindow: No such window in client list").clone();
 
         if self.lib.kill_client(frame.window()) {
             if frame.is_decorated() {
-                self.destroy_dec(*frame);
+                self.destroy_dec(frame);
             }
-            self.workspaces.get_mut(&self.current_ws).unwrap().windows.remove(&w);
-            self.clients.remove(&w);
-            let clients: Vec<Window> = self.clients
+            self.current_monitor().remove_window(w);
+            let clients: Vec<Window> = self.current_monitor()
+                .get_client_keys()
                 .iter()
-                .map(|(c, _w)| {
+                .map(|c| {
                     *c
                 }).collect();
             self.lib.update_net_client_list(clients);

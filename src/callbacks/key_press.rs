@@ -28,8 +28,10 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
     let ws_keys: Vec<u8> = (1..=9).map(|x| {
         xlib.str_to_keycode(&x.to_string()).unwrap()
     }).collect();
+    
+    let focus_w = wm.focus_w;
 
-    match wm.clients.get(&wm.focus_w) {
+    match wm.current_monitor().get_client(focus_w) {
         Some(ww) => {
             let keycode = keycode as u8;
             if mod_not_shift && xlib.str_to_keycode("Return").unwrap() == keycode {

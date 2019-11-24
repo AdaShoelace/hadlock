@@ -1,5 +1,5 @@
 use std::{
-    collections::HashSet,
+    collections::HashMap,
 };
 
 use crate::{
@@ -8,6 +8,7 @@ use crate::{
     },
     models::{
         screen::Screen,
+        windowwrapper::WindowWrapper,
     },
     layout::{
         Layout,
@@ -17,27 +18,29 @@ use crate::{
 
 pub struct Workspace {
     pub tag: u32,
-    pub screen: Screen,
-    pub windows: HashSet<Window>,
+    pub clients: HashMap<Window, WindowWrapper>,
     pub layout: Box<dyn Layout>,
 }
 
 impl Workspace {
-    pub fn new(tag: u32, screen: Screen) -> Self {
+    pub fn new(tag: u32) -> Self {
         Self {
             tag,
-            screen,
-            windows: HashSet::default(),
+            clients: HashMap::default(),
             layout: Box::new(floating::Floating)
         }
     }
-
-    pub fn add_window(&mut self, w: Window) {
-        self.windows.insert(w);
+    
+    pub fn cointains_window(&self, w: Window) -> bool {
+        self.clients.contains_key(&w)
     }
 
-    pub fn remove_window(&mut self, w: Window) {
-        self.windows.remove(&w);
+    pub fn add_window(&mut self, w: Window, ww: WindowWrapper) {
+        self.clients.insert(w, ww);
+    }
+
+    pub fn remove_window(&mut self, w: Window) -> WindowWrapper {
+        self.clients.remove(&w).unwrap()
     }
 }
 

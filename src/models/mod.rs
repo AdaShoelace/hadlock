@@ -4,6 +4,7 @@ pub mod screen;
 pub mod dockarea;
 pub mod window_type;
 pub mod workspace;
+pub mod monitor;
 
 #[derive(Clone, Copy, Debug)]
 pub enum WindowState {

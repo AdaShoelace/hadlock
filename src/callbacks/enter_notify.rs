@@ -14,7 +14,7 @@ pub fn enter_notify(_xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event
     };
 
 
-    if !wm.clients.contains_key(&w) && w != wm.lib.get_root() {
+    if !wm.current_monitor().contains_window(w) && w != wm.lib.get_root() {
         println!("Calling window {} not in client list", w);
         return;
     }

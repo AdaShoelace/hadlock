@@ -13,12 +13,4 @@ pub fn key_release(_xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
             } => (w, state, keycode),
             _ => { return; }
         };
-
-    match wm.clients.get(&wm.focus_w) {
-        Some(_ww) => {
-
-        },
-
-        None => { return; }
-    };
 }

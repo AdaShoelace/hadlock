@@ -18,14 +18,13 @@ pub fn button_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
             _ => { return; }
         };
 
-    if !wm.clients.contains_key(&window) || window == xlib.get_root() {
+    if !wm.current_monitor().contains_window(window) || window == xlib.get_root() {
         return
     }
 
     println!("Button pressed from: {}", window);
 
-    let ww = wm.clients.get(&window).expect("ButtonPressed: No such window in client list");
-    let geometry = xlib.get_geometry(ww.window());
+    let geometry = xlib.get_geometry(window);
 
     wm.drag_start_pos = (x_root as i32 , y_root as i32);
     wm.drag_start_frame_pos = (geometry.x,geometry.y);
@@ -51,6 +50,7 @@ pub fn button_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
                     Err(e) => println!("{}", e)
                 };
         }*/
+        let ww = wm.current_monitor().get_client(window).expect(&format!("Button press no client: {}", window)).clone();
         println!("Pointer location: {:?}", xlib.pointer_pos());
         match xlib.get_upmost_window() {
             Some(x) if x != window => wm.raise_window(&ww),
