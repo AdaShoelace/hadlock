@@ -40,3 +40,11 @@ impl Workspace {
         self.windows.remove(&w);
     }
 }
+
+impl PartialEq for Workspace {
+    fn eq(&self, other: &Self) -> bool {
+        self.tag == other.tag
+    }
+}
+
+impl Eq for Workspace {}

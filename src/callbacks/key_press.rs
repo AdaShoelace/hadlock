@@ -106,12 +106,9 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                     wm.center_cursor(w);
                     return;
                 }
-                match ws_keys.contains(&keycode) {
-                    true  => {
-                        let ws_num = keycode_to_ws(keycode);
-                        wm.set_current_ws(ws_num);
-                    },
-                    _ => {}
+                if ws_keys.contains(&keycode) {
+                    let ws_num = keycode_to_ws(keycode);
+                    wm.set_current_ws(ws_num);
                 }
             }
         },

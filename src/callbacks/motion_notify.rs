@@ -22,7 +22,26 @@ pub fn motion_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event
 
     if w == root && wm.focus_screen != wm.get_focused_screen() {
         wm.focus_screen = wm.get_focused_screen();
-        println!("Setting focus screen: {:?}", wm.focus_screen);
+        let screen = wm.focus_screen.clone();
+        wm.set_current_ws_by_screen(&screen);
+        {
+            use std::fs::{File, OpenOptions};
+            use std::io::{Write};
+            let path = "/home/pierre/hadlock.log";
+            match OpenOptions::new()
+                .write(true)
+                .create(true)
+                .append(true)
+                .open(path)
+                {
+                    Ok(mut x) => {
+                        let pointer_pos = xlib.pointer_pos();
+                        let output_text = &format!("setting new focus screen: {:?}", wm.focus_screen);
+                        write!(x, "{}\n", output_text);
+                    },
+                    Err(e) => println!("{}", e)
+                };
+        }
         return
     }
 

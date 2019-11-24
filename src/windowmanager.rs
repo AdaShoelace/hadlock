@@ -1,5 +1,4 @@
 #![allow(dead_code)]
-use libc::{c_int, c_uint};
 use std::collections::{
     HashMap,
     HashSet,
@@ -39,13 +38,13 @@ pub struct WindowManager {
     pub mode: Mode,
     pub focus_w: Window,
     pub focus_screen: Screen,
-    //pub latent_ws: u32,
     pub dock_area: DockArea,
     pub clients: HashMap<u64, WindowWrapper>,
-    pub drag_start_pos: (c_int, c_int),
-    pub drag_start_frame_pos: (c_int, c_int),
-    pub drag_start_frame_size: (c_uint, c_uint),
+    pub drag_start_pos: (i32, i32),
+    pub drag_start_frame_pos: (i32, i32),
+    pub drag_start_frame_size: (u32, u32),
     pub current_ws: u32,
+    pub visible_workspaces: HashSet<u32>,
     pub workspaces: BTreeMap<u32, Workspace>,
     pub decorate: bool,
 }
@@ -61,7 +60,7 @@ impl WindowManager {
         let root = lib.get_root();
         let mode = Mode::Floating;
         let screen = lib.get_screens().get(0).unwrap().clone();
-        let workspaces = {
+        let (workspaces, visible_workspaces) = {
             let mut workspaces = BTreeMap::new();
             let _ = lib.get_screens()
                 .iter()
@@ -69,9 +68,15 @@ impl WindowManager {
                 .for_each(|(i, val)| {
                     workspaces.insert(i as u32, Workspace::new(i as u32, val.clone()));
                 });
-            //workspaces.insert(0, Workspace::new(0, lib.get_screens().get(0).unwrap().clone()));
-            workspaces
+
+            let visible_workspaces = workspaces
+                .keys()
+                .map(|tag| *tag)
+                .collect::<HashSet<u32>>();
+
+            (workspaces, visible_workspaces)
         };
+
         Self {
             lib: lib,
             mode,
@@ -83,6 +88,7 @@ impl WindowManager {
             drag_start_frame_pos: (0, 0),
             drag_start_frame_size: (0, 0),
             current_ws: 0,
+            visible_workspaces: visible_workspaces,
             workspaces,
             decorate: CONFIG.decorate
         }
@@ -161,7 +167,11 @@ impl WindowManager {
     }
 
     pub fn get_windows_in_current_ws(&self) -> Vec<Window> {
-        self.get_windows_by_ws(self.current_ws)
+        let current = self.workspaces.get(&self.current_ws).expect("WindowManager::get_windows_by_ws");
+        current.windows
+            .iter()
+            .map(|x| *x)
+            .collect::<Vec<u64>>()
     }
 
     pub fn get_windows_by_ws(&self, ws: u32) -> Vec<Window> {
@@ -171,6 +181,7 @@ impl WindowManager {
             }).map(|(key, _val)| {
                 *key
             }).collect::<Vec<Window>>()
+
     }
 
     pub fn get_ws_by_window(&self, w: Window) -> Option<u32> {
@@ -178,60 +189,151 @@ impl WindowManager {
             return None;
         }
 
-        Some(self.clients.get(&w).unwrap().get_desktop())
+        Some(self.clients.get(&w).expect("WindowManager::get_ws_by_window").get_desktop())
+    }
+
+    fn get_visible_workspaces(&self) -> Vec<&Workspace> {
+        self.workspaces
+            .iter()
+            .filter(|(key, _val)| self.visible_workspaces.contains(key))
+            .map(|(_key, val)| val)
+            .collect::<Vec<&Workspace>>()
+    }
+
+    pub fn set_current_ws_by_screen(&mut self, screen: &Screen) {
+        {
+            use std::fs::{OpenOptions};
+            use std::io::{Write};
+            let path = "/home/pierre/hadlock.log";
+            match OpenOptions::new()
+                .write(true)
+                .create(true)
+                .append(true)
+                .open(path)
+                {
+                    Ok(mut x) => {
+                        let vec = self.get_visible_workspaces().iter().map(|ws| (format!("tag: {}",ws.tag), ws.screen.clone())).collect::<Vec<(String, Screen)>>();
+                        let output_text = if !vec.is_empty() {
+                            format!("setting current ws by screen: {:?}", vec)
+                        } else {
+                            format!("setting current ws by screen: {:?}", "empty")
+                        };
+                        let _ = write!(x, "{}\n", output_text);
+                    },
+                    Err(e) => println!("{}", e)
+                };
+        }
+        let ws = self.get_visible_workspaces()
+            .iter()
+            .filter(|val| val.screen == *screen)
+            .map(|val| val.tag)
+            .collect::<Vec<u32>>()
+            .first()
+            .map(|x| *x)
+            .expect("WindowManager::set_current_ws_by_screen");
+        if ws != self.current_ws {
+            self.current_ws = ws;
+        }
     }
 
     pub fn get_current_ws(&self) -> &Workspace {
         self.workspaces.get(&self.current_ws).expect("WindowManager::get_current_ws")
     }
 
+
+    fn hide_client(&mut self, w: Window) {
+        let client = match self.clients.get_mut(&w) {
+            Some(client) => client,
+            None => { return }
+        };
+        client.save_restore_position();
+        let client_pos = client.get_position();
+        //self.move_window(w, self.lib.get_screen().width * 3, client_pos.y)
+        match client.get_dec() {
+            Some(dec) => {
+                self.lib.unmap_window(dec);
+                self.lib.unmap_window(w)
+            },
+            None => self.lib.unmap_window(w)
+        }
+    }
+
+    fn show_client(&mut self, w: Window) {
+        let client = match self.clients.get_mut(&w) {
+            Some(client) => client,
+            None => { return }
+        };
+        let pos = client.get_restore_position();
+        client.set_position(pos);
+
+        match client.get_dec() {
+            Some(dec) => {
+                self.lib.map_window(dec);
+                self.lib.map_window(w)
+            },
+            None => self.lib.map_window(w)
+        }
+        //self.move_window(w, pos.x, pos.y)
+    }
+
     pub fn set_current_ws(&mut self, ws: u32) {
         info!("Desktop changed to: {}", ws);
 
-        let to_hide = self.get_current_ws().windows.clone();
-        to_hide
+        if self.visible_workspaces.contains(&ws) {
+
+            let win = self.workspaces.get(&ws).expect("Strange af...").windows.iter().nth(0);
+
+            let win = match win {
+                Some(window) => {
+                    self.current_ws = ws;
+                    *window
+                },
+                None => {
+                    self.current_ws = ws;
+                    self.lib.get_root()
+                }
+            };
+            self.set_focus(win);
+            return
+        }
+
+        let _ = self
+            .get_windows_in_current_ws()
             .iter()
             .for_each(|win| {
-                match self.clients.get_mut(win) {
-                    Some(ww) => {
-                        ww.save_restore_position();
-                        let ww_pos = ww.get_position();
-                        self.move_window(*win, self.lib.get_screen().width * 3, ww_pos.y)
-                    },
-                    None => {}
-                }
+                self.hide_client(*win)
             });
-        
+
         self.current_ws = if self.workspaces.contains_key(&ws) {
+            self.swap_visible_ws(self.current_ws, ws);
             ws
         } else {
             self.workspaces.insert(ws, Workspace::new(ws, self.get_focused_screen()));
+            self.swap_visible_ws(self.current_ws, ws);
             ws
         };
         debug!("before to_show");
-        let to_show = self.get_current_ws().windows.clone();
+        let to_show = self.get_windows_in_current_ws();
         debug!("after to_show");
         to_show.iter()
             .for_each(|win| {
-                match self.clients.get_mut(win) {
-                    Some(ww) => {
-                        let pos = ww.get_restore_position();
-                        ww.set_position(pos);
-                        self.move_window(*win, pos.x, pos.y)
-                    },
-                    None => {}
-                }
+                self.show_client(*win)
             });
 
         if to_show.is_empty() {
             self.focus_w = self.lib.get_root();
-            self.lib.take_focus(self.lib.get_root());
+            self.set_focus(self.lib.get_root());
         } else {
-            let w = *(to_show.into_iter().collect::<Vec<Window>>().get(0).unwrap());
+            let w = *(to_show.into_iter().collect::<Vec<Window>>().iter().nth(0).expect("WindowManager::set_current_ws"));
             self.focus_w = w;
-            self.lib.take_focus(w);
+            self.set_focus(self.lib.get_root());
         }
         self.lib.ewmh_current_desktop(self.current_ws);
+    }
+
+    fn swap_visible_ws(&mut self, to_swap: u32, swap_to: u32) {
+        self.visible_workspaces.remove(&to_swap);
+        self.visible_workspaces.insert(swap_to);
     }
 
     pub fn move_to_ws(&mut self, w: Window, ws: u8) {
@@ -309,11 +411,6 @@ impl WindowManager {
         }
     }
 
-    fn client_hide(&mut self, ww: &mut WindowWrapper) {
-        ww.save_restore_position();
-        self.move_window(ww.window(), self.lib.get_screen().width * 2, ww.get_position().y)
-    }
-
     fn window_initial_size(&mut self, w: Window) {
 
         if self.mode != Mode::Floating {
@@ -373,7 +470,8 @@ impl WindowManager {
             },
             _ => {
                 self.clients.get_mut(&w).expect("Not in list?!").save_restore_position();
-                self.move_window(w, 0, 0);
+                let screen = self.get_focused_screen();
+                self.move_window(w, screen.x, screen.y);
                 let size = self.get_current_ws().layout.maximize(&self, w);
                 let others = self.get_windows_in_current_ws()
                     .into_iter()
@@ -519,18 +617,18 @@ impl WindowManager {
 
 
         debug!("focused screens len: {}", screens.len());
-        let focused = screens.get(0).unwrap().clone();
+        let focused = screens.get(0).expect("No screen dafuq?").clone();
         focused
     }
 
     pub fn pointer_is_inside(&self, screen: &Screen) -> bool {
         let pointer_pos = self.lib.pointer_pos();
         debug!("pointer pos: {:?}", pointer_pos);
-        let inside_height = pointer_pos.y > screen.y &&
-            pointer_pos.y < screen.y + screen.height as i32;
+        let inside_height = pointer_pos.y >= screen.y &&
+            pointer_pos.y <= screen.y + screen.height as i32;
 
-        let inside_width = pointer_pos.x > screen.x &&
-            pointer_pos.x < screen.x + screen.width as i32;
+        let inside_width = pointer_pos.x >= screen.x &&
+            pointer_pos.x <= screen.x + screen.width as i32;
 
         inside_height && inside_width
     }

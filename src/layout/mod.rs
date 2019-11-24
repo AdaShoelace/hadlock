@@ -12,7 +12,6 @@ use crate::xlibwrapper::util::{
 use crate::models::Direction;
 use crate::xlibwrapper::xlibmodels::Window;
 
-
 pub trait Layout {
     fn place_window(&self, wm: &WindowManager, w: Window) -> Position {
         unimplemented!();

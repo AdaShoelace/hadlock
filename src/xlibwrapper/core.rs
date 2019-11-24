@@ -556,6 +556,23 @@ impl XlibWrapper {
             Position { x: root_x, y: root_y }
         }
     }
+    
+    pub fn move_cursor(&self, pos: Position) {
+        unsafe {
+            (self.lib.XWarpPointer)(
+                self.display,
+                0,
+                self.root,
+                0,
+                0,
+                0,
+                0,
+                pos.x,
+                pos.y
+            );
+            (self.lib.XFlush)(self.display);
+        }
+    }
 
     pub fn center_cursor(&self, ww: &WindowWrapper) {
         let size = ww.get_size();
