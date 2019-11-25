@@ -35,13 +35,14 @@ impl Layout for Floating {
     fn place_window(&self, dock_area: &DockArea, screen: &Screen, w: Window, ww: &WindowWrapper) -> Position {
 
 
-        let dw = (screen.width - ww.get_width() as i32).abs() / 2;
-        let mut dh = (screen.height - ww.get_height() as i32).abs() / 2;
+        let dw = (screen.width - ww.get_width() as i32) / 2;
+        let mut dh = (screen.height - ww.get_height() as i32) / 2;
 
         if let Some(dock_rect) = dock_area.as_rect(&screen) {
-            dh = ((screen.height + dock_rect.get_size().height as i32) - ww.get_height() as i32).abs() / 2;
+            dh = ((screen.height + dock_rect.get_size().height as i32) - ww.get_height() as i32) / 2;
         }
         let ret = Position{x: screen.x + dw, y: screen.y + dh};
+        //let ret = Position{x: screen.x, y: screen.y};
         ret
     }
 

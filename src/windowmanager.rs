@@ -348,6 +348,7 @@ impl WindowManager {
                 ww.restore_prev_state();
                 let size = ww.get_restore_size();
                 self.resize_window(w, size.width, size.height);
+                self.move_window(w,restore_pos.x, restore_pos.y);
             },
             _ => {
                 self.current_monitor().get_client_mut(w).expect("Not in list?!").save_restore_position();
@@ -390,15 +391,17 @@ impl WindowManager {
 
         let (dec_size, window_size) = self.current_monitor().resize_window(w, width, height);
 
-        let mut ww = self.current_monitor().get_client_mut(w).expect("Client not found in resize_window").clone();
+        let win = self.current_monitor().get_client_mut(w).expect("Client not found in resize_window").window();
+        let dec_win = self.current_monitor().get_client_mut(w).expect("Client not found in resize_window").get_dec();
 
-        if let Some(_) = ww.get_dec_rect() {
-            ww.set_dec_size(dec_size);
-            self.lib.resize_window(ww.get_dec().expect("resize_window: no dec"), dec_size.width, dec_size.height);
+
+        if let Some(dec_win) = dec_win {
+            self.current_monitor().get_client_mut(w).expect("Client not found in resize_window").set_dec_size(dec_size);
+            self.lib.resize_window(dec_win, dec_size.width, dec_size.height);
         }
 
-        ww.set_inner_size(window_size);
-        self.lib.resize_window(ww.window(), window_size.width, window_size.height);
+        self.current_monitor().get_client_mut(w).expect("Client not found in resize_window").set_inner_size(window_size);
+        self.lib.resize_window(win, window_size.width, window_size.height);
     }
 
     fn subscribe_to_events(&mut self, w: Window) {
