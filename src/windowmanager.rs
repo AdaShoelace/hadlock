@@ -146,7 +146,7 @@ impl WindowManager {
             return
         }
 
-        if self.monitors.get(&self.current_monitor).unwrap().contains_window(w) {
+        if self.current_monitor().contains_window(w) {
             return
         }
 
@@ -158,7 +158,7 @@ impl WindowManager {
         self.lib.add_to_save_set(w);
         self.lib.add_to_root_net_client_list(w);
         self.subscribe_to_events(w);
-        self.monitors.get_mut(&self.current_monitor).unwrap().add_window(w, ww);
+        self.current_monitor().add_window(w, ww);
         self.window_initial_size(w);
         self.place_window(w);
         self.lib.map_window(w);
@@ -220,13 +220,17 @@ impl WindowManager {
     }
 
     pub fn move_to_ws(&mut self, w: Window, ws: u8) {
-        match self.current_monitor().get_client_mut(w) {
-            Some(ww) => {
-                let ww_move = self.current_monitor().remove_window(w);
-                self.current_monitor().set_current_ws(ws.into());
-                self.current_monitor().add_window(w, ww_move);
-            },
-            _ => ()
+        debug!("move_to_ws called with: {}", w);
+        if self.current_monitor().contains_window(w) {
+            let current = self.current_monitor().current_ws;
+            self.hide_client(w);
+            let ww_move = self.current_monitor().remove_window(w);
+            self.current_monitor().set_current_ws(ws.into());
+            self.current_monitor().add_window(w, ww_move);
+            self.current_monitor().set_current_ws(current);
+            self.lib.sync(false);
+        } else {
+            debug!("move_to_ws: no such client: {}", w);
         }
     }
 
@@ -315,10 +319,11 @@ impl WindowManager {
         if !self.current_monitor().contains_window(w) {
             debug!("toggle_maximize: Window not in client list: {}", w);
             debug!("Client list:");
-            /*self.clients.keys()
-              .for_each(|key| {
-              println!("Client: {}", key)
-              });*/
+            self.current_monitor().get_client_keys()
+                .iter()
+                .for_each(|key| {
+                    println!("Client: {}", key)
+                });
             return
         }
 
@@ -328,10 +333,9 @@ impl WindowManager {
         match state {
             WindowState::Maximized => {
                 let others = self.current_monitor()
-                    .get_client_keys()
+                    .get_current_windows()
                     .into_iter()
                     .filter(|win| *win != w)
-                    .filter(|win| self.current_monitor().contains_window(*win))
                     .collect::<Vec<Window>>();
 
                 others
@@ -350,17 +354,16 @@ impl WindowManager {
                 let screen = self.get_focused_screen();
                 self.move_window(w, screen.x, screen.y);
                 let size = self.current_monitor().maximize(w);
-                let others = self.current_monitor().get_client_keys()
+                let others = self.current_monitor()
+                    .get_current_windows()
                     .into_iter()
                     .filter(|win| *win != w)
-                    .filter(|win| self.current_monitor().contains_window(*win))
                     .collect::<Vec<Window>>();
 
                 others
                     .into_iter()
                     .for_each(|win| {
-                        self.current_monitor().get_client_mut(win).unwrap().save_restore_position();
-                        self.move_window(win, self.lib.get_screen().width * 4, 0);
+                        self.hide_client(win)
                     });
                 let ww = self.current_monitor().get_client_mut(w).expect("Not in list?!");
                 ww.set_window_state(WindowState::Maximized);

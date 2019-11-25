@@ -4,7 +4,7 @@ use crate::xlibwrapper::xlibmodels::*;
 use super::rect::*;
 use super::WindowState;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct WindowWrapper {
     dec: Option<Window>,
     window: Window,

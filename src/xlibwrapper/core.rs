@@ -1253,6 +1253,7 @@ impl XlibWrapper {
     pub fn unmap_window(&self, w: Window) {
         unsafe {
             (self.lib.XUnmapWindow)(self.display, w);
+            self.sync(false);
         }
     }
 
