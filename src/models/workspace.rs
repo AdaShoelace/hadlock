@@ -16,6 +16,7 @@ use crate::{
     },
 };
 
+#[derive(Debug)]
 pub struct Workspace {
     pub tag: u32,
     pub clients: HashMap<Window, WindowWrapper>,
@@ -31,16 +32,17 @@ impl Workspace {
         }
     }
     
-    pub fn cointains_window(&self, w: Window) -> bool {
+    pub fn contains_window(&self, w: Window) -> bool {
         self.clients.contains_key(&w)
     }
 
     pub fn add_window(&mut self, w: Window, ww: WindowWrapper) {
+        warn!("{} added to desktop: {}", w, self.tag);
         self.clients.insert(w, ww);
     }
 
     pub fn remove_window(&mut self, w: Window) -> WindowWrapper {
-        self.clients.remove(&w).unwrap()
+        self.clients.remove(&w).expect(&format!("no such client: {} in ws:{}", w, self.tag))
     }
 }
 

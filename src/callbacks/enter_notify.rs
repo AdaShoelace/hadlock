@@ -18,5 +18,6 @@ pub fn enter_notify(_xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event
         println!("Calling window {} not in client list", w);
         return;
     }
+    wm.unset_focus(wm.focus_w);
     wm.set_focus(w);
 }

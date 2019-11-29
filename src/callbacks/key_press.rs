@@ -26,15 +26,16 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
     let mod_and_shift = (state & (Mod4Mask | Shift)) == Mod4Mask | Shift;
 
     let ws_keys: Vec<u8> = (1..=9).map(|x| {
-        xlib.str_to_keycode(&x.to_string()).unwrap()
+        xlib.str_to_keycode(&x.to_string()).expect("key_press 1")
     }).collect();
-    
+
     let focus_w = wm.focus_w;
 
     match wm.current_monitor().get_client(focus_w) {
         Some(ww) => {
             let keycode = keycode as u8;
-            if mod_not_shift && xlib.str_to_keycode("Return").unwrap() == keycode {
+
+            if mod_not_shift && xlib.str_to_keycode("Return").expect("key_press: 2") == keycode {
                 spawn_terminal();
             }
 
@@ -43,30 +44,30 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                 let width = ww.get_width();
                 let height = ww.get_height();
 
-                if xlib.str_to_keycode("Right").unwrap() == keycode {
+                if xlib.str_to_keycode("Right").expect("key_press: 3") == keycode {
                     wm.resize_window(w, width + 10, height);
                     wm.center_cursor(w);
                     return;
                 }
-                if xlib.str_to_keycode("Left").unwrap() == keycode {
+                if xlib.str_to_keycode("Left").expect("key_press: 4") == keycode {
                     wm.resize_window(w, width - 10, height);
                     wm.center_cursor(w);
                     return;
                 }
-                if xlib.str_to_keycode("Down").unwrap() == keycode {
+                if xlib.str_to_keycode("Down").expect("key_press: 5") == keycode {
                     wm.resize_window(w, width, height + 10);
                     wm.center_cursor(w);
                     return;
                 }
-                if xlib.str_to_keycode("Up").unwrap() == keycode {
+                if xlib.str_to_keycode("Up").expect("key_press: 6") == keycode {
                     wm.resize_window(w, width, height - 10);
                     wm.center_cursor(w);
                     return;
                 }
-                if xlib.str_to_keycode("q").unwrap() == keycode {
+                if xlib.str_to_keycode("q").expect("key_press: 7") == keycode {
                     wm.kill_window(w);
                 }
-                if xlib.str_to_keycode("e").unwrap() == keycode {
+                if xlib.str_to_keycode("e").expect("key_press: 8") == keycode {
                     xlib.exit();
                 }
 
@@ -84,25 +85,29 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
             if mod_not_shift {
                 println!("Number pressed");
 
+                if xlib.str_to_keycode("d").expect("key_press: key for h") == keycode {
+                    debug!("d is pressed");
+                    wm.hide_client(wm.focus_w);
+                }
                 if xlib.str_to_keycode("f").expect("Dafuq?!?!") == keycode {
                     wm.toggle_maximize(wm.focus_w);
                 }
-                if xlib.str_to_keycode("Right").unwrap() == keycode || xlib.str_to_keycode("l").unwrap() == keycode {
+                if xlib.str_to_keycode("Right").expect("key_press: 9") == keycode || xlib.str_to_keycode("l").expect("key_press: 10") == keycode {
                     wm.shift_window(wm.focus_w, Direction::East);
                     wm.center_cursor(w);
                     return;
                 }
-                if xlib.str_to_keycode("Left").unwrap() == keycode || xlib.str_to_keycode("h").unwrap() == keycode {
+                if xlib.str_to_keycode("Left").expect("key_press: 11") == keycode || xlib.str_to_keycode("h").expect("key_press: 12") == keycode {
                     wm.shift_window(wm.focus_w, Direction::West);
                     wm.center_cursor(w);
                     return;
                 }
-                if xlib.str_to_keycode("Down").unwrap() == keycode || xlib.str_to_keycode("j").unwrap() == keycode  {
+                if xlib.str_to_keycode("Down").expect("key_press: 13") == keycode || xlib.str_to_keycode("j").expect("key_press: 14") == keycode  {
                     wm.shift_window(wm.focus_w, Direction::South);
                     wm.center_cursor(w);
                     return;
                 }
-                if xlib.str_to_keycode("Up").unwrap() == keycode || xlib.str_to_keycode("k").unwrap() == keycode  {
+                if xlib.str_to_keycode("Up").expect("key_press: 15") == keycode || xlib.str_to_keycode("k").expect("key_press: 16") == keycode  {
                     println!("Snap up");
                     wm.shift_window(wm.focus_w, Direction::North);
                     wm.center_cursor(w);
@@ -117,7 +122,7 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
         None if w == xlib.get_root() => {
             let keycode = keycode as u8;
             if mod_not_shift {
-                if xlib.str_to_keycode("Return").unwrap() == keycode {
+                if xlib.str_to_keycode("Return").expect("key_press: 17") == keycode {
                     spawn_terminal();
                 }
 
@@ -130,7 +135,7 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                 }
             }
             if mod_and_shift {
-                if xlib.str_to_keycode("e").unwrap() == keycode {
+                if xlib.str_to_keycode("e").expect("key_press: 18") == keycode {
                     xlib.exit();
                 }
             }

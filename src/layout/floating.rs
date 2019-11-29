@@ -17,7 +17,7 @@ use crate::{
     },
 };
 
-
+#[derive(Debug)]
 pub struct Floating;
 
 impl Floating {

@@ -52,7 +52,7 @@ pub struct XlibWrapper {
 impl XlibWrapper {
     pub fn new() -> Self {
         let (disp, root, lib, xatom, screen, cursors) = unsafe {
-            let lib = xlib::Xlib::open().unwrap();
+            let lib = xlib::Xlib::open().expect("xlibwrapper::core: new");
             let disp = (lib.XOpenDisplay)(std::ptr::null_mut());
 
             if disp == std::ptr::null_mut() {
@@ -92,7 +92,7 @@ impl XlibWrapper {
         use x11_dl::xinerama::XineramaScreenInfo;
         use x11_dl::xinerama::Xlib;
 
-        let xlib = Xlib::open().unwrap();
+        let xlib = Xlib::open().expect("xlibwrapper::core: get_screens");
         let xinerama = unsafe { (xlib.XineramaIsActive)(self.display) } > 0;
 
         if xinerama {
@@ -161,7 +161,7 @@ impl XlibWrapper {
                 self.root,
                 xlib::CWEventMask | xlib::CWCursor,
                 &mut attrs,
-                );
+            );
         }
 
         self.select_input(self.root, root_event_mask);
@@ -199,18 +199,33 @@ impl XlibWrapper {
                 .map(|key| { keysym_lookup::into_keysym(key).expect("Core: no such key") })
                 .for_each(|key_sym| { self.grab_keys(self.get_root(), key_sym, xlib::Mod4Mask | xlib::ShiftMask) });
 
-        }
+            }
         self.sync(false);
     }
 
-    pub fn ewmh_current_desktop(&self, desktop: u32) {
+    fn ewmh_current_desktop(&self, desktop: u32) {
         let data = vec![desktop, xlib::CurrentTime as u32];
         self.set_desktop_prop(&data, self.xatom.NetCurrentDesktop);
+        self.sync(false);
+    }
+
+    pub fn update_desktops(&self, current_ws: u32, num_of_ws: Option<u32>) {
+        match num_of_ws {
+            Some(num) => {
+                let data = vec![num];
+                self.set_desktop_prop(&data, self.xatom.NetNumberOfDesktops);
+            },
+            None => {}
+        }
+        self.sync(false);
+        self.ewmh_current_desktop(current_ws);
     }
 
     pub fn init_desktops_hints(&self) {
         //set the number of desktop
         let data = vec![CONFIG.workspaces.len() as u32];
+        //let num_ws = self.get_screens().len();
+        //let data = vec![num_ws as u32];
         self.set_desktop_prop(&data, self.xatom.NetNumberOfDesktops);
         //set a current desktop
         let data = vec![0 as u32, xlib::CurrentTime as u32];
@@ -220,7 +235,7 @@ impl XlibWrapper {
         unsafe {
             let mut clist_tags: Vec<*mut c_char> = CONFIG.workspaces
                 .values()
-                .map(|x| CString::new(x.to_string().clone()).unwrap().into_raw())
+                .map(|x| CString::new(x.to_string().clone()).expect("xlibwrapper::core: init_desktops_hints").into_raw())
                 .collect();
             let ptr = clist_tags.as_mut_ptr();
             (self.lib.Xutf8TextListToTextProperty)(
@@ -229,14 +244,14 @@ impl XlibWrapper {
                 clist_tags.len() as i32,
                 xlib::XUTF8StringStyle,
                 &mut text,
-                );
+            );
             mem::forget(clist_tags);
             (self.lib.XSetTextProperty)(
                 self.display,
                 self.root,
                 &mut text,
                 self.xatom.NetDesktopNames,
-                );
+            );
 
             let mut attribute = 1u32;
             let attrib_ptr: *mut u32 = &mut attribute;
@@ -261,40 +276,40 @@ impl XlibWrapper {
             let window = self.get_atom("WINDOW");
 
             (self.lib.XChangeProperty)(self.display,
-                                       ewmh as c_ulong,
-                                       self.xatom.NetSupportingWmCheck as c_ulong,
-                                       window as c_ulong,
-                                       32,
-                                       0,
-                                       child_ptr as *mut c_uchar,
-                                       1);
+                ewmh as c_ulong,
+                self.xatom.NetSupportingWmCheck as c_ulong,
+                window as c_ulong,
+                32,
+                0,
+                child_ptr as *mut c_uchar,
+                1);
 
             (self.lib.XChangeProperty)(self.display,
-                                       ewmh as c_ulong,
-                                       self.xatom.NetWMName as c_ulong,
-                                       self.xatom.NetUtf8String as c_ulong,
-                                       8,
-                                       0,
-                                       "Hadlok".as_ptr() as *mut c_uchar,
-                                       5);
+                ewmh as c_ulong,
+                self.xatom.NetWMName as c_ulong,
+                self.xatom.NetUtf8String as c_ulong,
+                8,
+                0,
+                "Hadlok".as_ptr() as *mut c_uchar,
+                5);
 
             (self.lib.XChangeProperty)(self.display,
-                                       self.root,
-                                       self.xatom.NetSupportingWmCheck as c_ulong,
-                                       window as c_ulong,
-                                       32,
-                                       0,
-                                       child_ptr as *mut c_uchar,
-                                       1);
+                self.root,
+                self.xatom.NetSupportingWmCheck as c_ulong,
+                window as c_ulong,
+                32,
+                0,
+                child_ptr as *mut c_uchar,
+                1);
 
             (self.lib.XChangeProperty)(self.display,
-                                       self.root,
-                                       self.xatom.NetWMName as c_ulong,
-                                       self.xatom.NetUtf8String as c_ulong,
-                                       8,
-                                       0,
-                                       "Hadlok".as_ptr() as *mut c_uchar,
-                                       5);
+                self.root,
+                self.xatom.NetWMName as c_ulong,
+                self.xatom.NetUtf8String as c_ulong,
+                8,
+                0,
+                "Hadlok".as_ptr() as *mut c_uchar,
+                5);
         }
 
         //set the WM NAME
@@ -304,7 +319,7 @@ impl XlibWrapper {
             self.root as u64,
             self.xatom.NetSupportingWmCheck,
             xlib::XA_WINDOW,
-            );
+        );
 
         //set a viewport
         let data = vec![0 as u32, 0 as u32];
@@ -371,7 +386,7 @@ impl XlibWrapper {
                 xlib::PropModeReplace,
                 data.as_ptr() as *const u8,
                 1 as i32,
-                );
+            );
             mem::forget(data);
         }
     }
@@ -388,7 +403,7 @@ impl XlibWrapper {
                     xlib::PropModeReplace,
                     cstring.as_ptr() as *const u8,
                     value.len() as i32,
-                    );
+                );
                 mem::forget(cstring);
             }
         }
@@ -406,7 +421,7 @@ impl XlibWrapper {
                 xlib::PropModeReplace,
                 xdata.as_ptr() as *const u8,
                 data.len() as i32,
-                );
+            );
             mem::forget(xdata);
         }
     }
@@ -556,7 +571,7 @@ impl XlibWrapper {
             Position { x: root_x, y: root_y }
         }
     }
-    
+
     pub fn move_cursor(&self, pos: Position) {
         unsafe {
             (self.lib.XWarpPointer)(
@@ -594,9 +609,9 @@ impl XlibWrapper {
     }
 
     pub fn configure_window(&self,
-                            window: Window,
-                            value_mask: Mask,
-                            changes: WindowChanges) {
+        window: Window,
+        value_mask: Mask,
+        changes: WindowChanges) {
         unsafe {
             let mut raw_changes = xlib::XWindowChanges {
                 x: changes.x,
@@ -776,15 +791,15 @@ impl XlibWrapper {
     }
 
     pub fn grab_button(&self,
-                       button: u32,
-                       modifiers: u32,
-                       grab_window: Window,
-                       owner_events: bool,
-                       event_mask: u32,
-                       pointer_mode: i32,
-                       keyboard_mode: i32,
-                       confine_to: Window,
-                       cursor: u64
+        button: u32,
+        modifiers: u32,
+        grab_window: Window,
+        owner_events: bool,
+        event_mask: u32,
+        pointer_mode: i32,
+        keyboard_mode: i32,
+        confine_to: Window,
+        cursor: u64
     ) {
         unsafe {
             (self.lib.XGrabButton)(
@@ -832,7 +847,7 @@ impl XlibWrapper {
         &self,
         window: xlib::Window,
         prop: xlib::Atom,
-        ) -> Option<xlib::Atom> {
+    ) -> Option<xlib::Atom> {
         // Shamelessly stolen from lex148/leftWM
         let mut format_return: i32 = 0;
         let mut nitems_return: c_ulong = 0;
@@ -852,7 +867,7 @@ impl XlibWrapper {
                 &mut nitems_return,
                 &mut nitems_return,
                 &mut prop_return,
-                );
+            );
             if status == i32::from(xlib::Success) && !prop_return.is_null() {
                 #[allow(clippy::cast_lossless, clippy::cast_ptr_alignment)]
                 let atom = *(prop_return as *const xlib::Atom);
@@ -887,12 +902,12 @@ impl XlibWrapper {
     }
 
     pub fn grab_key(&self,
-                    key_code: u32,
-                    modifiers: u32,
-                    grab_window: Window,
-                    owner_event: bool,
-                    pointer_mode: i32,
-                    keyboard_mode: i32) {
+        key_code: u32,
+        modifiers: u32,
+        grab_window: Window,
+        owner_event: bool,
+        pointer_mode: i32,
+        keyboard_mode: i32) {
         unsafe {
             // add error handling.. Like really come up with a strategy!
             (self.lib.XGrabKey)(
@@ -963,8 +978,8 @@ impl XlibWrapper {
                     Event::new(EventType::ConfigurationRequest, Some(payload))
                 },
                 xlib::MapRequest => {
-                    //debug!("MapRequest");
                     let event = xlib::XMapRequestEvent::from(event);
+                    debug!("MapRequest: {}", event.window);
                     let payload = EventPayload::MapRequest(event.window);
                     Event::new(EventType::MapRequest, Some(payload))
                 },
@@ -1043,7 +1058,7 @@ impl XlibWrapper {
                 xlib::PropertyNotify => {
                     let event = xlib::XPropertyEvent::from(event);
                     let ret = CString::from_raw((self.lib.XGetAtomName)(self.display, event.atom));
-                    ret.to_str().unwrap();
+                    ret.to_str().expect("xlibwrapper::core: next_event");
                     //debug!("Property changed {:?}", ret);
                     Event::new(EventType::UnknownEvent, None)
                 },
@@ -1141,7 +1156,7 @@ impl XlibWrapper {
                 &mut nitems_return,
                 &mut bytes_after_return,
                 &mut prop_return,
-                );
+            );
             if status == i32::from(xlib::Success) {
                 #[allow(clippy::cast_ptr_alignment)]
                 let array_ptr = prop_return as *const i64;
@@ -1177,7 +1192,7 @@ impl XlibWrapper {
                 &mut nitems_return,
                 &mut bytes_after_return,
                 &mut prop_return,
-                );
+            );
             if status == i32::from(xlib::Success) {
                 #[allow(clippy::cast_ptr_alignment)]
                 let array_ptr = prop_return as *const i64;
@@ -1218,7 +1233,7 @@ impl XlibWrapper {
         }
         WindowType::Normal
     }
-    
+
     pub fn get_upmost_window(&self) -> Option<Window> {
         match self.get_top_level_windows().last() {
             Some(x) => Some(*x),
