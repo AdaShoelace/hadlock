@@ -17,9 +17,9 @@ pub fn motion_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event
         };
     let root = xlib.get_root();
     wm.set_current_monitor_by_mouse();
-    let current = wm.current_monitor().get_current_ws_tag();
+    let current = wm.current_monitor().expect("motion_notify: current_monitor 1").get_current_ws_tag();
     wm.lib.update_desktops(current, None);
-    if !wm.current_monitor().contains_window(w) && w == root {
+    if !wm.current_monitor().expect("motion_notify: current_monitor 2").contains_window(w) && w == root {
         return
     }
 

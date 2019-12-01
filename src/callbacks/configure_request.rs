@@ -30,8 +30,8 @@ pub fn configure_request(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: E
         stack_mode: window_changes.stack_mode,
     };
 
-    if wm.current_monitor().contains_window(w) {
-        let frame = wm.current_monitor().get_client(w).expect("ConfigureWindow: No such window in client list");
+    if wm.current_monitor().expect("configure_request: current_monitor 1").contains_window(w) {
+        let frame = wm.current_monitor().expect("configure_request: current_monitor 2").get_client(w).expect("ConfigureWindow: No such window in client list");
         xlib.configure_window(
             frame.window(),
             value_mask as i64,

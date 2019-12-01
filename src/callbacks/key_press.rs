@@ -31,7 +31,7 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
     let focus_w = wm.focus_w;
 
-    match wm.current_monitor().get_client(focus_w) {
+    match wm.current_monitor().expect("key_press: current_monitor 1").get_client(focus_w) {
         Some(ww) => {
             let keycode = keycode as u8;
 
