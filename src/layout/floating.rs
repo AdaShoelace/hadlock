@@ -32,18 +32,20 @@ impl Floating {
 
 impl Layout for Floating {
 
-    fn place_window(&self, dock_area: &DockArea, screen: &Screen, w: Window, ww: &WindowWrapper) -> Position {
+    fn place_window(&self, dock_area: &DockArea, screen: &Screen, w: Window, ww: &WindowWrapper) -> (Size, Position) {
 
+        let ww_size = ww.get_size();
+        let new_size = Size{ width: (screen.width as u32 / 10) * 8, height: (screen.height as u32 / 10) * 6 as u32 };
 
-        let dw = (screen.width - ww.get_width() as i32) / 2;
-        let mut dh = (screen.height - ww.get_height() as i32) / 2;
+        let dw = (screen.width - new_size.width as i32) / 2;
+        let mut dh = (screen.height - new_size.height as i32) / 2;
 
         if let Some(dock_rect) = dock_area.as_rect(&screen) {
             dh = ((screen.height + dock_rect.get_size().height as i32) - ww.get_height() as i32) / 2;
         }
         let ret = Position{x: screen.x + dw, y: screen.y + dh};
-        //let ret = Position{x: screen.x, y: screen.y};
-        ret
+        
+        (new_size, ret)
     }
 
     fn move_window(&self, screen: &Screen, dock_area: &DockArea, w: Window, x: i32, y: i32) -> (Position, Position) {

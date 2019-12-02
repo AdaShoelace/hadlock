@@ -143,7 +143,7 @@ impl Monitor {
         self.workspaces.get(&self.current_ws)?.clients.get(&w)
     }
 
-    pub fn place_window(&mut self, w: Window) -> Position {
+    pub fn place_window(&mut self, w: Window) -> (Size, Position) {
         let ww = self.get_client(w).expect("monitor: place_window 1").clone();
         let screen = self.screen.clone();
         let dock_area = self.dock_area.clone();

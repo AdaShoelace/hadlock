@@ -140,13 +140,26 @@ impl WindowManager {
         self.lib.map_window(dec_window);
         self.lib.sync(false);
     }
+    
+    fn window_inside_screen(w_geom: &Geometry, screen: &Screen) -> bool {
+        let inside_width = w_geom.x >= screen.x && w_geom.x < screen.x + screen.width;
+        let inside_height = w_geom.y >= screen.y && w_geom.y < screen.y + screen.height; 
+        inside_width && inside_height
+    }
+
 
     pub fn setup_window(&mut self, w: Window) {
         warn!("setup window");
         if self.lib.get_window_type(w) == WindowType::Dock {
             match self.lib.get_window_strut_array(w) {
                 Some(dock) => {
-                    self.current_monitor().expect("setup_windot: current_monitor 1").set_dock_area(DockArea::from(dock));
+                    let w_geom = self.lib.get_geometry(w);
+                    let mon = self.monitors
+                        .values_mut()
+                        .filter(|mon| Self::window_inside_screen(&w_geom, &mon.screen))
+                        .collect::<Vec<&mut Monitor>>().remove(0);
+                    mon.set_dock_area(dock);
+                    //self.current_monitor().expect("setup_windot: current_monitor 1").set_dock_area(DockArea::from(dock));
                 }
                 None => {
                     return
@@ -264,8 +277,6 @@ impl WindowManager {
                 .for_each(|win| self.show_client(*win));
 
             let current = self.current_monitor().expect("set_current_ws: current_monitor 6").get_current_ws_tag();
-            //let num = self.get_all_active_ws().len() as u32;
-            //self.lib.update_desktops(current, Some(num));
             self.lib.update_desktops(current, None);
             return
         }
@@ -283,15 +294,12 @@ impl WindowManager {
                     self.lib.sync(false);
                     self.lib.move_cursor(pos);
                     self.unset_focus(self.focus_w);
-                    //self.set_current_monitor_by_mouse();
                     self.current_monitor().expect("set_current_ws: current_monitor 7").set_current_ws(ws as u32);
                     let current = self.current_monitor().expect("set_current_ws: current_monitor 8").get_current_ws_tag();
                     self.current_monitor().expect("set_current_ws: current_monitor 9")
                         .get_current_windows()
                         .iter()
                         .for_each(|win| self.show_client(*win));
-                    //let num = self.get_all_active_ws().len() as u32;
-                    //self.lib.update_desktops(current, Some(num));
                     self.lib.update_desktops(current, None);
                     return
                 },
@@ -314,8 +322,6 @@ impl WindowManager {
                     .iter()
                     .for_each(|win| self.show_client(*win));
                 let current = self.current_monitor().expect("set_current_ws: current_monitor 13").get_current_ws_tag();
-                //let num = self.get_all_active_ws().len() as u32;
-                //self.lib.update_desktops(current, Some(num));
                 self.lib.update_desktops(current, None);
             },
             _ => {}
@@ -347,8 +353,6 @@ impl WindowManager {
             .iter()
             .for_each(|win| self.show_client(*win));
         let current = self.current_monitor().expect("set_current_ws: current_monitor 17").get_current_ws_tag();
-        //let num = self.get_all_active_ws().len() as u32;
-        //self.lib.update_desktops(current, Some(num));
         self.lib.update_desktops(current, None);
     }
 
@@ -407,7 +411,7 @@ impl WindowManager {
             None => { return }
         };
 
-        self.unset_focus(self.focus_w);
+        //self.unset_focus(self.focus_w);
         self.lib.remove_focus(self.focus_w);
         self.focus_w = ww.window();
         self.lib.ungrab_all_buttons(self.focus_w);
@@ -588,8 +592,9 @@ impl WindowManager {
             return
         }
 
-        let pos = self.current_monitor().expect("place_window: current_monitor 2").place_window(w);
+        let (size, pos) = self.current_monitor().expect("place_window: current_monitor 2").place_window(w);
         self.move_window(w, pos.x, pos.y);
+        self.resize_window(w, size.width, size.height);
         let ww = self.current_monitor().expect("place_window: current_monitor 3").get_client_mut(w).expect("window_manager: place_window");
         ww.set_position(pos);
     }
@@ -743,19 +748,6 @@ impl WindowManager {
                 self.lib.grab_button(
                     *button,
                     Mod4Mask,
-                    w,
-                    false,
-                    (ButtonPressMask | ButtonReleaseMask | ButtonMotionMask) as u32,
-                    GrabModeAsync,
-                    GrabModeAsync,
-                    0,0);
-            });
-        buttons
-            .iter()
-            .for_each(|button| {
-                self.lib.grab_button(
-                    *button,
-                    0,
                     w,
                     false,
                     (ButtonPressMask | ButtonReleaseMask | ButtonMotionMask) as u32,

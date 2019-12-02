@@ -18,7 +18,7 @@ use crate::models::{
 use crate::xlibwrapper::xlibmodels::Window;
 
 pub trait Layout : std::fmt::Debug {
-    fn place_window(&self, dock_area: &DockArea, screen: &Screen, w: Window, ww: &WindowWrapper) -> Position {
+    fn place_window(&self, dock_area: &DockArea, screen: &Screen, w: Window, ww: &WindowWrapper) -> (Size, Position) {
         unimplemented!();
     }
 
