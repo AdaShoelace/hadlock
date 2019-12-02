@@ -20,7 +20,7 @@ pub(super) fn load_config() -> Config {
 
         x => {
             println!("Wrong number of arguments:{}\nDefault config will be applied", x);
-            ""
+            "/home/pierre/.config/hadlock/hadlock.json"
         }
     };
 

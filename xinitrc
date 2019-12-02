@@ -1,7 +1,7 @@
 # xinitrc file for testing our window manager.
 xrdb -load Xresources
 
-compton --config="./compton.conf" &
+#compton --config="./compton.conf" &
 # 0. Set wallpaper using feh
 #feh --bg-scale ./wallpaper.jpg &
 
@@ -18,4 +18,5 @@ alacritty &
 polybar --config="./polyconf" example 2>polylog &
 
 # 2. Start our window manager.
-exec ./target/debug/hadlock ~/Programming/rust/hobby/hadlock/config/hadlok.json
+
+exec $(RUST_LOG=hadlock ./target/debug/hadlock ~/Programming/rust/hobby/hadlock/config/hadlok.json)

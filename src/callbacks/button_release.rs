@@ -16,7 +16,7 @@ pub fn button_release(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Even
         };
 
 
-    if !wm.clients.contains_key(&window) || window == xlib.get_root() {
+    if !wm.current_monitor().expect("button_release: current_monitor 1").contains_window(window) || window == xlib.get_root() {
         return
     }
     
@@ -24,5 +24,5 @@ pub fn button_release(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Even
 
     //println!("Button released at: {}", window);
 
-    let _ww = wm.clients.get(&window).expect("ButtonPressed: No such window in client list");
+    let _ww = wm.current_monitor().expect("button_release: current_monitor 2").get_client(window).expect("ButtonPressed: No such window in client list");
 }

@@ -47,11 +47,10 @@ impl Runner {
             });
         self.lib.ungrab_server();
         
-        tx.send(true);
+        let _ = tx.send(true);
 
         loop {
             let event = self.lib.next_event();
-            // println!("{:?}", &event);
 
             match self.call_table.get(&event.event_type) {
                 Some(func) => func(self.lib.clone(), &mut self.wm, event),

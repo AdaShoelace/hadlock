@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate log;
+
 mod windowmanager;
 mod xlibwrapper;
 mod models;
@@ -19,11 +22,12 @@ use crate::config::*;
 
 
 fn main() {
-    
+    env_logger::init();    
     let (tx, rx) = mpsc::channel::<bool>();
 
     let xlib = Rc::new(XlibWrapper::new());
     let window_manager = WindowManager::new(xlib.clone());
+    info!("Screens on startup: {:?}", xlib.get_screens());
     // Avoid zombies by ignoring SIGCHLD
     unsafe { signal::signal(Signal::SIGCHLD, SigHandler::SigIgn) }.unwrap();
     call_commands(ExecTime::Pre);

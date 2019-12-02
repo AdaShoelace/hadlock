@@ -17,10 +17,9 @@ pub fn leave_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
 
     // this check is an ugly hack to not crash when decorations window gets destroyed before
     // client and client recieves an "OnLeave"-event
-    if !wm.clients.contains_key(&w) || w == xlib.get_root() {
+    if !wm.current_monitor().expect("leave_notify: current_monitor 1").contains_window(w) || w == xlib.get_root() {
         return;
     }
 
-    let ww = wm.clients.get(&w).expect("OnLeave: No such window in client list");
     wm.unset_focus(w);
 }

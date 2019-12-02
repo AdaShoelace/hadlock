@@ -5,7 +5,7 @@ Hadlock is a (soon to be) tiling window manager for X.
 Built for learning purposes.  
 
 ---
-![](hadlock-alpha.gif)
+![](hadlock-multi-monitor.gif)
 ---
 
 ## Progress
@@ -16,7 +16,7 @@ Built for learning purposes.
 - [x] Close window
 - [x] Start terminal
 - [x] Workspaces
-- [ ] Multimonitor support 
+- [x] Multimonitor support 
 - [x] Window decorations
 - [x] Undecorated windows
 - [ ] Text in decoration  

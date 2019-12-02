@@ -4,13 +4,12 @@ use crate::xlibwrapper::xlibmodels::*;
 use super::rect::*;
 use super::WindowState;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct WindowWrapper {
     dec: Option<Window>,
     window: Window,
     window_rect: Rect,
     dec_rect: Option<Rect>,
-    desktop: u32,
     restore_position: Position,
     restore_size: Size,
     current_state: WindowState,
@@ -19,14 +18,13 @@ pub struct WindowWrapper {
 }
 
 impl WindowWrapper {
-    pub fn new(window: Window, window_rect: Rect, desktop: u32) -> Self {
+    pub fn new(window: Window, window_rect: Rect,) -> Self {
         let restore_size = window_rect.get_size();
         Self {
             dec: None,
             window,
             window_rect,
             dec_rect: None,
-            desktop: desktop,
             restore_position: Position { x: 0, y: 0 },
             restore_size,
             current_state: WindowState::Free,
@@ -169,13 +167,4 @@ impl WindowWrapper {
     pub fn get_restore_size(&self) -> Size {
         self.restore_size.clone()
     }
-    
-    pub fn set_desktop(&mut self, desktop: u32) {
-        self.desktop = desktop;
-    }
-
-    pub fn get_desktop(&self) -> u32 {
-        self.desktop
-    }
-
 }
