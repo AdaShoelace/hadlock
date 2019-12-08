@@ -491,7 +491,7 @@ impl WindowManager {
             return
         }
 
-        let ww = self.current_monitor().expect("toggle_maximize: current_monitor 3").get_client(w).expect("windowmanager: toggle_maximize 1");
+        let ww = self.current_monitor().expect("toggle_maximize: current_monitor 3").get_client_mut(w).expect("windowmanager: toggle_maximize 1");
         let (state, restore_pos) = (ww.get_window_state(), ww.get_restore_position());
 
         match state {
@@ -515,6 +515,9 @@ impl WindowManager {
                 self.move_window(w,restore_pos.x, restore_pos.y);
             },
             _ => {
+                ww.save_restore_position();
+                ww.set_window_state(WindowState::Maximized);
+                ww.save_restore_size();
                 self.current_monitor().expect("toggle_maximize: current_monitor 6").get_client_mut(w).expect("Not in list?!").save_restore_position();
                 let screen = self.get_focused_screen();
                 self.move_window(w, screen.x, screen.y);
@@ -530,9 +533,6 @@ impl WindowManager {
                     .for_each(|win| {
                         self.hide_client(win)
                     });
-                let ww = self.current_monitor().expect("toggle_maximize: current_monitor 9").get_client_mut(w).expect("Not in list?!");
-                ww.set_window_state(WindowState::Maximized);
-                ww.save_restore_size();
                 self.resize_window(w, size.width, size.height);
             }
         }
@@ -596,6 +596,7 @@ impl WindowManager {
         self.move_window(w, pos.x, pos.y);
         self.resize_window(w, size.width, size.height);
         let ww = self.current_monitor().expect("place_window: current_monitor 3").get_client_mut(w).expect("window_manager: place_window");
+        ww.save_restore_position();
         ww.set_position(pos);
     }
 
