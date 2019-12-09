@@ -586,8 +586,9 @@ impl WindowManager {
         self.center_cursor(w);
         self.current_monitor().expect("shift_window: current_monitor 3").get_client_mut(w).expect("window_manager: shift_window").set_window_state(WindowState::Snapped);
     }
+    
 
-    fn place_window(&mut self, w: Window) {
+    pub fn place_window(&mut self, w: Window) {
         if !self.current_monitor().expect("place_window: current_monitor 1").contains_window(w) {
             return
         }
@@ -733,6 +734,7 @@ impl WindowManager {
         "Return",
         "f",
         "e",
+        "c",
         "h", "j", "k", "l",
         "d",
         "1", "2", "3", "4", "5", "6", "7", "8", "9"]

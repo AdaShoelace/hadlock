@@ -22,6 +22,10 @@ pub trait Layout : std::fmt::Debug {
         unimplemented!();
     }
 
+    fn place_window_relative(&self, dock_area: &DockArea, screen: &Screen, w: Window, ww: &WindowWrapper) -> (Size, Position) {
+        unimplemented!();
+    }
+
     fn move_window(&self, screen: &Screen, dock_area: &DockArea, w: Window, x: i32, y: i32) -> (Position, Position) {
         unimplemented!();
     }
