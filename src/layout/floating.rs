@@ -41,7 +41,7 @@ impl Layout for Floating {
         let mut dh = (screen.height - new_size.height as i32) / 2;
 
         if let Some(dock_rect) = dock_area.as_rect(&screen) {
-            dh = ((screen.height + dock_rect.get_size().height as i32) - ww.get_height() as i32) / 2;
+            dh = ((screen.height + dock_rect.get_size().height as i32) - new_size.height as i32) / 2;
         }
         let ret = Position{x: screen.x + dw, y: screen.y + dh};
         
