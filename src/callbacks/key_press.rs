@@ -107,9 +107,15 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                     wm.center_cursor(w);
                     return;
                 }
-                if xlib.str_to_keycode("Up").expect("key_press: 15") == keycode || xlib.str_to_keycode("k").expect("key_press: 16") == keycode  {
-                    println!("Snap up");
+                if xlib.str_to_keycode("Up").expect("key_press: \"Up\"") == keycode || xlib.str_to_keycode("k").expect("key_press: 16") == keycode  {
+                    debug!("Snap up");
                     wm.shift_window(wm.focus_w, Direction::North);
+                    wm.center_cursor(w);
+                    return;
+                }
+                if xlib.str_to_keycode("c").expect("key_press: \"c\"") == keycode {
+                    debug!("Center window");
+                    wm.place_window(wm.focus_w);
                     wm.center_cursor(w);
                     return;
                 }
