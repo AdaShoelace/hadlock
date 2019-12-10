@@ -502,7 +502,9 @@ impl WindowManager {
             return None
         }
 
+
         let ww = self.current_monitor()?.get_client_mut(w)?;
+
         let (state, restore_pos) = (ww.get_window_state(), ww.get_restore_position());
 
         match state {
@@ -530,6 +532,7 @@ impl WindowManager {
                 ww.set_window_state(WindowState::Maximized);
                 ww.save_restore_size();
                 self.current_monitor()?.get_client_mut(w)?.save_restore_position();
+
                 let screen = self.get_focused_screen();
                 self.move_window(w, screen.x, screen.y);
                 let size = self.current_monitor()?.maximize(w);
@@ -595,15 +598,19 @@ impl WindowManager {
     }
     
 
+
     pub fn place_window(&mut self, w: Window) -> HadlockOption<()> {
         if !self.current_monitor()?.contains_window(w) {
             return None
+
         }
 
         let (size, pos) = self.current_monitor()?.place_window(w);
         self.move_window(w, pos.x, pos.y);
         self.resize_window(w, size.width, size.height);
+
         let ww = self.current_monitor()?.get_client_mut(w)?;
+
         ww.save_restore_position();
         ww.set_position(pos);
         Some(())
