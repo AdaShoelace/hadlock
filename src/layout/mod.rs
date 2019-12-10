@@ -4,7 +4,7 @@ pub mod floating;
 pub mod tiled;
 pub mod master_tiling;
 
-use crate::windowmanager::*;
+
 use crate::xlibwrapper::util::{
     Position,
     Size

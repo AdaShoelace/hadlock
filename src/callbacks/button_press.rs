@@ -9,7 +9,7 @@ use std::rc::Rc;
 
 pub fn button_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
-    let (window, x_root, y_root, state, button) =
+    let (window, x_root, y_root, _state, button) =
         match event {
             Event {
                 event_type: EventType::ButtonPress,
