@@ -22,7 +22,7 @@ pub fn button_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
         return
     }
 
-    println!("Button pressed from: {}", window);
+    debug!("Button pressed from: {}", window);
 
     let geometry = xlib.get_geometry(window);
 
@@ -31,9 +31,9 @@ pub fn button_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event)
     wm.drag_start_frame_size = (geometry.width, geometry.height);
 
     if button == Button1 {
-        println!("Button1 pressed");
+        debug!("Button1 pressed");
         let ww = wm.current_monitor().expect("button_press: current_monitor 2").get_client(window).expect(&format!("Button press no client: {}", window)).clone();
-        println!("Pointer location: {:?}", xlib.pointer_pos());
+        debug!("Pointer location: {:?}", xlib.pointer_pos());
         match xlib.get_upmost_window() {
             Some(x) if x != window => wm.raise_window(&ww),
             _ => { return }
