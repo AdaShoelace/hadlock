@@ -20,8 +20,10 @@ use nix::sys::signal::{self, SigHandler, Signal};
 
 use crate::config::*;
 
+pub type HadlockResult<T> = Result<T, Box<dyn std::error::Error>>;
+pub type HadlockOption<T> = Option<T>;
 
-fn main() {
+fn main() -> HadlockResult<()> {
     env_logger::init();    
     let (tx, rx) = mpsc::channel::<bool>();
 
@@ -38,6 +40,7 @@ fn main() {
         }
     });
     Runner::new(xlib, window_manager).run(tx);
+    Ok(())
 }
 
 fn call_commands(exec_time: ExecTime) {

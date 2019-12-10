@@ -7,7 +7,6 @@ use crate::{
         xlibmodels::Window,
     },
     models::{
-        screen::Screen,
         windowwrapper::WindowWrapper,
     },
     layout::{

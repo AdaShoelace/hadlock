@@ -5,6 +5,8 @@ use std::collections::{
 use std::rc::Rc;
 
 use crate::{
+    HadlockResult,
+    HadlockOption,
     config::*,
     xlibwrapper::{
         masks::*,
@@ -148,7 +150,7 @@ impl WindowManager {
     }
 
 
-    pub fn setup_window(&mut self, w: Window) {
+    pub fn setup_window(&mut self, w: Window) -> HadlockOption<()> {
         warn!("setup window");
         if self.lib.get_window_type(w) == WindowType::Dock {
             match self.lib.get_window_strut_array(w) {
@@ -159,25 +161,24 @@ impl WindowManager {
                         .filter(|mon| Self::window_inside_screen(&w_geom, &mon.screen))
                         .collect::<Vec<&mut Monitor>>().remove(0);
                     mon.set_dock_area(dock);
-                    //self.current_monitor().expect("setup_windot: current_monitor 1").set_dock_area(DockArea::from(dock));
                 }
                 None => {
-                    return
+                    return None
                 }
             }
         }
 
         if !self.should_be_managed(w) {
             warn!("{} should not be managed", w);
-            return
+            return None
         }
 
         if self.current_monitor().expect("setup_window: current monitor 2").contains_window(w) {
             warn!("Current monitor already contains: {}", w);
-            return
+            return None
         }
 
-        if self.client_exist(w) { return }
+        if self.client_exist(w) { return None}
 
         let geom = self.lib.get_geometry(w);
         let mut ww = WindowWrapper::new(w, Rect::from(geom));
@@ -187,11 +188,12 @@ impl WindowManager {
         self.lib.add_to_save_set(w);
         self.lib.add_to_root_net_client_list(w);
         self.subscribe_to_events(w);
-        self.current_monitor().expect("Setup_window: current_monitor 3").add_window(w, ww);
+        self.current_monitor()?.add_window(w, ww);
         self.window_initial_size(w);
         self.place_window(w);
         self.show_client(w);
         self.raise_window(&ww);
+        Some(())
     }
 
     fn client_exist(&self, w: Window) -> bool {
@@ -201,10 +203,13 @@ impl WindowManager {
             .count() > 0
     }
 
-    pub fn hide_client(&mut self, w: Window) {
-        let client = match self.current_monitor().expect("hide_client: current_monitor 1").get_client_mut(w) {
+    pub fn hide_client(&mut self, w: Window) -> HadlockOption<()> {
+        let client = match self.current_monitor()?.get_client_mut(w) {
             Some(client) => client,
-            None => { debug!("no such client");return }
+            None => { 
+                debug!("no such client");
+                return None
+            }
         };
         debug!("Hide client: {}", w);
         client.save_restore_position();
@@ -216,12 +221,13 @@ impl WindowManager {
             None => self.lib.unmap_window(w)
         }
         self.lib.sync(true);
+        Some(())
     }
 
-    fn show_client(&mut self, w: Window) {
-        let client = match self.current_monitor().expect("show_client: current_monitor 1").get_client_mut(w) {
+    fn show_client(&mut self, w: Window) -> HadlockOption<()> {
+        let client = match self.current_monitor()?.get_client_mut(w) {
             Some(client) => client,
-            None => { return }
+            None => { return None }
         };
         debug!("show client: {}", w);
         let pos = client.get_restore_position();
@@ -235,6 +241,7 @@ impl WindowManager {
             None => self.lib.map_window(w)
         }
         self.lib.sync(true);
+        Some(())
     }
 
     fn is_ws_visible(&self, ws: u32) -> bool {
@@ -254,31 +261,31 @@ impl WindowManager {
         mon.into_iter().nth(0)
     }
 
-    pub fn set_current_ws(&mut self, ws: u32) {
+    pub fn set_current_ws(&mut self, ws: u32) -> HadlockOption<()> {
         info!("Desktop changed to: {}", ws);
 
         if ws == self.current_monitor().expect("set_current_ws: current_monitor 1").get_current_ws_tag() {
-            return
+            return None
         }
 
-        if self.current_monitor().expect("set_current_ws: current_monitor 2").contains_ws(ws) && !self.is_ws_visible(ws) {
+        if self.current_monitor()?.contains_ws(ws) && !self.is_ws_visible(ws) {
 
-            self.current_monitor().expect("set_current_ws: current_monitor 3")
+            self.current_monitor()?
                 .get_current_windows()
                 .iter()
-                .for_each(|win| self.hide_client(*win));
+                .for_each(|win| {self.hide_client(*win);});
 
-            self.current_monitor().expect("set_current_ws: current_monitor 4")
+            self.current_monitor()?
                 .set_current_ws(ws);
 
-            self.current_monitor().expect("set_current_ws: current_monitor 5")
+            self.current_monitor()?
                 .get_current_windows()
                 .iter()
-                .for_each(|win| self.show_client(*win));
+                .for_each(|win| {self.show_client(*win);});
 
-            let current = self.current_monitor().expect("set_current_ws: current_monitor 6").get_current_ws_tag();
+            let current = self.current_monitor()?.get_current_ws_tag();
             self.lib.update_desktops(current, None);
-            return
+            return Some(())
         }
 
         if self.is_ws_visible(ws) {
@@ -294,34 +301,34 @@ impl WindowManager {
                     self.lib.sync(false);
                     self.lib.move_cursor(pos);
                     self.unset_focus(self.focus_w);
-                    self.current_monitor().expect("set_current_ws: current_monitor 7").set_current_ws(ws as u32);
-                    let current = self.current_monitor().expect("set_current_ws: current_monitor 8").get_current_ws_tag();
-                    self.current_monitor().expect("set_current_ws: current_monitor 9")
+                    self.current_monitor()?.set_current_ws(ws as u32);
+                    let current = self.current_monitor()?.get_current_ws_tag();
+                    self.current_monitor()?
                         .get_current_windows()
                         .iter()
-                        .for_each(|win| self.show_client(*win));
+                        .for_each(|win| {self.show_client(*win);});
                     self.lib.update_desktops(current, None);
-                    return
+                    return Some(())
                 },
-                None => {return}
+                None => {return None}
             }
         }
 
         // no monitor has ws
         match self.get_monitor_by_ws(ws) {
             None => {
-                self.current_monitor().expect("set_current_ws: current_monitor 10")
+                self.current_monitor()?
                     .get_current_windows()
                     .iter()
-                    .for_each(|win| self.hide_client(*win));
-                self.current_monitor().expect("set_current_ws: current_monitor 11")
+                    .for_each(|win| {self.hide_client(*win);});
+                self.current_monitor()?
                     .set_current_ws(ws);
 
-                self.current_monitor().expect("set_current_ws: current_monitor 12")
+                self.current_monitor()?
                     .get_current_windows()
                     .iter()
-                    .for_each(|win| self.show_client(*win));
-                let current = self.current_monitor().expect("set_current_ws: current_monitor 13").get_current_ws_tag();
+                    .for_each(|win| {self.show_client(*win);});
+                let current = self.current_monitor()?.get_current_ws_tag();
                 self.lib.update_desktops(current, None);
             },
             _ => {}
@@ -341,19 +348,20 @@ impl WindowManager {
         self.current_monitor = mon_id;
         self.lib.move_cursor(pos);
         self.set_current_monitor_by_mouse();
-        self.current_monitor().expect("set_current_ws: current_monitor 14")
+        self.current_monitor()?
             .get_current_windows()
             .iter()
-            .for_each(|win| self.hide_client(*win));
-        self.current_monitor().expect("set_current_ws: current_monitor 15")
+            .for_each(|win| {self.hide_client(*win);});
+        self.current_monitor()?
             .set_current_ws(ws);
 
-        self.current_monitor().expect("set_current_ws: current_monitor 16")
+        self.current_monitor()?
             .get_current_windows()
             .iter()
-            .for_each(|win| self.show_client(*win));
-        let current = self.current_monitor().expect("set_current_ws: current_monitor 17").get_current_ws_tag();
+            .for_each(|win| {self.show_client(*win);});
+        let current = self.current_monitor()?.get_current_ws_tag();
         self.lib.update_desktops(current, None);
+        Some(())
     }
 
     fn print_monitors(&self) {
@@ -362,53 +370,54 @@ impl WindowManager {
             .for_each(|mon| debug!("{:#?}", mon));
     }
 
-    pub fn move_to_ws(&mut self, w: Window, ws: u8) {
+    pub fn move_to_ws(&mut self, w: Window, ws: u8) -> HadlockOption<()> {
         debug!("move_to_ws called with: {}", w);
         if w != self.focus_w {
             debug!("Trying to move {}, and it is not focus_w: {}", w, self.focus_w);
-            return
+            return None
         }
     
-        let current_ws = self.current_monitor().expect("move_to_ws: current_monitor 0").get_current_ws_tag();
+        let current_ws = self.current_monitor()?.get_current_ws_tag();
 
         if ws as u32 == current_ws {
             debug!("Trying to move {} from {} to {}", w, ws, current_ws);
-            return
+            return None
         }
 
         let w = self.focus_w;
 
         if let None = self.get_monitor_by_ws(ws as u32) {
-            let temp = self.current_monitor().expect("move_to_ws: current_monitor 1").get_current_ws_tag();
+            let temp = self.current_monitor()?.get_current_ws_tag();
             let ww = self.current_monitor().expect("move_to_ws: current_monitor 2").remove_window(w);
-            self.current_monitor().expect("move_to_ws: current_monitor 3").set_current_ws(ws as u32);
-            self.current_monitor().expect("move_to_ws: current_monitor 4").add_window(w, ww);
-            self.current_monitor().expect("move_to_ws: current_monitor 5").set_current_ws(temp);
+            self.current_monitor()?.set_current_ws(ws as u32);
+            self.current_monitor()?.add_window(w, ww);
+            self.current_monitor()?.set_current_ws(temp);
         } else {
             self.hide_client(w);
-            let current = self.current_monitor().expect("move_to_ws: current_monitor 6").id;
-            let ww = self.current_monitor().expect("move_to_ws: current_monitor 7").remove_window(w);
+            let current = self.current_monitor()?.id;
+            let ww = self.current_monitor()?.remove_window(w);
             let mon = self.get_monitor_by_ws(ws.into()).unwrap();
             let temp = mon.id;
             self.current_monitor = temp;
-            self.current_monitor().expect("move_to_ws: current_monitor 8").add_window_to_ws(w, ww, ws.into());
+            self.current_monitor()?.add_window_to_ws(w, ww, ws.into());
             self.place_window(w);
             self.current_monitor = current;
         }
+        Some(())
     }
 
-    pub fn set_focus(&mut self, w: Window) {
+    pub fn set_focus(&mut self, w: Window) -> HadlockOption<()> {
         let root = self.lib.get_root();
-        let client = self.current_monitor().expect("set_focus: current_monitor 1").get_client(w).map(|x| *x).clone();
+        let client = self.current_monitor()?.get_client(w).map(|x| *x).clone();
         let ww = match client {
             Some(ww) => ww,
             None if w == root => {
                 let root = self.lib.get_root();
                 self.focus_w = root;
                 self.lib.take_focus(self.focus_w);
-                return
+                return Some(())
             }
-            None => { return }
+            None => { return None}
         };
 
         //self.unset_focus(self.focus_w);
@@ -435,12 +444,13 @@ impl WindowManager {
         }
         // need to rethink focus for non floating modes
         info!("focus_w: {}", self.focus_w);
+        Some(())
     }
 
-    pub fn unset_focus(&mut self, w: Window) {
-        let ww = match self.current_monitor().expect("unset_focus: current_monitor 1").get_client(w).map(|x| *x).clone() {
+    pub fn unset_focus(&mut self, w: Window) -> HadlockOption<()> {
+        let ww = match self.current_monitor()?.get_client(w).map(|x| *x).clone() {
             Some(ww) => ww,
-            None => { return }
+            None => { return None}
         };
         match ww.get_dec() {
             Some(dec) => {
@@ -454,6 +464,7 @@ impl WindowManager {
                 self.lib.resize_window(w, size.width, size.height);
             }
         }
+        Some(())
     }
 
     fn window_initial_size(&mut self, w: Window) {
@@ -478,25 +489,27 @@ impl WindowManager {
         }
     }
 
-    pub fn toggle_maximize(&mut self, w: Window) {
+    pub fn toggle_maximize(&mut self, w: Window) -> HadlockOption<()> {
         // TODO: cleanup this mess...
-        if !self.current_monitor().expect("toggle_maximize: current_monitor 1").contains_window(w) {
+        if !self.current_monitor()?.contains_window(w) {
             debug!("toggle_maximize: Window not in client list: {}", w);
             debug!("Client list:");
-            self.current_monitor().expect("toggle_maximize: current_monitor 2").get_client_keys()
+            self.current_monitor()?.get_client_keys()
                 .iter()
                 .for_each(|key| {
                     println!("Client: {}", key)
                 });
-            return
+            return None
         }
 
-        let ww = self.current_monitor().expect("toggle_maximize: current_monitor 3").get_client_mut(w).expect("windowmanager: toggle_maximize 1");
+
+        let ww = self.current_monitor()?.get_client_mut(w)?;
+
         let (state, restore_pos) = (ww.get_window_state(), ww.get_restore_position());
 
         match state {
             WindowState::Maximized => {
-                let others = self.current_monitor().expect("toggle_maximize: current_monitor 4")
+                let others = self.current_monitor()?
                     .get_current_windows()
                     .into_iter()
                     .filter(|win| *win != w)
@@ -505,10 +518,10 @@ impl WindowManager {
                 others
                     .into_iter()
                     .for_each(|win| {
-                        self.show_client(win)
+                        self.show_client(win);
                     });
                 self.show_client(w);
-                let ww = self.current_monitor().expect("toggle_maximize: current_monitor 5").get_client_mut(w).expect("How can it not be in list?!");
+                let ww = self.current_monitor()?.get_client_mut(w)?;
                 ww.restore_prev_state();
                 let size = ww.get_restore_size();
                 self.resize_window(w, size.width, size.height);
@@ -518,11 +531,12 @@ impl WindowManager {
                 ww.save_restore_position();
                 ww.set_window_state(WindowState::Maximized);
                 ww.save_restore_size();
-                self.current_monitor().expect("toggle_maximize: current_monitor 6").get_client_mut(w).expect("Not in list?!").save_restore_position();
+                self.current_monitor()?.get_client_mut(w)?.save_restore_position();
+
                 let screen = self.get_focused_screen();
                 self.move_window(w, screen.x, screen.y);
-                let size = self.current_monitor().expect("toggle_maximize: current_monitor 7").maximize(w);
-                let others = self.current_monitor().expect("toggle_maximize: current_monitor 8")
+                let size = self.current_monitor()?.maximize(w);
+                let others = self.current_monitor()?
                     .get_current_windows()
                     .into_iter()
                     .filter(|win| *win != w)
@@ -531,41 +545,35 @@ impl WindowManager {
                 others
                     .into_iter()
                     .for_each(|win| {
-                        self.hide_client(win)
+                        self.hide_client(win);
                     });
                 self.resize_window(w, size.width, size.height);
             }
         }
-        /*let ww = self.clients.get(&w).expect("Not in list? {WindowManager::maximize}");
-          match ww.get_dec() {
-          Some(dec) => {
-          self.lib.raise_window(dec);
-          self.lib.raise_window(w);
-          },
-          None => self.lib.raise_window(w)
-          }*/
         self.set_focus(w);
         self.center_cursor(w);
+        Some(())
     }
 
-    pub fn resize_window(&mut self, w: Window, width: u32, height: u32) {
-        if !self.current_monitor().expect("resize_window: current_monitor 1").contains_window(w) {
-            return
+    pub fn resize_window(&mut self, w: Window, width: u32, height: u32) -> HadlockOption<()> {
+        if !self.current_monitor()?.contains_window(w) {
+            return None
         }
 
-        let (dec_size, window_size) = self.current_monitor().expect("resize_window: current_monitor 2").resize_window(w, width, height);
+        let (dec_size, window_size) = self.current_monitor()?.resize_window(w, width, height);
 
-        let win = self.current_monitor().expect("resize_window: current_monitor 3").get_client_mut(w).expect("Client not found in resize_window").window();
-        let dec_win = self.current_monitor().expect("resize_window: current_monitor 4").get_client_mut(w).expect("Client not found in resize_window").get_dec();
+        let win = self.current_monitor()?.get_client_mut(w)?.window();
+        let dec_win = self.current_monitor()?.get_client_mut(w)?.get_dec();
 
 
         if let Some(dec_win) = dec_win {
-            self.current_monitor().expect("resize_window: current_monitor 5").get_client_mut(w).expect("Client not found in resize_window").set_dec_size(dec_size);
+            self.current_monitor()?.get_client_mut(w)?.set_dec_size(dec_size);
             self.lib.resize_window(dec_win, dec_size.width, dec_size.height);
         }
 
-        self.current_monitor().expect("resize_window: current_monitor 6").get_client_mut(w).expect("Client not found in resize_window").set_inner_size(window_size);
+        self.current_monitor()?.get_client_mut(w)?.set_inner_size(window_size);
         self.lib.resize_window(win, window_size.width, window_size.height);
+        Some(())
     }
 
     fn subscribe_to_events(&mut self, w: Window) {
@@ -574,31 +582,38 @@ impl WindowManager {
             EnterWindowMask | LeaveWindowMask | FocusChangeMask | PropertyChangeMask
         );
     }
-    pub fn shift_window(&mut self, w: Window, direction: Direction) {
-        if !self.current_monitor().expect("shift_window: current_monitor 1").contains_window(w) {
-            return
+
+    pub fn shift_window(&mut self, w: Window, direction: Direction) -> HadlockOption<()> {
+        if !self.current_monitor()?.contains_window(w) {
+            return None
         }
 
-        let (pos, size) = self.current_monitor().expect("shift_window: current_monitor 2").shift_window(w, direction);
+        let (pos, size) = self.current_monitor()?.shift_window(w, direction);
         self.move_window(w, pos.x, pos.y);
         self.resize_window(w, size.width, size.height);
         self.set_focus(w);
         self.center_cursor(w);
-        self.current_monitor().expect("shift_window: current_monitor 3").get_client_mut(w).expect("window_manager: shift_window").set_window_state(WindowState::Snapped);
+        self.current_monitor()?.get_client_mut(w)?.set_window_state(WindowState::Snapped);
+        Some(())
     }
     
 
-    pub fn place_window(&mut self, w: Window) {
-        if !self.current_monitor().expect("place_window: current_monitor 1").contains_window(w) {
-            return
+
+    pub fn place_window(&mut self, w: Window) -> HadlockOption<()> {
+        if !self.current_monitor()?.contains_window(w) {
+            return None
+
         }
 
-        let (size, pos) = self.current_monitor().expect("place_window: current_monitor 2").place_window(w);
+        let (size, pos) = self.current_monitor()?.place_window(w);
         self.move_window(w, pos.x, pos.y);
         self.resize_window(w, size.width, size.height);
-        let ww = self.current_monitor().expect("place_window: current_monitor 3").get_client_mut(w).expect("window_manager: place_window");
+
+        let ww = self.current_monitor()?.get_client_mut(w)?;
+
         ww.save_restore_position();
         ww.set_position(pos);
+        Some(())
     }
 
     pub fn should_be_managed(&self, w: Window) -> bool {
@@ -628,12 +643,12 @@ impl WindowManager {
         }
     }
 
-    pub fn move_window(&mut self, w: Window, x: i32, y: i32) {
-        let mut ww = match self.current_monitor().expect("move_window: current_monitor 1").get_client(w) {
+    pub fn move_window(&mut self, w: Window, x: i32, y: i32) -> HadlockOption<()> {
+        let ww = match self.current_monitor()?.get_client(w) {
             Some(ww) => ww.clone(),
-            None => { return }
+            None => { return None }
         };
-        let (outer_pos, inner_pos) = self.current_monitor().expect("move_window: current_monitor 2").move_window(w, x, y);
+        let (outer_pos, inner_pos) = self.current_monitor()?.move_window(w, x, y);
 
         match ww.get_dec() {
             Some(dec) => {
@@ -645,16 +660,18 @@ impl WindowManager {
                     ww.window(),
                     inner_pos
                 );
-                let ww = self.current_monitor().expect("move_window: current_monitor 3").get_client_mut(w).expect("window_manager: move_window 1");
+                let ww = self.current_monitor()?.get_client_mut(w)?;
                 ww.set_position(outer_pos);
+                Some(())
             },
             None => {
                 self.lib.move_window(
                     ww.window(),
                     outer_pos
                 );
-                let ww = self.current_monitor().expect("move_window: current_monitor 4").get_client_mut(w).expect("window_manager: move_window 2");
+                let ww = self.current_monitor()?.get_client_mut(w)?;
                 ww.set_position(outer_pos);
+                Some(())
             }
         }
     }
@@ -693,27 +710,28 @@ impl WindowManager {
         }
     }
 
-    pub fn center_cursor(&mut self, w: Window) {
-        let ww = match self.current_monitor().expect("center_cursor: current_monitor 1").get_client(w) {
+    pub fn center_cursor(&mut self, w: Window) -> HadlockOption<()> {
+        let ww = match self.current_monitor()?.get_client(w) {
             Some(ww) => ww.clone(),
-            None => { return }
+            None => { return None }
         };
-        self.lib.center_cursor(&ww)
+        self.lib.center_cursor(&ww);
+        Some(())
     }
 
-    pub fn kill_window(&mut self, w: Window) {
-        if !self.current_monitor().expect("kill_window: current_monitor 1").contains_window(w) || w == self.lib.get_root() {
-            return;
+    pub fn kill_window(&mut self, w: Window) -> HadlockOption<()> {
+        if !self.current_monitor()?.contains_window(w) || w == self.lib.get_root() {
+            return None
         }
 
-        let frame = self.current_monitor().expect("kill_window: current_monitor 2").get_client(w).expect("KillWindow: No such window in client list").clone();
+        let frame = self.current_monitor()?.get_client(w)?.clone();
 
         if self.lib.kill_client(frame.window()) {
             if frame.is_decorated() {
                 self.destroy_dec(frame);
             }
-            self.current_monitor().expect("kill_window: current_monitor 3").remove_window(w);
-            let clients: Vec<Window> = self.current_monitor().expect("kill_window: current_monitor 4")
+            self.current_monitor()?.remove_window(w);
+            let clients: Vec<Window> = self.current_monitor()?
                 .get_client_keys()
                 .iter()
                 .map(|c| {
@@ -722,6 +740,7 @@ impl WindowManager {
             self.lib.update_net_client_list(clients);
         }
         info!("Top level windows: {}", self.lib.top_level_window_count());
+        Some(())
     }
 
     pub fn grab_keys(&self, w: Window) {
