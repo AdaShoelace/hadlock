@@ -12,7 +12,8 @@ pub fn map_request(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) 
         },
         _ => { return; }
     };
-
+    let (class, name) = xlib.get_class_hint(w);
+    debug!("Mapped class: {}, name: {}", class, name);
     wm.setup_window(w);
     xlib.map_window(w);
 }

@@ -21,7 +21,9 @@ impl Runner {
         };
 
         ret.call_table.insert(EventType::MapRequest, Box::new(map_request::map_request));
+        ret.call_table.insert(EventType::UnmapNotify, Box::new(unmap_notify::unmap_notify));
         ret.call_table.insert(EventType::ConfigurationRequest, Box::new(configure_request::configure_request));
+        ret.call_table.insert(EventType::ClientMessageRequest, Box::new(client_message_request::client_message_request));
         ret.call_table.insert(EventType::MotionNotify, Box::new(motion_notify::motion_notify));
         ret.call_table.insert(EventType::DestroyWindow, Box::new(destroy_window::destroy_window));
         ret.call_table.insert(EventType::Expose, Box::new(expose::expose));
@@ -31,6 +33,7 @@ impl Runner {
         ret.call_table.insert(EventType::KeyPress, Box::new(key_press::key_press));
         ret.call_table.insert(EventType::KeyRelease, Box::new(key_release::key_release));
         ret.call_table.insert(EventType::ButtonRelease, Box::new(button_release::button_release));
+        ret.call_table.insert(EventType::PropertyNotify, Box::new(property_notify::property_notify));
 
 
         ret

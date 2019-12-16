@@ -1,4 +1,4 @@
-#![allow(unused_variables, dead_code)]
+#![allow(unused_variables)]
 use x11_dl::xlib;
 use std::os::raw::*;
 use std::ffi::CString;
@@ -163,7 +163,6 @@ impl XlibWrapper {
                 &mut attrs,
             );
         }
-
         self.select_input(self.root, root_event_mask);
 
         unsafe {
@@ -190,6 +189,7 @@ impl XlibWrapper {
                 "Down",
                 "Return",
                 "q",
+                "d",
                 "e",
                 "1", "2", "3", "4", "5", "6", "7", "8", "9"
             ];
@@ -361,6 +361,55 @@ impl XlibWrapper {
         }
     }
 
+    pub fn get_window_states_atoms(&self, window: xlib::Window) -> Vec<xlib::Atom> {
+        let mut format_return: i32 = 0;
+        let mut nitems_return: c_ulong = 0;
+        let mut bytes_remaining: c_ulong = 0;
+        let mut type_return: xlib::Atom = 0;
+        let mut prop_return: *mut c_uchar = unsafe { std::mem::uninitialized() };
+        unsafe {
+            let status = (self.lib.XGetWindowProperty)(
+                self.display,
+                window,
+                self.xatom.NetWMState,
+                0,
+                4096i64 / 4,
+                xlib::False,
+                xlib::XA_ATOM,
+                &mut type_return,
+                &mut format_return,
+                &mut nitems_return,
+                &mut bytes_remaining,
+                &mut prop_return,
+            );
+            if status == i32::from(xlib::Success) && !prop_return.is_null() {
+                #[allow(clippy::cast_lossless, clippy::cast_ptr_alignment)]
+                //let result = *(prop_return as *const u32);
+                let ptr = prop_return as *const u64;
+                let results: &[xlib::Atom] = std::slice::from_raw_parts(ptr, nitems_return as usize);
+                return results.to_vec();
+            }
+            vec![]
+        }
+    }
+
+    pub fn set_window_states_atoms(&self, window: xlib::Window, states: Vec<xlib::Atom>) {
+        let data: Vec<u32> = states.iter().map(|x| *x as u32).collect();
+        unsafe {
+            (self.lib.XChangeProperty)(
+                self.display,
+                window,
+                self.xatom.NetWMState,
+                xlib::XA_ATOM,
+                32,
+                xlib::PropModeReplace,
+                data.as_ptr() as *const u8,
+                data.len() as i32,
+            );
+            std::mem::forget(data);
+        }
+    }
+
     pub fn get_atom_if_exists(&self, s: &str) -> u64 {
         unsafe {
             match CString::new(s) {
@@ -374,7 +423,7 @@ impl XlibWrapper {
         self.screen.clone()
     }
 
-    fn set_desktop_prop_u64(&self, value: u64, atom: c_ulong, type_: c_ulong) {
+    pub fn set_desktop_prop_u64(&self, value: u64, atom: c_ulong, type_: c_ulong) {
         let data = vec![value as u32];
         unsafe {
             (self.lib.XChangeProperty)(
@@ -842,6 +891,18 @@ impl XlibWrapper {
     pub fn get_window_type_atom(&self, w: Window) -> Option<xlib::Atom> {
         self.get_atom_prop_value(w, self.xatom.NetWMWindowType)
     }
+    
+    pub fn get_class_hint(&self, w: Window) -> (String, String) {
+        unsafe {
+            let mut hint_return = xlib::XClassHint{res_class: mem::uninitialized(), res_name: mem::uninitialized()};
+            (self.lib.XGetClassHint)(
+                self.display,
+                w,
+                &mut hint_return
+            );
+            (CString::from_raw(hint_return.res_class).to_str().expect("res_class fucked up").to_string(), CString::from_raw(hint_return.res_name).to_str().expect("res_name fucked up").to_string())
+        }
+    }
 
     pub fn get_atom_prop_value(
         &self,
@@ -974,7 +1035,7 @@ impl XlibWrapper {
                         window_changes,
                         event.value_mask
                     );
-
+                    debug!("ConfigureRequest from: {}", event.window);
                     Event::new(EventType::ConfigurationRequest, Some(payload))
                 },
                 xlib::MapRequest => {
@@ -983,8 +1044,13 @@ impl XlibWrapper {
                     let payload = EventPayload::MapRequest(event.window);
                     Event::new(EventType::MapRequest, Some(payload))
                 },
+                xlib::UnmapNotify => {
+                    let event = xlib::XUnmapEvent::from(event);
+                    debug!("UnmapRequest: {}", event.window);
+                    let payload = EventPayload::UnmapNotify(event.window);
+                    Event::new(EventType::UnmapNotify, Some(payload))
+                },
                 xlib::ButtonPress => {
-                    //debug!("Button press");
                     let event = xlib::XButtonEvent::from(event);
                     let payload = EventPayload::ButtonPress(
                         event.window,
@@ -997,7 +1063,6 @@ impl XlibWrapper {
                     Event::new(EventType::ButtonPress, Some(payload))
                 },
                 xlib::ButtonRelease => {
-                    //debug!("Button press");
                     let event = xlib::XButtonEvent::from(event);
                     let payload = EventPayload::ButtonRelease(
                         event.window,
@@ -1010,7 +1075,6 @@ impl XlibWrapper {
                     Event::new(EventType::ButtonRelease, Some(payload))
                 },
                 xlib::KeyPress => {
-                    //debug!("Keypress\tEvent: {:?}", event);
                     let event = xlib::XKeyEvent::from(event);
                     let payload = EventPayload::KeyPress(event.window, event.state, event.keycode);
                     Event::new(EventType::KeyPress, Some(payload))
@@ -1030,18 +1094,15 @@ impl XlibWrapper {
                         event.y_root,
                         event.state
                     );
-                    //debug!("motion_notify for window: {}", event.window);
                     Event::new(EventType::MotionNotify, Some(payload))
                 },
                 xlib::EnterNotify => {
                     let event = xlib::XCrossingEvent::from(event);
-                    //debug!("{:?}", event);
                     let payload = EventPayload::EnterNotify(event.window, event.subwindow);
                     Event::new(EventType::EnterNotify, Some(payload))
                 },
                 xlib::LeaveNotify => {
                     let event = xlib::XCrossingEvent::from(event);
-                    //debug!("{:?}", event);
                     let payload = EventPayload::LeaveNotify(event.window);
                     Event::new(EventType::LeaveNotify, Some(payload))
                 },
@@ -1052,6 +1113,7 @@ impl XlibWrapper {
                 },
                 xlib::DestroyNotify => {
                     let event = xlib::XDestroyWindowEvent::from(event);
+                    debug!("Destroy: {:?}", event);
                     let payload = EventPayload::DestroyWindow(event.window);
                     Event::new(EventType::DestroyWindow, Some(payload))
                 },
@@ -1059,15 +1121,18 @@ impl XlibWrapper {
                     let event = xlib::XPropertyEvent::from(event);
                     let ret = CString::from_raw((self.lib.XGetAtomName)(self.display, event.atom));
                     ret.to_str().expect("xlibwrapper::core: next_event");
-                    //debug!("Property changed {:?}", ret);
-                    Event::new(EventType::UnknownEvent, None)
+                    let payload = EventPayload::PropertyNotify(event.window, event.atom);
+                    Event::new(EventType::PropertyNotify, Some(payload))
                 },
                 xlib::ClientMessage => {
-                    let _event = xlib::XClientMessageEvent::from(event);
-                    //debug!("{:?}", event);
-                    Event::new(EventType::UnknownEvent, None)
+                    let event = xlib::XClientMessageEvent::from(event);
+                    debug!("ClientMessageRequest");
+                    let payload = EventPayload::ClientMessageRequest(event.window, event.message_type, vec![event.data.get_long(0), event.data.get_long(1), event.data.get_long(2)]);
+                    Event::new(EventType::ClientMessageRequest, Some(payload))
                 },
-                _ => Event::new(EventType::UnknownEvent, None)
+                _ => {
+                    Event::new(EventType::UnknownEvent, None)
+                }
             }
         }
     }

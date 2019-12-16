@@ -11,7 +11,6 @@ XEPHYR=$(whereis -b Xephyr | cut -f2 -d' ')
 xinit ./xinitrc -- \
     "$XEPHYR" \
         :99 \
-		-resizeable \
         -ac \
 		-screen 1280x720 \
 		+xinerama \

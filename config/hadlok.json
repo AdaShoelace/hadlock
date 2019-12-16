@@ -32,8 +32,8 @@
 			"program": "polybar",
 			"args": [
 				"--config=./polyconf",
-				"example",
-				"2>polylog"
+				"--log=ERROR",
+				"example"
 			]
 		}
 	]

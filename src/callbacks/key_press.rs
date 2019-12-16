@@ -71,7 +71,7 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                     xlib.exit();
                 }
                 if xlib.str_to_keycode("f").expect("key_press: 8") == keycode {
-                    wm.toggle_monocle(w);
+                    //wm.toggle_monocle(w);
                 }
 
                 match ws_keys.contains(&keycode) {
@@ -120,7 +120,7 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                 }
                 if xlib.str_to_keycode("d").expect("key_press: \"d\"") == keycode {
                     debug!("dmenu_run");
-                    spawn_process("dmenu_run", vec![]);
+                    spawn_process("dmenu_recency", vec![]);
                     return;
                 }
                 if ws_keys.contains(&keycode) {
@@ -134,6 +134,11 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
             if mod_not_shift {
                 if xlib.str_to_keycode("Return").expect("key_press: 17") == keycode {
                     spawn_process(CONFIG.term.as_str(), vec![]);
+                }
+                if xlib.str_to_keycode("d").expect("key_press: \"d\"") == keycode {
+                    debug!("dmenu_run");
+                    spawn_process("dmenu_recency", vec![]);
+                    return;
                 }
 
                 match ws_keys.contains(&keycode) {
