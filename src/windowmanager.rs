@@ -5,7 +5,6 @@ use std::collections::{
 use std::rc::Rc;
 
 use crate::{
-    HadlockResult,
     HadlockOption,
     config::*,
     xlibwrapper::{

@@ -1,9 +1,6 @@
 #![allow(unused_variables)]
 
 pub mod floating;
-pub mod tiled;
-pub mod master_tiling;
-
 
 use crate::xlibwrapper::util::{
     Position,

@@ -169,5 +169,5 @@ fn spawn_process(bin_name: &str, args: Vec<&str>) {
     args
         .into_iter()
         .for_each(|arg| {cmd.arg(arg);});
-    cmd.spawn();
+    let _ = cmd.spawn();
 }

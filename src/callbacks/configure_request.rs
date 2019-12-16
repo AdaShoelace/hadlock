@@ -1,5 +1,4 @@
 use crate::windowmanager::WindowManager;
-use crate::xlibwrapper::xlibmodels::*;
 use crate::xlibwrapper::core::*;
 use crate::xlibwrapper::event::*;
 

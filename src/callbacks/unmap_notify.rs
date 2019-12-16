@@ -3,7 +3,7 @@ use crate::xlibwrapper::event::*;
 use crate::xlibwrapper::core::*;
 use std::rc::Rc;
 
-pub fn unmap_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
+pub fn unmap_notify(_xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
     let w = match event.event_type {
         EventType::UnmapNotify => match event.payload {

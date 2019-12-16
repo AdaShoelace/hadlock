@@ -1,4 +1,4 @@
-#![allow(unused_variables)]
+#![allow(unused_variables, deprecated)]
 use x11_dl::xlib;
 use std::os::raw::*;
 use std::ffi::CString;
@@ -24,7 +24,7 @@ use crate::models::{
 };
 
 
-pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> c_int {
+pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> i32 {
     let err = *e;
     if err.error_code == xlib::BadWindow {
         return 0;
@@ -32,7 +32,7 @@ pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xli
     1
 }
 
-pub(crate) unsafe extern "C" fn on_wm_detected(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> c_int {
+pub(crate) unsafe extern "C" fn on_wm_detected(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> i32 {
     if (*e).error_code == xlib::BadAccess {
         error!("Other wm registered!");
         return 1;
@@ -45,13 +45,12 @@ pub struct XlibWrapper {
     pub xatom: XAtom,
     display: *mut Display,
     root: Window,
-    screen: Screen,
     cursors: Cursor
 }
 
 impl XlibWrapper {
     pub fn new() -> Self {
-        let (disp, root, lib, xatom, screen, cursors) = unsafe {
+        let (disp, root, lib, xatom, cursors) = unsafe {
             let lib = xlib::Xlib::open().expect("xlibwrapper::core: new");
             let disp = (lib.XOpenDisplay)(std::ptr::null_mut());
 
@@ -68,10 +67,9 @@ impl XlibWrapper {
             let screen_id = (lib.XDefaultScreen)(disp);
             let display_width = (lib.XDisplayWidth)(disp, screen_id);
             let display_height = (lib.XDisplayHeight)(disp, screen_id);
-            let screen = Screen::new(root, display_width, display_height, 0, 0);
             let cursors = Cursor::new(&lib, disp);
 
-            (disp, root, lib, xatom, screen, cursors)
+            (disp, root, lib, xatom, cursors)
         };
 
 
@@ -80,7 +78,6 @@ impl XlibWrapper {
             xatom,
             display: disp,
             root,
-            screen,
             cursors
         };
         ret.init();
@@ -327,31 +324,6 @@ impl XlibWrapper {
 
     }
 
-    pub fn set_viewport(&self, pos: Position) {
-        let data = vec![pos.x as u32, pos.y as u32];
-        self.set_desktop_prop(&data, self.xatom.NetDesktopViewport);
-    }
-
-    pub fn set_cursor_normal(&self) {
-        unsafe {
-            (self.lib.XDefineCursor)(
-                self.display,
-                self.root,
-                self.cursors.normal_cursor
-            );
-        }
-    }
-
-    pub fn set_cursor_move(&self) {
-        unsafe {
-            (self.lib.XDefineCursor)(
-                self.display,
-                self.root,
-                self.cursors.move_cursor
-            );
-        }
-    }
-
     fn get_atom(&self, s: &str) -> u64 {
         unsafe {
             match CString::new(s) {
@@ -410,19 +382,6 @@ impl XlibWrapper {
         }
     }
 
-    pub fn get_atom_if_exists(&self, s: &str) -> u64 {
-        unsafe {
-            match CString::new(s) {
-                Ok(b) => (self.lib.XInternAtom)(self.display, b.as_ptr() as *const c_char, 1) as u64,
-                _ => panic!("Invalid atom! {}", s),
-            }
-        }
-    }
-
-    pub fn get_screen(&self) -> Screen {
-        self.screen.clone()
-    }
-
     pub fn set_desktop_prop_u64(&self, value: u64, atom: c_ulong, type_: c_ulong) {
         let data = vec![value as u32];
         unsafe {
@@ -473,16 +432,6 @@ impl XlibWrapper {
             );
             mem::forget(xdata);
         }
-    }
-
-
-    pub fn get_window_attrs(&self, window: xlib::Window) -> Result<xlib::XWindowAttributes, ()> {
-        let mut attrs: xlib::XWindowAttributes = unsafe { mem::zeroed() };
-        let status = unsafe { (self.lib.XGetWindowAttributes)(self.display, window, &mut attrs) };
-        if status == 0 {
-            return Err(());
-        }
-        Ok(attrs)
     }
 
     pub fn add_to_save_set(&self, w: Window) {
@@ -676,19 +625,6 @@ impl XlibWrapper {
         }
     }
 
-    pub fn grab_keyboard(&self, w: Window) {
-        unsafe {
-            (self.lib.XGrabKeyboard)(
-                self.display,
-                w,
-                to_c_bool(false),
-                GrabModeAsync,
-                GrabModeAsync,
-                xlib::CurrentTime
-            );
-        }
-    }
-
     pub fn add_to_root_net_client_list(&self, w: Window) {
         unsafe {
             let list = vec![w];
@@ -752,15 +688,6 @@ impl XlibWrapper {
         }
     }
 
-    pub fn intern_atom(&self, s: &str) -> u64 {
-        unsafe {
-            match CString::new(s) {
-                Ok(b) =>  (self.lib.XInternAtom)(self.display, b.as_ptr() as *const i8, 0) as u64,
-                _ => panic!("Invalid atom {}", s)
-            }
-        }
-    }
-
     pub fn get_geometry(&self, w: Window) -> Geometry {
 
         unsafe {
@@ -773,19 +700,6 @@ impl XlibWrapper {
                 width: attr.width as u32,
                 height: attr.height as u32,
             }
-        }
-    }
-
-    pub fn get_wm_protocols(&self, w: Window) -> Vec<u64> {
-        unsafe {
-            let mut protocols: *mut u64 = std::ptr::null_mut();
-            let mut num = 0;
-            (self.lib.XGetWMProtocols)(self.display, w, &mut protocols, &mut num);
-            let slice = std::slice::from_raw_parts(protocols, num as usize);
-
-            slice.iter()
-                .map(|&x| x as u64)
-                .collect::<Vec<u64>>()
         }
     }
 
@@ -876,15 +790,6 @@ impl XlibWrapper {
     pub fn key_sym_to_keycode(&self, keysym: u64) -> KeyCode {
         unsafe {
             (self.lib.XKeysymToKeycode)(self.display, keysym)
-        }
-    }
-
-    pub fn get_keycode_from_string(&self, key: &str) -> u64 {
-        unsafe {
-            match CString::new(key.as_bytes()) {
-                Ok(b) => (self.lib.XStringToKeysym)(b.as_ptr()) as u64,
-                _ => panic!("Invalid key string!"),
-            }
         }
     }
 
@@ -1155,12 +1060,6 @@ impl XlibWrapper {
         }
     }
 
-    pub fn remove_from_save_set(&self, w: Window) {
-        unsafe {
-            (self.lib.XRemoveFromSaveSet)(self.display, w);
-        }
-    }
-
     pub fn select_input(&self, window: xlib::Window, masks: Mask) {
         unsafe {
             (self.lib.XSelectInput)(
@@ -1178,10 +1077,6 @@ impl XlibWrapper {
         unsafe {
             (self.lib.XSetWindowBorderWidth)(self.display, w, border_width);
         }
-    }
-
-    pub fn set_atom_number_of_desktops(&self, num: u32) {
-        self.set_desktop_prop(&[num], self.xatom.NetNumberOfDesktops);
     }
 
     pub fn sync(&self, discard: bool) {

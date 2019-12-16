@@ -1,4 +1,4 @@
-#![allow(unused_variables, dead_code)]
+#![allow(unused_variables, dead_code, deprecated)]
 use x11_dl::xlib;
 use super::util::*;
 
