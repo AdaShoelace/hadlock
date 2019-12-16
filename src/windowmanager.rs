@@ -5,14 +5,13 @@ use std::collections::{
 use std::rc::Rc;
 
 use crate::{
-    HadlockResult,
     HadlockOption,
     config::*,
     xlibwrapper::{
         masks::*,
         core::*,
         util::*,
-        xlibmodels::*
+        xlibmodels::*,
     },
     models::{
         windowwrapper::*,
@@ -142,10 +141,10 @@ impl WindowManager {
         self.lib.map_window(dec_window);
         self.lib.sync(false);
     }
-    
+
     fn window_inside_screen(w_geom: &Geometry, screen: &Screen) -> bool {
         let inside_width = w_geom.x >= screen.x && w_geom.x < screen.x + screen.width;
-        let inside_height = w_geom.y >= screen.y && w_geom.y < screen.y + screen.height; 
+        let inside_height = w_geom.y >= screen.y && w_geom.y < screen.y + screen.height;
         inside_width && inside_height
     }
 
@@ -206,7 +205,7 @@ impl WindowManager {
     pub fn hide_client(&mut self, w: Window) -> HadlockOption<()> {
         let client = match self.current_monitor()?.get_client_mut(w) {
             Some(client) => client,
-            None => { 
+            None => {
                 debug!("no such client");
                 return None
             }
@@ -220,6 +219,7 @@ impl WindowManager {
             },
             None => self.lib.unmap_window(w)
         }
+        self.set_focus(self.lib.get_root());
         self.lib.sync(true);
         Some(())
     }
@@ -376,7 +376,7 @@ impl WindowManager {
             debug!("Trying to move {}, and it is not focus_w: {}", w, self.focus_w);
             return None
         }
-    
+
         let current_ws = self.current_monitor()?.get_current_ws_tag();
 
         if ws as u32 == current_ws {
@@ -596,7 +596,7 @@ impl WindowManager {
         self.current_monitor()?.get_client_mut(w)?.set_window_state(WindowState::Snapped);
         Some(())
     }
-    
+
 
 
     pub fn place_window(&mut self, w: Window) -> HadlockOption<()> {
@@ -628,6 +628,7 @@ impl WindowManager {
         }
 
         if self.lib.get_window_attributes(w).override_redirect {
+            self.lib.map_window(w);
             return false;
         }
         true

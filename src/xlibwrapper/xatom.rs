@@ -15,9 +15,6 @@ pub struct XAtom {
     pub NetWMName: xlib::Atom,
     pub NetWMState: xlib::Atom,
 
-    //pub NetWMStateSticky: xlib::Atom,
-    //pub NetWMStateAbove: xlib::Atom,
-    //pub NetWMStateFullscreen: xlib::Atom,
     pub NetWMStateModal: xlib::Atom,
     pub NetWMStateSticky: xlib::Atom,
     pub NetWMStateMaximizedVert: xlib::Atom,
@@ -50,6 +47,8 @@ pub struct XAtom {
     pub NetWMStrutPartial: xlib::Atom, //net version - Reserve Screen Space
     pub NetWMStrut: xlib::Atom,        //old version
 
+    pub WMTransientFor: xlib::Atom,
+    pub WMNormalHints: xlib::Atom,
     pub NetUtf8String: xlib::Atom
 }
 
@@ -59,19 +58,19 @@ impl XAtom {
             self.NetActiveWindow,
             self.NetSupported,
             self.NetWMName,
-            //self.NetWMState,
-            //self.NetWMStateModal,
-            //self.NetWMStateSticky,
-            //self.NetWMStateMaximizedVert,
-            //self.NetWMStateMaximizedHorz,
-            //self.NetWMStateShaded,
-            //self.NetWMStateSkipTaskbar,
-            //self.NetWMStateSkipPager,
-            //self.NetWMStateHidden,
-            //self.NetWMStateFullscreen,
-            //self.NetWMStateAbove,
-            //self.NetWMStateBelow,
-            //self.NetWMStateDemandsAttention,
+            self.NetWMState,
+            self.NetWMStateModal,
+            self.NetWMStateSticky,
+            self.NetWMStateMaximizedVert,
+            self.NetWMStateMaximizedHorz,
+            self.NetWMStateShaded,
+            self.NetWMStateSkipTaskbar,
+            self.NetWMStateSkipPager,
+            self.NetWMStateHidden,
+            self.NetWMStateFullscreen,
+            self.NetWMStateAbove,
+            self.NetWMStateBelow,
+            self.NetWMStateDemandsAttention,
             self.NetWMWindowType,
             self.NetWMWindowTypeDesktop,
             self.NetWMWindowTypeDock,
@@ -89,7 +88,7 @@ impl XAtom {
             self.NetWMDesktop,
             self.NetWMStrutPartial,
             self.NetWMStrut,
-        ]
+            ]
     }
 
     pub fn get_name(&self, atom: xlib::Atom) -> &str {
@@ -151,7 +150,9 @@ impl XAtom {
         if atom == self.NetWMStateBelow {
             return "NetWMStateBelow";
         }
-
+        if atom == self.NetWMStateDemandsAttention {
+            return "NET_WM_STATE_DEMANDS_ATTENTION"
+        }
         if atom == self.NetWMWindowType {
             return "_NET_WM_WINDOW_TYPE";
         }
@@ -184,6 +185,9 @@ impl XAtom {
         }
         if atom == self.NetWMStrut {
             return "_NET_WM_STRUT";
+        }
+        if atom == self.WMTransientFor {
+            return "WM_TRANSIENT_FOR"
         }
         if atom == self.NetUtf8String {
             return "UTF8_STRING"
@@ -234,6 +238,8 @@ impl XAtom {
             NetWMStrutPartial: from(xlib, dpy, "_NET_WM_STRUT_PARTIAL"),
             NetWMStrut: from(xlib, dpy, "_NET_WM_STRUT"),
 
+            WMNormalHints: from(xlib, dpy, "WM_NORMAL_HINTS"),
+            WMTransientFor: from(xlib, dpy, "WM_TRANSIENT_FOR"),
             NetUtf8String: from(xlib, dpy, "UTF8_STRING")
         }
     }
@@ -242,3 +248,4 @@ impl XAtom {
 fn from(xlib: &xlib::Xlib, dpy: *mut xlib::Display, s: &str) -> xlib::Atom {
     unsafe { (xlib.XInternAtom)(dpy, CString::new(s).unwrap().into_raw(), xlib::False) }
 }
+

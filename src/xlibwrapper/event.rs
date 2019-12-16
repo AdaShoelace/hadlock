@@ -6,7 +6,9 @@ use super::xlibmodels::*;
 pub enum EventType {
     ConfigurationNotification,
     ConfigurationRequest,
+    ClientMessageRequest,
     MapRequest,
+    UnmapNotify,
     ButtonPress,
     ButtonRelease,
     KeyPress,
@@ -14,6 +16,7 @@ pub enum EventType {
     MotionNotify,
     EnterNotify,
     LeaveNotify,
+    PropertyNotify,
     Expose,
     DestroyWindow,
     UnknownEvent
@@ -38,7 +41,9 @@ impl Event {
 pub enum EventPayload {
     ConfigurationNotification(Window),
     ConfigurationRequest(Window, WindowChanges, u64),
+    ClientMessageRequest(Window, u64, Vec<i64>),
     MapRequest(Window),
+    UnmapNotify(Window),
     ButtonPress(Window, Window, u32, u32, u32, u32),
     ButtonRelease(Window, Window, u32, u32, u32, u32),
     KeyPress(Window, u32, u32),
@@ -46,6 +51,7 @@ pub enum EventPayload {
     MotionNotify(Window, i32, i32, u32),
     EnterNotify(Window, Window),
     LeaveNotify(Window),
+    PropertyNotify(Window, u64),
     Expose(Window),
     DestroyWindow(Window),
     ButtonReleased,

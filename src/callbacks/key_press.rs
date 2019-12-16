@@ -36,7 +36,7 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
             let keycode = keycode as u8;
 
             if mod_not_shift && xlib.str_to_keycode("Return").expect("key_press: 2") == keycode {
-                spawn_terminal();
+                spawn_process(CONFIG.term.as_str(), vec![]);
             }
 
             if mod_and_shift {
@@ -70,6 +70,9 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                 if xlib.str_to_keycode("e").expect("key_press: 8") == keycode {
                     xlib.exit();
                 }
+                if xlib.str_to_keycode("f").expect("key_press: 8") == keycode {
+                    //wm.toggle_monocle(w);
+                }
 
                 match ws_keys.contains(&keycode) {
                     true  => {
@@ -85,10 +88,6 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
             if mod_not_shift {
                 println!("Number pressed");
 
-                if xlib.str_to_keycode("d").expect("key_press: key for h") == keycode {
-                    debug!("d is pressed");
-                    wm.hide_client(wm.focus_w);
-                }
                 if xlib.str_to_keycode("f").expect("Dafuq?!?!") == keycode {
                     wm.toggle_maximize(wm.focus_w);
                 }
@@ -116,7 +115,12 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
                 if xlib.str_to_keycode("c").expect("key_press: \"c\"") == keycode {
                     debug!("Center window");
                     wm.place_window(wm.focus_w);
-                    wm.center_cursor(w);
+                    wm.center_cursor(wm.focus_w);
+                    return;
+                }
+                if xlib.str_to_keycode("d").expect("key_press: \"d\"") == keycode {
+                    debug!("dmenu_run");
+                    spawn_process("dmenu_recency", vec![]);
                     return;
                 }
                 if ws_keys.contains(&keycode) {
@@ -129,7 +133,12 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
             let keycode = keycode as u8;
             if mod_not_shift {
                 if xlib.str_to_keycode("Return").expect("key_press: 17") == keycode {
-                    spawn_terminal();
+                    spawn_process(CONFIG.term.as_str(), vec![]);
+                }
+                if xlib.str_to_keycode("d").expect("key_press: \"d\"") == keycode {
+                    debug!("dmenu_run");
+                    spawn_process("dmenu_recency", vec![]);
+                    return;
                 }
 
                 match ws_keys.contains(&keycode) {
@@ -155,9 +164,10 @@ fn keycode_to_ws(keycode: u8) -> u32 {
     ((keycode - 10) % 10) as u32
 }
 
-fn spawn_terminal() {
-    match Command::new(CONFIG.term.as_str()).spawn() {
-        Ok(_) => {},
-        Err(e) => eprintln!("Failed to open terminal. Error: {}", e)
-    }
+fn spawn_process(bin_name: &str, args: Vec<&str>) {
+    let mut cmd = Command::new(bin_name);
+    args
+        .into_iter()
+        .for_each(|arg| {cmd.arg(arg);});
+    let _ = cmd.spawn();
 }

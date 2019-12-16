@@ -14,6 +14,9 @@ pub mod key_press;
 pub mod key_release;
 pub mod destroy_window;
 pub mod expose;
+pub mod property_notify;
+pub mod unmap_notify;
+pub mod client_message_request;
 
 pub type Callback = Box<fn(Rc<XlibWrapper>, &mut WindowManager, Event)>;
 

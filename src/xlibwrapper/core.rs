@@ -1,4 +1,4 @@
-#![allow(unused_variables, dead_code)]
+#![allow(unused_variables, deprecated)]
 use x11_dl::xlib;
 use std::os::raw::*;
 use std::ffi::CString;
@@ -24,7 +24,7 @@ use crate::models::{
 };
 
 
-pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> c_int {
+pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> i32 {
     let err = *e;
     if err.error_code == xlib::BadWindow {
         return 0;
@@ -32,7 +32,7 @@ pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xli
     1
 }
 
-pub(crate) unsafe extern "C" fn on_wm_detected(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> c_int {
+pub(crate) unsafe extern "C" fn on_wm_detected(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> i32 {
     if (*e).error_code == xlib::BadAccess {
         error!("Other wm registered!");
         return 1;
@@ -45,13 +45,12 @@ pub struct XlibWrapper {
     pub xatom: XAtom,
     display: *mut Display,
     root: Window,
-    screen: Screen,
     cursors: Cursor
 }
 
 impl XlibWrapper {
     pub fn new() -> Self {
-        let (disp, root, lib, xatom, screen, cursors) = unsafe {
+        let (disp, root, lib, xatom, cursors) = unsafe {
             let lib = xlib::Xlib::open().expect("xlibwrapper::core: new");
             let disp = (lib.XOpenDisplay)(std::ptr::null_mut());
 
@@ -68,10 +67,9 @@ impl XlibWrapper {
             let screen_id = (lib.XDefaultScreen)(disp);
             let display_width = (lib.XDisplayWidth)(disp, screen_id);
             let display_height = (lib.XDisplayHeight)(disp, screen_id);
-            let screen = Screen::new(root, display_width, display_height, 0, 0);
             let cursors = Cursor::new(&lib, disp);
 
-            (disp, root, lib, xatom, screen, cursors)
+            (disp, root, lib, xatom, cursors)
         };
 
 
@@ -80,7 +78,6 @@ impl XlibWrapper {
             xatom,
             display: disp,
             root,
-            screen,
             cursors
         };
         ret.init();
@@ -163,7 +160,6 @@ impl XlibWrapper {
                 &mut attrs,
             );
         }
-
         self.select_input(self.root, root_event_mask);
 
         unsafe {
@@ -190,6 +186,7 @@ impl XlibWrapper {
                 "Down",
                 "Return",
                 "q",
+                "d",
                 "e",
                 "1", "2", "3", "4", "5", "6", "7", "8", "9"
             ];
@@ -327,31 +324,6 @@ impl XlibWrapper {
 
     }
 
-    pub fn set_viewport(&self, pos: Position) {
-        let data = vec![pos.x as u32, pos.y as u32];
-        self.set_desktop_prop(&data, self.xatom.NetDesktopViewport);
-    }
-
-    pub fn set_cursor_normal(&self) {
-        unsafe {
-            (self.lib.XDefineCursor)(
-                self.display,
-                self.root,
-                self.cursors.normal_cursor
-            );
-        }
-    }
-
-    pub fn set_cursor_move(&self) {
-        unsafe {
-            (self.lib.XDefineCursor)(
-                self.display,
-                self.root,
-                self.cursors.move_cursor
-            );
-        }
-    }
-
     fn get_atom(&self, s: &str) -> u64 {
         unsafe {
             match CString::new(s) {
@@ -361,20 +333,56 @@ impl XlibWrapper {
         }
     }
 
-    pub fn get_atom_if_exists(&self, s: &str) -> u64 {
+    pub fn get_window_states_atoms(&self, window: xlib::Window) -> Vec<xlib::Atom> {
+        let mut format_return: i32 = 0;
+        let mut nitems_return: c_ulong = 0;
+        let mut bytes_remaining: c_ulong = 0;
+        let mut type_return: xlib::Atom = 0;
+        let mut prop_return: *mut c_uchar = unsafe { std::mem::uninitialized() };
         unsafe {
-            match CString::new(s) {
-                Ok(b) => (self.lib.XInternAtom)(self.display, b.as_ptr() as *const c_char, 1) as u64,
-                _ => panic!("Invalid atom! {}", s),
+            let status = (self.lib.XGetWindowProperty)(
+                self.display,
+                window,
+                self.xatom.NetWMState,
+                0,
+                4096i64 / 4,
+                xlib::False,
+                xlib::XA_ATOM,
+                &mut type_return,
+                &mut format_return,
+                &mut nitems_return,
+                &mut bytes_remaining,
+                &mut prop_return,
+            );
+            if status == i32::from(xlib::Success) && !prop_return.is_null() {
+                #[allow(clippy::cast_lossless, clippy::cast_ptr_alignment)]
+                //let result = *(prop_return as *const u32);
+                let ptr = prop_return as *const u64;
+                let results: &[xlib::Atom] = std::slice::from_raw_parts(ptr, nitems_return as usize);
+                return results.to_vec();
             }
+            vec![]
         }
     }
 
-    pub fn get_screen(&self) -> Screen {
-        self.screen.clone()
+    pub fn set_window_states_atoms(&self, window: xlib::Window, states: Vec<xlib::Atom>) {
+        let data: Vec<u32> = states.iter().map(|x| *x as u32).collect();
+        unsafe {
+            (self.lib.XChangeProperty)(
+                self.display,
+                window,
+                self.xatom.NetWMState,
+                xlib::XA_ATOM,
+                32,
+                xlib::PropModeReplace,
+                data.as_ptr() as *const u8,
+                data.len() as i32,
+            );
+            std::mem::forget(data);
+        }
     }
 
-    fn set_desktop_prop_u64(&self, value: u64, atom: c_ulong, type_: c_ulong) {
+    pub fn set_desktop_prop_u64(&self, value: u64, atom: c_ulong, type_: c_ulong) {
         let data = vec![value as u32];
         unsafe {
             (self.lib.XChangeProperty)(
@@ -424,16 +432,6 @@ impl XlibWrapper {
             );
             mem::forget(xdata);
         }
-    }
-
-
-    pub fn get_window_attrs(&self, window: xlib::Window) -> Result<xlib::XWindowAttributes, ()> {
-        let mut attrs: xlib::XWindowAttributes = unsafe { mem::zeroed() };
-        let status = unsafe { (self.lib.XGetWindowAttributes)(self.display, window, &mut attrs) };
-        if status == 0 {
-            return Err(());
-        }
-        Ok(attrs)
     }
 
     pub fn add_to_save_set(&self, w: Window) {
@@ -627,19 +625,6 @@ impl XlibWrapper {
         }
     }
 
-    pub fn grab_keyboard(&self, w: Window) {
-        unsafe {
-            (self.lib.XGrabKeyboard)(
-                self.display,
-                w,
-                to_c_bool(false),
-                GrabModeAsync,
-                GrabModeAsync,
-                xlib::CurrentTime
-            );
-        }
-    }
-
     pub fn add_to_root_net_client_list(&self, w: Window) {
         unsafe {
             let list = vec![w];
@@ -703,15 +688,6 @@ impl XlibWrapper {
         }
     }
 
-    pub fn intern_atom(&self, s: &str) -> u64 {
-        unsafe {
-            match CString::new(s) {
-                Ok(b) =>  (self.lib.XInternAtom)(self.display, b.as_ptr() as *const i8, 0) as u64,
-                _ => panic!("Invalid atom {}", s)
-            }
-        }
-    }
-
     pub fn get_geometry(&self, w: Window) -> Geometry {
 
         unsafe {
@@ -724,19 +700,6 @@ impl XlibWrapper {
                 width: attr.width as u32,
                 height: attr.height as u32,
             }
-        }
-    }
-
-    pub fn get_wm_protocols(&self, w: Window) -> Vec<u64> {
-        unsafe {
-            let mut protocols: *mut u64 = std::ptr::null_mut();
-            let mut num = 0;
-            (self.lib.XGetWMProtocols)(self.display, w, &mut protocols, &mut num);
-            let slice = std::slice::from_raw_parts(protocols, num as usize);
-
-            slice.iter()
-                .map(|&x| x as u64)
-                .collect::<Vec<u64>>()
         }
     }
 
@@ -830,17 +793,20 @@ impl XlibWrapper {
         }
     }
 
-    pub fn get_keycode_from_string(&self, key: &str) -> u64 {
-        unsafe {
-            match CString::new(key.as_bytes()) {
-                Ok(b) => (self.lib.XStringToKeysym)(b.as_ptr()) as u64,
-                _ => panic!("Invalid key string!"),
-            }
-        }
-    }
-
     pub fn get_window_type_atom(&self, w: Window) -> Option<xlib::Atom> {
         self.get_atom_prop_value(w, self.xatom.NetWMWindowType)
+    }
+    
+    pub fn get_class_hint(&self, w: Window) -> (String, String) {
+        unsafe {
+            let mut hint_return = xlib::XClassHint{res_class: mem::uninitialized(), res_name: mem::uninitialized()};
+            (self.lib.XGetClassHint)(
+                self.display,
+                w,
+                &mut hint_return
+            );
+            (CString::from_raw(hint_return.res_class).to_str().expect("res_class fucked up").to_string(), CString::from_raw(hint_return.res_name).to_str().expect("res_name fucked up").to_string())
+        }
     }
 
     pub fn get_atom_prop_value(
@@ -974,7 +940,7 @@ impl XlibWrapper {
                         window_changes,
                         event.value_mask
                     );
-
+                    debug!("ConfigureRequest from: {}", event.window);
                     Event::new(EventType::ConfigurationRequest, Some(payload))
                 },
                 xlib::MapRequest => {
@@ -983,8 +949,13 @@ impl XlibWrapper {
                     let payload = EventPayload::MapRequest(event.window);
                     Event::new(EventType::MapRequest, Some(payload))
                 },
+                xlib::UnmapNotify => {
+                    let event = xlib::XUnmapEvent::from(event);
+                    debug!("UnmapRequest: {}", event.window);
+                    let payload = EventPayload::UnmapNotify(event.window);
+                    Event::new(EventType::UnmapNotify, Some(payload))
+                },
                 xlib::ButtonPress => {
-                    //debug!("Button press");
                     let event = xlib::XButtonEvent::from(event);
                     let payload = EventPayload::ButtonPress(
                         event.window,
@@ -997,7 +968,6 @@ impl XlibWrapper {
                     Event::new(EventType::ButtonPress, Some(payload))
                 },
                 xlib::ButtonRelease => {
-                    //debug!("Button press");
                     let event = xlib::XButtonEvent::from(event);
                     let payload = EventPayload::ButtonRelease(
                         event.window,
@@ -1010,7 +980,6 @@ impl XlibWrapper {
                     Event::new(EventType::ButtonRelease, Some(payload))
                 },
                 xlib::KeyPress => {
-                    //debug!("Keypress\tEvent: {:?}", event);
                     let event = xlib::XKeyEvent::from(event);
                     let payload = EventPayload::KeyPress(event.window, event.state, event.keycode);
                     Event::new(EventType::KeyPress, Some(payload))
@@ -1030,18 +999,15 @@ impl XlibWrapper {
                         event.y_root,
                         event.state
                     );
-                    //debug!("motion_notify for window: {}", event.window);
                     Event::new(EventType::MotionNotify, Some(payload))
                 },
                 xlib::EnterNotify => {
                     let event = xlib::XCrossingEvent::from(event);
-                    //debug!("{:?}", event);
                     let payload = EventPayload::EnterNotify(event.window, event.subwindow);
                     Event::new(EventType::EnterNotify, Some(payload))
                 },
                 xlib::LeaveNotify => {
                     let event = xlib::XCrossingEvent::from(event);
-                    //debug!("{:?}", event);
                     let payload = EventPayload::LeaveNotify(event.window);
                     Event::new(EventType::LeaveNotify, Some(payload))
                 },
@@ -1052,6 +1018,7 @@ impl XlibWrapper {
                 },
                 xlib::DestroyNotify => {
                     let event = xlib::XDestroyWindowEvent::from(event);
+                    debug!("Destroy: {:?}", event);
                     let payload = EventPayload::DestroyWindow(event.window);
                     Event::new(EventType::DestroyWindow, Some(payload))
                 },
@@ -1059,15 +1026,18 @@ impl XlibWrapper {
                     let event = xlib::XPropertyEvent::from(event);
                     let ret = CString::from_raw((self.lib.XGetAtomName)(self.display, event.atom));
                     ret.to_str().expect("xlibwrapper::core: next_event");
-                    //debug!("Property changed {:?}", ret);
-                    Event::new(EventType::UnknownEvent, None)
+                    let payload = EventPayload::PropertyNotify(event.window, event.atom);
+                    Event::new(EventType::PropertyNotify, Some(payload))
                 },
                 xlib::ClientMessage => {
-                    let _event = xlib::XClientMessageEvent::from(event);
-                    //debug!("{:?}", event);
-                    Event::new(EventType::UnknownEvent, None)
+                    let event = xlib::XClientMessageEvent::from(event);
+                    debug!("ClientMessageRequest");
+                    let payload = EventPayload::ClientMessageRequest(event.window, event.message_type, vec![event.data.get_long(0), event.data.get_long(1), event.data.get_long(2)]);
+                    Event::new(EventType::ClientMessageRequest, Some(payload))
                 },
-                _ => Event::new(EventType::UnknownEvent, None)
+                _ => {
+                    Event::new(EventType::UnknownEvent, None)
+                }
             }
         }
     }
@@ -1090,12 +1060,6 @@ impl XlibWrapper {
         }
     }
 
-    pub fn remove_from_save_set(&self, w: Window) {
-        unsafe {
-            (self.lib.XRemoveFromSaveSet)(self.display, w);
-        }
-    }
-
     pub fn select_input(&self, window: xlib::Window, masks: Mask) {
         unsafe {
             (self.lib.XSelectInput)(
@@ -1113,10 +1077,6 @@ impl XlibWrapper {
         unsafe {
             (self.lib.XSetWindowBorderWidth)(self.display, w, border_width);
         }
-    }
-
-    pub fn set_atom_number_of_desktops(&self, num: u32) {
-        self.set_desktop_prop(&[num], self.xatom.NetNumberOfDesktops);
     }
 
     pub fn sync(&self, discard: bool) {

@@ -11,7 +11,7 @@ pub enum WindowState {
     Snapped,
     Maximized,
     Free,
-    Tiled
+    _Tiled
 }
 
 #[derive(Clone, Copy, Debug)]
