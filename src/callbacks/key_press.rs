@@ -1,20 +1,22 @@
-use crate::windowmanager::WindowManager;
-use crate::xlibwrapper::{
-    core::*,
-    event::*,
-    masks::*
+use {
+    crate::windowmanager::WindowManager,
+    crate::xlibwrapper::{
+        core::*,
+        action::Action,
+        masks::*
+    },
+    crate::models::Direction,
+    crate::config::*,
+
+    std::rc::Rc,
+    std::process::Command,
 };
-use crate::models::Direction;
-use crate::config::*;
 
-use std::rc::Rc;
-use std::process::Command;
-
-pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
+pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, action: Action) {
     //println!("keypress registered");
     let (w, state, keycode) =
-        match event {
-            Event::KeyPress{win, state, keycode}  => (win, state, keycode),
+        match action {
+            Action::KeyPress{win, state, keycode}  => (win, state, keycode),
             _ => { return; }
         };
 

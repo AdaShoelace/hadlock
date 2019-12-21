@@ -1,13 +1,15 @@
-use crate::windowmanager::WindowManager;
-use crate::xlibwrapper::core::*;
-use crate::xlibwrapper::event::*;
-use std::rc::Rc;
+use {
+    crate::windowmanager::WindowManager,
+    crate::xlibwrapper::core::*,
+    crate::xlibwrapper::action::Action,
+    std::rc::Rc,
+};
 
 
-pub fn destroy_window(_xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
+pub fn destroy_window(_xlib: Rc<XlibWrapper>, wm: &mut WindowManager, action: Action) {
 
-    let w = match event {
-        Event::DestroyNotify{win} => win,
+    let w = match action {
+        Action::DestroyNotify{win} => win,
         _ => { return; }
     };
 

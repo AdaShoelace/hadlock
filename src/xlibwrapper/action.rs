@@ -7,7 +7,7 @@ use x11_dl::xlib::{
 };
 
 #[derive(Debug, Hash, PartialEq, Eq)]
-pub enum Event {
+pub enum Action {
     ConfigurationNotification{win: Window},
     ConfigurationRequest{win: Window, win_changes: WindowChanges, value_mask: u64},
     ClientMessageRequest{win: Window, message_type: u64, data: Vec<i64>},
@@ -27,7 +27,7 @@ pub enum Event {
     UnknownEvent
 }
 
-impl From<XEvent> for Event {
+impl From<XEvent> for Action {
     fn from(xevent: XEvent) -> Self {
         match xevent.get_type() {
             xlib::ConfigureRequest => {
