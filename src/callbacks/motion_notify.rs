@@ -7,14 +7,11 @@ use std::rc::Rc;
 
 pub fn motion_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
-    let (w, x_root, y_root, state) =
-        match event.event_type {
-            EventType::MotionNotify => match event.payload {
-                Some(EventPayload::MotionNotify(w, x_root, y_root, state)) => (w, x_root, y_root, state),
-                _ => { return; }
-            },
-            _ => { return; }
-        };
+    let (w, x_root, y_root, state) = match event {
+        Event::MotionNotify{win, x_root, y_root, state} => (win, x_root, y_root, state),
+        _ => { return; }
+    };
+
     let root = xlib.get_root();
     wm.set_current_monitor_by_mouse();
     let current = wm.current_monitor().expect("motion_notify: current_monitor 1").get_current_ws_tag();

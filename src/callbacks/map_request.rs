@@ -5,16 +5,18 @@ use std::rc::Rc;
 
 pub fn map_request(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
-    let w = match event.event_type {
-        EventType::MapRequest => match event.payload {
-            Some(EventPayload::MapRequest(w)) => w,
-            _ => { return; }
-        },
+    let w = match event{
+        Event::MapRequest{win} => win,
         _ => { return; }
     };
+
     let (class, name) = xlib.get_class_hint(w);
     debug!("Mapped class: {}, name: {}", class, name);
-    wm.setup_window(w);
+    if wm.client_exist(w) {
+        wm.show_client(w);
+    } else {
+        wm.setup_window(w);
+    }
     xlib.map_window(w);
 }
 
