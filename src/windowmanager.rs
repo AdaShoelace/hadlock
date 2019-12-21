@@ -195,11 +195,28 @@ impl WindowManager {
         Some(())
     }
 
-    fn client_exist(&self, w: Window) -> bool {
+    pub fn client_exist(&self, w: Window) -> bool {
         self.monitors
             .values()
             .filter(|mon| mon.contains_window(w))
             .count() > 0
+    }
+    
+    pub fn hide_decoration(&mut self, w: Window) -> HadlockOption<()> {
+        let client = match self.current_monitor()?.get_client(w) {
+            Some(client) => client,
+            None => {
+                debug!("no such client");
+                return None
+            }
+        };
+        
+        match client.get_dec() {
+            Some(dec) => self.lib.unmap_window(dec),
+            None => return Some(())
+        }
+
+        Some(())
     }
 
     pub fn hide_client(&mut self, w: Window) -> HadlockOption<()> {
@@ -224,7 +241,7 @@ impl WindowManager {
         Some(())
     }
 
-    fn show_client(&mut self, w: Window) -> HadlockOption<()> {
+    pub fn show_client(&mut self, w: Window) -> HadlockOption<()> {
         let client = match self.current_monitor()?.get_client_mut(w) {
             Some(client) => client,
             None => { return None }

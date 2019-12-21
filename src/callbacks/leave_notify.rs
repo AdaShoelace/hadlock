@@ -8,10 +8,7 @@ use std::rc::Rc;
 pub fn leave_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
     let w = match event {
-        Event {
-            event_type: EventType::LeaveNotify,
-            payload: Some(EventPayload::LeaveNotify(w))
-        } => w,
+        Event::LeaveNotify{win} => win,
         _ => { return; }
     };
 

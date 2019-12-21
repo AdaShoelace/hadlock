@@ -9,12 +9,9 @@ use std::rc::Rc;
 
 pub fn button_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
-    let (window, x_root, y_root, _state, button) =
+    let (window, sub_win, x_root, y_root, _state, button) =
         match event {
-            Event {
-                event_type: EventType::ButtonPress,
-                payload: Some(EventPayload::ButtonPress(window, _sub_window, button, x_root, y_root, state))
-            } => (window, x_root, y_root, state, button),
+            Event::ButtonPress{win, sub_win, x_root, y_root, state, button}  => (win, sub_win, x_root, y_root, state, button),
             _ => { return; }
         };
 

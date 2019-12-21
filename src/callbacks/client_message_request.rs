@@ -11,11 +11,8 @@ use std::rc::Rc;
 
 pub fn client_message_request(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
-    let (window, message_type, data) = match event.event_type {
-        EventType::ClientMessageRequest => match event.payload {
-            Some(EventPayload::ClientMessageRequest(window, message_type, data)) => (window, message_type, data),
-            _ => { return; }
-        },
+    let (window, message_type, data) = match event {
+        Event::ClientMessageRequest{win, message_type, data} => (win, message_type, data),
         _ => { return; }
     };
 

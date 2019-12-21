@@ -7,10 +7,7 @@ use std::rc::Rc;
 pub fn destroy_window(_xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
     let w = match event {
-        Event {
-            event_type: EventType::DestroyWindow,
-            payload: Some(EventPayload::DestroyWindow(w))
-        } => w,
+        Event::DestroyNotify{win} => win,
         _ => { return; }
     };
 

@@ -5,14 +5,12 @@ use std::rc::Rc;
 
 pub fn unmap_notify(_xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
-    let w = match event.event_type {
-        EventType::UnmapNotify => match event.payload {
-            Some(EventPayload::UnmapNotify(w)) => w,
-            _ => { return; }
-        },
+    let w = match event {
+        Event::UnmapNotify{win} => win,
         _ => { return; }
     };
-    wm.hide_client(w);
+
+    wm.hide_decoration(w);
     //wm.lib.unmap_window(w);
 }
 

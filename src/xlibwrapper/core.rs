@@ -1,5 +1,5 @@
 #![allow(unused_variables, deprecated)]
-use x11_dl::xlib;
+pub use x11_dl::xlib;
 use std::os::raw::*;
 use std::ffi::CString;
 use std::mem;
@@ -915,130 +915,14 @@ impl XlibWrapper {
         }
     }
 
-    pub fn next_event(&self) -> Event {
+    pub fn next_event(&self) -> xlib::XEvent {
         unsafe {
             let mut event: xlib::XEvent = mem::uninitialized();
             (self.lib.XNextEvent)(self.display, &mut event);
             //debug!("Event: {:?}", event);
             //debug!("Event type: {:?}", event.get_type());
             //debug!("Pending events: {}", (self.lib.XPending)(self.display));
-
-            match event.get_type() {
-                xlib::ConfigureRequest => {
-                    let event = xlib::XConfigureRequestEvent::from(event);
-                    let window_changes = WindowChanges {
-                        x: event.x,
-                        y: event.y,
-                        width: event.width,
-                        height: event.height,
-                        border_width: event.border_width,
-                        sibling: event.above,
-                        stack_mode: event.detail
-                    };
-                    let payload = EventPayload::ConfigurationRequest(
-                        event.window,
-                        window_changes,
-                        event.value_mask
-                    );
-                    debug!("ConfigureRequest from: {}", event.window);
-                    Event::new(EventType::ConfigurationRequest, Some(payload))
-                },
-                xlib::MapRequest => {
-                    let event = xlib::XMapRequestEvent::from(event);
-                    debug!("MapRequest: {}", event.window);
-                    let payload = EventPayload::MapRequest(event.window);
-                    Event::new(EventType::MapRequest, Some(payload))
-                },
-                xlib::UnmapNotify => {
-                    let event = xlib::XUnmapEvent::from(event);
-                    debug!("UnmapRequest: {}", event.window);
-                    let payload = EventPayload::UnmapNotify(event.window);
-                    Event::new(EventType::UnmapNotify, Some(payload))
-                },
-                xlib::ButtonPress => {
-                    let event = xlib::XButtonEvent::from(event);
-                    let payload = EventPayload::ButtonPress(
-                        event.window,
-                        event.subwindow,
-                        event.button,
-                        event.x_root as u32,
-                        event.y_root as u32,
-                        event.state as u32
-                    );
-                    Event::new(EventType::ButtonPress, Some(payload))
-                },
-                xlib::ButtonRelease => {
-                    let event = xlib::XButtonEvent::from(event);
-                    let payload = EventPayload::ButtonRelease(
-                        event.window,
-                        event.subwindow,
-                        event.button,
-                        event.x_root as u32,
-                        event.y_root as u32,
-                        event.state as u32
-                    );
-                    Event::new(EventType::ButtonRelease, Some(payload))
-                },
-                xlib::KeyPress => {
-                    let event = xlib::XKeyEvent::from(event);
-                    let payload = EventPayload::KeyPress(event.window, event.state, event.keycode);
-                    Event::new(EventType::KeyPress, Some(payload))
-                },
-
-                xlib::KeyRelease => {
-                    let event = xlib::XKeyEvent::from(event);
-                    let payload = EventPayload::KeyRelease(event.window, event.state, event.keycode);
-                    Event::new(EventType::KeyRelease, Some(payload))
-                },
-
-                xlib::MotionNotify => {
-                    let event = xlib::XMotionEvent::from(event);
-                    let payload = EventPayload::MotionNotify(
-                        event.window,
-                        event.x_root,
-                        event.y_root,
-                        event.state
-                    );
-                    Event::new(EventType::MotionNotify, Some(payload))
-                },
-                xlib::EnterNotify => {
-                    let event = xlib::XCrossingEvent::from(event);
-                    let payload = EventPayload::EnterNotify(event.window, event.subwindow);
-                    Event::new(EventType::EnterNotify, Some(payload))
-                },
-                xlib::LeaveNotify => {
-                    let event = xlib::XCrossingEvent::from(event);
-                    let payload = EventPayload::LeaveNotify(event.window);
-                    Event::new(EventType::LeaveNotify, Some(payload))
-                },
-                xlib::Expose => {
-                    let event = xlib::XExposeEvent::from(event);
-                    let payload = EventPayload::Expose(event.window);
-                    Event::new(EventType::Expose, Some(payload))
-                },
-                xlib::DestroyNotify => {
-                    let event = xlib::XDestroyWindowEvent::from(event);
-                    debug!("Destroy: {:?}", event);
-                    let payload = EventPayload::DestroyWindow(event.window);
-                    Event::new(EventType::DestroyWindow, Some(payload))
-                },
-                xlib::PropertyNotify => {
-                    let event = xlib::XPropertyEvent::from(event);
-                    let ret = CString::from_raw((self.lib.XGetAtomName)(self.display, event.atom));
-                    ret.to_str().expect("xlibwrapper::core: next_event");
-                    let payload = EventPayload::PropertyNotify(event.window, event.atom);
-                    Event::new(EventType::PropertyNotify, Some(payload))
-                },
-                xlib::ClientMessage => {
-                    let event = xlib::XClientMessageEvent::from(event);
-                    debug!("ClientMessageRequest");
-                    let payload = EventPayload::ClientMessageRequest(event.window, event.message_type, vec![event.data.get_long(0), event.data.get_long(1), event.data.get_long(2)]);
-                    Event::new(EventType::ClientMessageRequest, Some(payload))
-                },
-                _ => {
-                    Event::new(EventType::UnknownEvent, None)
-                }
-            }
+            event
         }
     }
 

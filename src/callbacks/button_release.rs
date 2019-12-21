@@ -6,12 +6,9 @@ use std::rc::Rc;
 
 pub fn button_release(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
-    let (window, _x_root, _y_root, _state) =
+    let (window, _sub_win, _x_root, _y_root, button, _state) =
         match event {
-            Event {
-                event_type: EventType::ButtonRelease,
-                payload: Some(EventPayload::ButtonRelease(window, _sub_window, _button, x_root, y_root, state))
-            } => (window, x_root, y_root, state),
+            Event::ButtonRelease{win, sub_win, x_root, y_root, button, state} => (win, sub_win, x_root, y_root, button, state),
             _ => { return; }
         };
 
@@ -20,9 +17,7 @@ pub fn button_release(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Even
         return
     }
     
-    println!("Focused window: {}", wm.focus_w);
-
-    //println!("Button released at: {}", window);
+    debug!("Focused window: {}", wm.focus_w);
 
     let _ww = wm.current_monitor().expect("button_release: current_monitor 2").get_client(window).expect("ButtonPressed: No such window in client list");
 }

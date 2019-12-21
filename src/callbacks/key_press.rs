@@ -14,10 +14,7 @@ pub fn key_press(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
     //println!("keypress registered");
     let (w, state, keycode) =
         match event {
-            Event {
-                event_type: EventType::KeyPress,
-                payload: Some(EventPayload::KeyPress(w, state, keycode))
-            } => (w, state, keycode),
+            Event::KeyPress{win, state, keycode}  => (win, state, keycode),
             _ => { return; }
         };
 
