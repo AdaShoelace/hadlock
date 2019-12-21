@@ -7,7 +7,7 @@ use std::rc::Rc;
 use std::sync::mpsc;
 
 pub struct Runner {
-    call_table: HashMap<EventType, Callback>,
+    call_table: HashMap<i32, Callback>,
     lib: Rc<XlibWrapper>,
     wm: WindowManager
 }
@@ -20,20 +20,20 @@ impl Runner {
             wm
         };
 
-        ret.call_table.insert(EventType::MapRequest, Box::new(map_request::map_request));
-        ret.call_table.insert(EventType::UnmapNotify, Box::new(unmap_notify::unmap_notify));
-        ret.call_table.insert(EventType::ConfigurationRequest, Box::new(configure_request::configure_request));
-        ret.call_table.insert(EventType::ClientMessageRequest, Box::new(client_message_request::client_message_request));
-        ret.call_table.insert(EventType::MotionNotify, Box::new(motion_notify::motion_notify));
-        ret.call_table.insert(EventType::DestroyWindow, Box::new(destroy_window::destroy_window));
-        ret.call_table.insert(EventType::Expose, Box::new(expose::expose));
-        ret.call_table.insert(EventType::LeaveNotify, Box::new(leave_notify::leave_notify));
-        ret.call_table.insert(EventType::EnterNotify, Box::new(enter_notify::enter_notify));
-        ret.call_table.insert(EventType::ButtonPress, Box::new(button_press::button_press));
-        ret.call_table.insert(EventType::KeyPress, Box::new(key_press::key_press));
-        ret.call_table.insert(EventType::KeyRelease, Box::new(key_release::key_release));
-        ret.call_table.insert(EventType::ButtonRelease, Box::new(button_release::button_release));
-        ret.call_table.insert(EventType::PropertyNotify, Box::new(property_notify::property_notify));
+        ret.call_table.insert(xlib::MapRequest, Box::new(map_request::map_request));
+        ret.call_table.insert(xlib::UnmapNotify, Box::new(unmap_notify::unmap_notify));
+        ret.call_table.insert(xlib::ConfigureRequest, Box::new(configure_request::configure_request));
+        ret.call_table.insert(xlib::ClientMessage, Box::new(client_message_request::client_message_request));
+        ret.call_table.insert(xlib::MotionNotify, Box::new(motion_notify::motion_notify));
+        ret.call_table.insert(xlib::DestroyNotify, Box::new(destroy_window::destroy_window));
+        ret.call_table.insert(xlib::Expose, Box::new(expose::expose));
+        ret.call_table.insert(xlib::LeaveNotify, Box::new(leave_notify::leave_notify));
+        ret.call_table.insert(xlib::EnterNotify, Box::new(enter_notify::enter_notify));
+        ret.call_table.insert(xlib::ButtonPress, Box::new(button_press::button_press));
+        ret.call_table.insert(xlib::KeyPress, Box::new(key_press::key_press));
+        ret.call_table.insert(xlib::KeyRelease, Box::new(key_release::key_release));
+        ret.call_table.insert(xlib::ButtonRelease, Box::new(button_release::button_release));
+        ret.call_table.insert(xlib::PropertyNotify, Box::new(property_notify::property_notify));
 
 
         ret
@@ -55,8 +55,8 @@ impl Runner {
         loop {
             let event = self.lib.next_event();
 
-            match self.call_table.get(&event.event_type) {
-                Some(func) => func(self.lib.clone(), &mut self.wm, event),
+            match self.call_table.get(&event.get_type()) {
+                Some(func) => func(self.lib.clone(), &mut self.wm, Event::from(event)),
                 None => { continue; }
             }
         }

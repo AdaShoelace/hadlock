@@ -10,10 +10,7 @@ pub fn configure_request(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: E
 
     let (w, window_changes, value_mask) =
         match event {
-            Event {
-                event_type: EventType::ConfigurationRequest,
-                payload: Some(EventPayload::ConfigurationRequest(w, window_changes, value_mask))
-            } => (w, window_changes, value_mask),
+            Event::ConfigurationRequest{win, win_changes, value_mask} => (win, win_changes, value_mask),
             _ => { return; }
         };
 

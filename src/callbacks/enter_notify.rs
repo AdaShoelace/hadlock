@@ -6,10 +6,7 @@ use std::rc::Rc;
 pub fn enter_notify(_xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
 
     let (w, _sub_w) = match event {
-        Event {
-            event_type: EventType::EnterNotify,
-            payload: Some(EventPayload::EnterNotify(w, sub_w))
-        } => (w, sub_w),
+        Event::EnterNotify{win, sub_win} => (win, sub_win),
         _ => { return; }
     };
 
