@@ -1,14 +1,15 @@
+use {
+    crate::windowmanager::WindowManager,
+    crate::xlibwrapper::core::*,
+    crate::xlibwrapper::action::Action,
+    std::rc::Rc
+};
 
-use crate::windowmanager::WindowManager;
-use crate::xlibwrapper::core::*;
-use crate::xlibwrapper::event::*;
-//use crate::config::*;
-use std::rc::Rc;
 
-pub fn leave_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
+pub fn leave_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, action: Action) {
 
-    let w = match event {
-        Event::LeaveNotify{win} => win,
+    let w = match action {
+        Action::LeaveNotify{win} => win,
         _ => { return; }
     };
 

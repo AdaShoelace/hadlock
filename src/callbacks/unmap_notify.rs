@@ -1,12 +1,14 @@
-use crate::windowmanager::*;
-use crate::xlibwrapper::event::*;
-use crate::xlibwrapper::core::*;
-use std::rc::Rc;
+use {
+    crate::windowmanager::*,
+    crate::xlibwrapper::action::Action,
+    crate::xlibwrapper::core::*,
+    std::rc::Rc,
+};
 
-pub fn unmap_notify(_xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
+pub fn unmap_notify(_xlib: Rc<XlibWrapper>, wm: &mut WindowManager, action: Action) {
 
-    let w = match event {
-        Event::UnmapNotify{win} => win,
+    let w = match action {
+        Action::UnmapNotify{win} => win,
         _ => { return; }
     };
 

@@ -8,7 +8,7 @@ mod runner;
 mod callbacks;
 mod config;
 mod layout;
-mod main_reducer;
+mod reducer;
 mod state;
 
 use windowmanager::*;
@@ -16,7 +16,7 @@ use runner::*;
 use xlibwrapper::{
     core::*,
     xlibmodels::*,
-    event::*,
+    action::Action,
 };
 use std::rc::Rc;
 use std::process::Command;
@@ -32,13 +32,6 @@ use state::State;
 pub type HadlockResult<T> = Result<T, Box<dyn std::error::Error>>;
 pub type HadlockOption<T> = Option<T>;
 
-
-pub enum Action {
-    MapWindow(Window),
-    Empty,
-}
-
-
 fn main() -> HadlockResult<()> {
     init_logger()?;
     let (tx, rx) = mpsc::channel::<bool>();
@@ -46,7 +39,7 @@ fn main() -> HadlockResult<()> {
     let xlib = Rc::new(XlibWrapper::new());
     info!("Screens on startup: {:?}", xlib.get_screens());
 
-    let mut store = Store::new(main_reducer::main_reducer, State::default());
+    let mut store = Store::new(reducer::reducer, State::default());
 
 
 
