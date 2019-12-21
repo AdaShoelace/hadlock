@@ -1,16 +1,17 @@
-use crate::windowmanager::WindowManager;
-use crate::xlibwrapper::core::*;
-use crate::xlibwrapper::event::*;
+use {
+    crate::windowmanager::WindowManager,
+    crate::xlibwrapper::core::*,
+    crate::xlibwrapper::action::Action,
+    x11_dl::xlib,
+    std::rc::Rc,
+};
 
-use x11_dl::xlib;
-use std::rc::Rc;
 
-
-pub fn configure_request(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
+pub fn configure_request(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, action: Action) {
 
     let (w, window_changes, value_mask) =
-        match event {
-            Event::ConfigurationRequest{win, win_changes, value_mask} => (win, win_changes, value_mask),
+        match action {
+            Action::ConfigurationRequest{win, win_changes, value_mask} => (win, win_changes, value_mask),
             _ => { return; }
         };
 

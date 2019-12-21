@@ -1,6 +1,6 @@
 use crate::windowmanager::WindowManager;
 use crate::xlibwrapper::core::XlibWrapper;
-use crate::xlibwrapper::event::Event;
+use crate::xlibwrapper::action::Action;
 use std::rc::Rc;
 
 pub mod map_request;
@@ -18,5 +18,5 @@ pub mod property_notify;
 pub mod unmap_notify;
 pub mod client_message_request;
 
-pub type Callback = Box<fn(Rc<XlibWrapper>, &mut WindowManager, Event)>;
+pub type Callback = Box<fn(Rc<XlibWrapper>, &mut WindowManager, Action)>;
 

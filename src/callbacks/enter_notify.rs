@@ -1,12 +1,14 @@
-use crate::windowmanager::WindowManager;
-use crate::xlibwrapper::core::*;
-use crate::xlibwrapper::event::*;
-use std::rc::Rc;
+use {
+    crate::windowmanager::WindowManager,
+    crate::xlibwrapper::core::*,
+    crate::xlibwrapper::action::Action,
+    std::rc::Rc,
+};
 
-pub fn enter_notify(_xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
+pub fn enter_notify(_xlib: Rc<XlibWrapper>, wm: &mut WindowManager, action: Action) {
 
-    let (w, _sub_w) = match event {
-        Event::EnterNotify{win, sub_win} => (win, sub_win),
+    let (w, _sub_w) = match action {
+        Action::EnterNotify{win, sub_win} => (win, sub_win),
         _ => { return; }
     };
 

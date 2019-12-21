@@ -1,14 +1,16 @@
-use crate::windowmanager::WindowManager;
-use crate::xlibwrapper::core::*;
-use crate::xlibwrapper::event::*;
-use crate::xlibwrapper::util::Position;
-use crate::xlibwrapper::masks::*;
-use std::rc::Rc;
+use {
+    crate::xlibwrapper::core::*,
+    crate::xlibwrapper::masks::*,
+    crate::xlibwrapper::action::Action,
+    crate::xlibwrapper::util::Position,
+    crate::windowmanager::WindowManager,
+    std::rc::Rc,
+};
 
-pub fn motion_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
+pub fn motion_notify(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, action: Action) {
 
-    let (w, x_root, y_root, state) = match event {
-        Event::MotionNotify{win, x_root, y_root, state} => (win, x_root, y_root, state),
+    let (w, x_root, y_root, state) = match action {
+        Action::MotionNotify{win, x_root, y_root, state} => (win, x_root, y_root, state),
         _ => { return; }
     };
 

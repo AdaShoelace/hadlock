@@ -9,7 +9,7 @@ use super::{
     util::*,
     xatom::*,
     xlibmodels::*,
-    event::*,
+    action::Action,
 };
 
 use super::cursor::Cursor;

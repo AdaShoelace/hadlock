@@ -1,10 +1,12 @@
-use std::collections::HashMap;
-use super::windowmanager::WindowManager;
-use super::callbacks::*;
-use super::xlibwrapper::event::*;
-use super::xlibwrapper::core::*;
-use std::rc::Rc;
-use std::sync::mpsc;
+use {
+    std::collections::HashMap,
+    super::windowmanager::WindowManager,
+    super::callbacks::*,
+    super::xlibwrapper::action::Action,
+    super::xlibwrapper::core::*,
+    std::rc::Rc,
+    std::sync::mpsc,
+};
 
 pub struct Runner {
     call_table: HashMap<i32, Callback>,
@@ -49,14 +51,14 @@ impl Runner {
                 self.wm.setup_window(*w)
             });
         self.lib.ungrab_server();
-        
+
         let _ = tx.send(true);
 
         loop {
             let event = self.lib.next_event();
 
             match self.call_table.get(&event.get_type()) {
-                Some(func) => func(self.lib.clone(), &mut self.wm, Event::from(event)),
+                Some(func) => func(self.lib.clone(), &mut self.wm, Action::from(event)),
                 None => { continue; }
             }
         }

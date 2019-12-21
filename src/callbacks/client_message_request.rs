@@ -1,7 +1,9 @@
-use crate::windowmanager::*;
-use crate::xlibwrapper::event::*;
-use crate::xlibwrapper::core::*;
-use std::rc::Rc;
+use {
+    crate::windowmanager::*,
+    crate::xlibwrapper::action::Action,
+    crate::xlibwrapper::core::*,
+    std::rc::Rc,
+};
 
 /*
  *  All the credit for this solution goes to lex148 @ github.com
@@ -9,10 +11,10 @@ use std::rc::Rc;
  */
 
 
-pub fn client_message_request(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, event: Event) {
+pub fn client_message_request(xlib: Rc<XlibWrapper>, wm: &mut WindowManager, action: Action) {
 
-    let (window, message_type, data) = match event {
-        Event::ClientMessageRequest{win, message_type, data} => (win, message_type, data),
+    let (window, message_type, data) = match action {
+        Action::ClientMessageRequest{win, message_type, data} => (win, message_type, data),
         _ => { return; }
     };
 
