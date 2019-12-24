@@ -9,6 +9,7 @@ pub(crate) type Display = xlib::Display;
 pub(crate) type Drawable = xlib::Drawable;
 pub(crate) type Time = xlib::Time;
 pub(crate) type KeyCode = xlib::KeyCode;
+pub(crate) type MonitorId = u32;
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub struct WindowChanges {

@@ -13,7 +13,8 @@ use {
         config::CONFIG,
     },
     std::rc::Rc,
-    reducer::*
+    reducer::*,
+    std::cell::RefCell,
 };
 
 
@@ -21,7 +22,7 @@ impl Reducer<action::LeaveNotify> for State {
     fn reduce(&mut self, action: action::LeaveNotify) {
         debug!("LeaveNotify");
         if let Some(w) = self.windows.get_mut(&action.win) {
-                w.handle_state = HandleState::Unfocus;
+                w.handle_state = HandleState::Unfocus.into();
         }
     }
 }

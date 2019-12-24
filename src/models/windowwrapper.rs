@@ -3,15 +3,30 @@ use crate::xlibwrapper::util::*;
 use crate::xlibwrapper::xlibmodels::*;
 use super::rect::*;
 use super::WindowState;
+use std::cell::RefCell;
 
 #[derive(Copy, Clone, Debug)]
+pub enum HandleState {
+    New,
+    Handled,
+    Map,
+    Focus,
+    Unfocus,
+    Destroy,
+    Move,
+    Resize
+}
+
+#[derive(Clone, Debug)]
 pub struct WindowWrapper {
     dec: Option<Window>,
     window: Window,
     window_rect: Rect,
+    pub is_visible: bool,
     dec_rect: Option<Rect>,
     restore_position: Position,
     restore_size: Size,
+    pub handle_state: RefCell<HandleState>,
     current_state: WindowState,
     previous_state: WindowState,
     
@@ -24,9 +39,11 @@ impl WindowWrapper {
             dec: None,
             window,
             window_rect,
+            is_visible: true,
             dec_rect: None,
             restore_position: Position { x: 0, y: 0 },
             restore_size,
+            handle_state: RefCell::new(HandleState::New),
             current_state: WindowState::Free,
             previous_state: WindowState::Free,
         }
@@ -131,14 +148,14 @@ impl WindowWrapper {
         }
     }
 
-    pub fn get_width(&self) -> u32 {
+    pub fn get_width(&self) -> i32 {
         match self.dec_rect {
             Some(rect) => rect.get_size().width,
             None => self.window_rect.get_size().width
         }
     }
 
-    pub fn get_height(&self) -> u32 {
+    pub fn get_height(&self) -> i32 {
         match self.dec_rect {
             Some(rect) => rect.get_size().height,
             None => self.window_rect.get_size().height
