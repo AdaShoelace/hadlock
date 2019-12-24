@@ -1,22 +1,26 @@
 #[macro_use]
 extern crate log;
 
-mod windowmanager;
+#[macro_use]
+extern crate derivative;
+
+//mod windowmanager;
+mod wm;
 mod xlibwrapper;
 mod models;
-mod runner;
-mod callbacks;
+//mod runner;
 mod config;
-mod layout;
-mod reducer;
+//mod layout;
+mod reducers;
 mod state;
+mod hdl_dispatcher;
+mod hdl_reactor;
 
-use windowmanager::*;
-use runner::*;
+//use windowmanager::*;
+//use runner::*;
 use xlibwrapper::{
     core::*,
     xlibmodels::*,
-    action::Action,
 };
 use std::rc::Rc;
 use std::process::Command;
@@ -25,8 +29,8 @@ use std::sync::mpsc;
 use fern;
 use chrono;
 use nix::sys::signal::{self, SigHandler, Signal};
-use redux_rs::{Store, Subscription};
 use crate::config::*;
+use reducer::*;
 use state::State;
 
 pub type HadlockResult<T> = Result<T, Box<dyn std::error::Error>>;
@@ -39,10 +43,6 @@ fn main() -> HadlockResult<()> {
     let xlib = Rc::new(XlibWrapper::new());
     info!("Screens on startup: {:?}", xlib.get_screens());
 
-    let mut store = Store::new(reducer::reducer, State::default());
-
-
-
 
     // Avoid zombies by ignoring SIGCHLD
     unsafe { signal::signal(Signal::SIGCHLD, SigHandler::SigIgn) }.unwrap();
@@ -53,10 +53,10 @@ fn main() -> HadlockResult<()> {
             _ => { return },
         }
     });
-    Runner::new(xlib.clone(), WindowManager::new(xlib.clone())).run(tx);
-    /*loop {
-        xlib.next_event();
-    }*/
+    
+    hdl_dispatcher::run(xlib);
+
+    //Runner::new(xlib.clone(), WindowManager::new(xlib.clone())).run(tx);
 
     Ok(())
 }

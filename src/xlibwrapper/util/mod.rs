@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 pub struct Position { pub x: i32, pub y: i32 }
 
 #[derive(Copy, Clone, Debug)]
-pub struct Size { pub width: u32, pub height: u32 }
+pub struct Size { pub width: i32, pub height: i32 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum Color {

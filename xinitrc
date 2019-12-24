@@ -12,7 +12,8 @@ xrdb -load Xresources
 #xeyes &
 #pcmanfm &
 alacritty &
-firefox &
+alacritty &
+#firefox &
 #mousepad &
 
 # polybar
