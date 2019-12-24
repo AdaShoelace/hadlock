@@ -3,13 +3,13 @@ pub use x11_dl::xlib;
 use std::os::raw::*;
 use std::ffi::CString;
 use std::mem;
+use lazy_static::*;
 
 use super::{
     masks::*,
     util::*,
     xatom::*,
     xlibmodels::*,
-    action::Action,
 };
 
 use super::cursor::Cursor;
@@ -673,8 +673,8 @@ impl XlibWrapper {
                 w,
                 pos.x,
                 pos.y,
-                size.width,
-                size.height,
+                size.width as u32,
+                size.height as u32,
                 border_width,
                 border_color.value(),
                 bg_color.value()
@@ -796,7 +796,7 @@ impl XlibWrapper {
     pub fn get_window_type_atom(&self, w: Window) -> Option<xlib::Atom> {
         self.get_atom_prop_value(w, self.xatom.NetWMWindowType)
     }
-    
+
     pub fn get_class_hint(&self, w: Window) -> (String, String) {
         unsafe {
             let mut hint_return = xlib::XClassHint{res_class: mem::uninitialized(), res_name: mem::uninitialized()};
@@ -933,13 +933,13 @@ impl XlibWrapper {
     }
 
 
-    pub fn resize_window(&self, w: Window, width: u32, height: u32) {
+    pub fn resize_window(&self, w: Window, size: Size) {
         unsafe {
             (self.lib.XResizeWindow)(
                 self.display,
                 w,
-                width,
-                height
+                size.width as u32,
+                size.height as u32
             );
         }
     }
@@ -1116,6 +1116,23 @@ impl XlibWrapper {
         }
     }
 
+    pub fn should_be_managed(&self, w: Window) -> bool {
+        if let Some(prop_val) = self.get_window_type_atom(w) {
+            if vec![self.xatom.NetWMWindowTypeDock,
+            self.xatom.NetWMWindowTypeToolbar,
+            self.xatom.NetWMWindowTypeUtility,
+            self.xatom.NetWMWindowTypeDialog,
+            self.xatom.NetWMWindowTypeMenu].contains(&prop_val) {
+                return false;
+            }
+        }
+
+        if self.get_window_attributes(w).override_redirect {
+            self.map_window(w);
+            return false;
+        }
+        true
+    }
     pub fn exit(&self) {
         unsafe {
             (self.lib.XCloseDisplay)(self.display);

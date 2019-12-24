@@ -37,7 +37,7 @@ impl From<Geometry> for Rect {
     fn from(item: Geometry) -> Self {
         Self {
             position: Position { x: item.x, y: item.y },
-            size: Size { width: item.width, height: item.height }
+            size: Size { width: item.width as i32, height: item.height as i32}
         }
     }
 }

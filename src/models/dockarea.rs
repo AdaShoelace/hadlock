@@ -68,8 +68,8 @@ impl DockArea {
                 y: 0,
             },
             Size {
-                width: self.top_end_x as u32 - self.top_start_x as u32,
-                height: self.top as u32,
+                width: self.top_end_x - self.top_start_x,
+                height: self.top,
             }
         )
     }
@@ -82,8 +82,8 @@ impl DockArea {
                 y: screen_height - self.bottom,
             },
             Size {
-                width: self.bottom_end_x as u32 - self.bottom_start_x as u32,
-                height: self.bottom as u32,
+                width: self.bottom_end_x - self.bottom_start_x,
+                height: self.bottom,
             }
         )
     }
@@ -95,8 +95,8 @@ impl DockArea {
                 y: self.left_start_y,
             },
             Size {
-                width: self.left as u32,
-                height: self.left_end_y as u32 - self.left_start_y as u32,
+                width: self.left,
+                height: self.left_end_y - self.left_start_y,
             }
         )
     }
@@ -108,8 +108,8 @@ impl DockArea {
                 y: self.right_start_y,
             },
             Size {
-                width: self.right as u32,
-                height: self.right_end_y as u32 - self.right_start_y as u32,
+                width: self.right,
+                height: self.right_end_y - self.right_start_y,
             }
         )
     }

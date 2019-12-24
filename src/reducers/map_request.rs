@@ -13,7 +13,8 @@ use {
         config::CONFIG,
     },
     std::rc::Rc,
-    reducer::*
+    reducer::*,
+    std::cell::RefCell,
 };
 
 
@@ -21,7 +22,7 @@ impl Reducer<action::MapRequest> for State {
     fn reduce(&mut self, action: action::MapRequest) {
 
         match self.windows.get_mut(&action.win) {
-            Some(w) => w.handle_state = HandleState::Map,
+            Some(w) => w.handle_state = HandleState::Map.into(),
             None => {
                 if self.lib.should_be_managed(action.win) {
                     let pos = Position{x: 200, y: 300};

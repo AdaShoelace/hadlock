@@ -82,7 +82,9 @@ impl HdlReactor {
     fn set_focus(&self, focus: Window) {
         if focus == self.lib.get_root() { return }
         self.grab_buttons(focus);
+        self.lib.sync(false);
         self.grab_keys(focus);
+        self.lib.sync(false);
         self.lib.take_focus(focus);
         self.lib.set_border_width(focus, CONFIG.border_width as u32);
         self.lib.set_border_color(focus, CONFIG.border_color);
@@ -94,7 +96,9 @@ impl HdlReactor {
     pub fn unset_focus(&self, w: Window) {
         self.lib.remove_focus(w);
         self.lib.ungrab_all_buttons(w);
+        self.lib.sync(false);
         self.lib.ungrab_keys(w);
+        self.lib.sync(false);
         self.lib.set_border_width(w, 0);
         self.lib.set_border_color(w, CONFIG.background_color);
         /*let size = ww.get_size();
@@ -107,10 +111,12 @@ impl Reactor<State> for HdlReactor {
     type Output = ();
 
     fn react(&self, state: &State) {
+        //debug!("{:#?}", state);
         state.windows
             .iter()
             .for_each(|(key, val)| {
-                match val.handle_state {
+                let state = *val.handle_state.borrow();
+                match state {
                     HandleState::New => {
                         self.lib.add_to_save_set(*key);
                         self.lib.add_to_root_net_client_list(*key);
@@ -118,21 +124,31 @@ impl Reactor<State> for HdlReactor {
                         self.lib.resize_window(*key, val.get_size());
                         self.subscribe_to_events(*key);
                         self.lib.map_window(*key);
+                        val.handle_state.replace(HandleState::Handled);
                     },
                     HandleState::Map => {
                         self.lib.map_window(*key);
                     },
-                    HandleState::Move(pos) => self.lib.move_window(*key, pos),
-                    HandleState::ResizeRelative(size) => {
-                        let size = Size{ width: val.get_size().width + (size.width - val.get_size().width),
-                                            height: val.get_size().height + (size.height - val.get_size().height)};
-                        self.lib.resize_window(*key, size);
+                    HandleState::Move => {
+                        self.lib.move_window(*key, val.get_position());
+                        self.lib.sync(false);
                     },
-                    HandleState::Focus => self.set_focus(*key),
-                    HandleState::Unfocus => self.unset_focus(*key),
+                    HandleState::Resize => {
+                        self.lib.resize_window(*key, val.get_size());
+                        self.lib.sync(false);
+                    },
+                    HandleState::Focus => {
+                        self.set_focus(*key);
+                        val.handle_state.replace(HandleState::Handled);
+                    },
+                    HandleState::Unfocus => {
+                        self.unset_focus(*key);
+                        val.handle_state.replace(HandleState::Handled);
+                    },
                     _ => ()
                 }
             });
-        self.state.replace(state.clone());
+        self.lib.sync(false);
+        //self.state.replace(state.clone());
     }
 }
