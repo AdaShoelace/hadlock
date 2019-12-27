@@ -13,6 +13,7 @@ use {
         xatom::*,
     },
     derivative::*,
+    std::cell::RefCell,
 };
 
 #[derive(Derivative)]

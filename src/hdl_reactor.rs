@@ -27,6 +27,52 @@ pub struct HdlReactor {
     state: RefCell<State>,
 }
 
+impl Reactor<State> for HdlReactor {
+    type Output = ();
+
+    fn react(&self, state: &State) {
+        //debug!("{:#?}", state);
+        state.windows
+            .iter()
+            .for_each(|(key, val)| {
+                let state = *val.handle_state.borrow();
+                match state {
+                    HandleState::New => {
+                        self.lib.add_to_save_set(*key);
+                        self.lib.add_to_root_net_client_list(*key);
+                        self.lib.move_window(*key, val.get_position());
+                        self.lib.resize_window(*key, val.get_size());
+                        self.subscribe_to_events(*key);
+                        self.lib.map_window(*key);
+                        val.handle_state.replace(HandleState::Handled);
+                    },
+                    HandleState::Map => {
+                        self.lib.map_window(*key);
+                    },
+                    HandleState::Move => {
+                        self.lib.move_window(*key, val.get_position());
+                        self.lib.sync(false);
+                    },
+                    HandleState::Resize => {
+                        self.lib.resize_window(*key, val.get_size());
+                        self.lib.sync(false);
+                    },
+                    HandleState::Focus => {
+                        self.set_focus(*key);
+                        val.handle_state.replace(HandleState::Handled);
+                    },
+                    HandleState::Unfocus => {
+                        self.unset_focus(*key);
+                        val.handle_state.replace(HandleState::Handled);
+                    },
+                    _ => ()
+                }
+            });
+        self.lib.sync(false);
+        //self.state.replace(state.clone());
+    }
+}
+
 impl HdlReactor {
     pub fn new(lib: Rc<XlibWrapper>, original_state: State) -> Self {
         Self {
@@ -107,48 +153,3 @@ impl HdlReactor {
     }
 }
 
-impl Reactor<State> for HdlReactor {
-    type Output = ();
-
-    fn react(&self, state: &State) {
-        //debug!("{:#?}", state);
-        state.windows
-            .iter()
-            .for_each(|(key, val)| {
-                let state = *val.handle_state.borrow();
-                match state {
-                    HandleState::New => {
-                        self.lib.add_to_save_set(*key);
-                        self.lib.add_to_root_net_client_list(*key);
-                        self.lib.move_window(*key, val.get_position());
-                        self.lib.resize_window(*key, val.get_size());
-                        self.subscribe_to_events(*key);
-                        self.lib.map_window(*key);
-                        val.handle_state.replace(HandleState::Handled);
-                    },
-                    HandleState::Map => {
-                        self.lib.map_window(*key);
-                    },
-                    HandleState::Move => {
-                        self.lib.move_window(*key, val.get_position());
-                        self.lib.sync(false);
-                    },
-                    HandleState::Resize => {
-                        self.lib.resize_window(*key, val.get_size());
-                        self.lib.sync(false);
-                    },
-                    HandleState::Focus => {
-                        self.set_focus(*key);
-                        val.handle_state.replace(HandleState::Handled);
-                    },
-                    HandleState::Unfocus => {
-                        self.unset_focus(*key);
-                        val.handle_state.replace(HandleState::Handled);
-                    },
-                    _ => ()
-                }
-            });
-        self.lib.sync(false);
-        //self.state.replace(state.clone());
-    }
-}

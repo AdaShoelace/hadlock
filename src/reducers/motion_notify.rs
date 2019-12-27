@@ -21,7 +21,6 @@ use {
 
 impl Reducer<action::MotionNotify> for State {
     fn reduce(&mut self, action: action::MotionNotify) {
-        debug!("MotionNotify");
         let drag_pos = Position { x: action.x_root, y: action.y_root };
         let (delta_x, delta_y) =  (drag_pos.x - self.drag_start_pos.0,
             drag_pos.y - self.drag_start_pos.1);
