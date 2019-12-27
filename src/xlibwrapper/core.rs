@@ -1084,6 +1084,37 @@ impl XlibWrapper {
             None => None
         }
     }
+    
+    fn reparent(&self, w: Window, new_parent: Window) {
+        unsafe {
+            (self.lib.XReparentWindow)(
+                self.display,
+                w,
+                new_parent,
+                CONFIG.border_width,
+                CONFIG.decoration_height + CONFIG.border_width,
+            );
+        }        
+    }
+
+    pub fn reparent_client(&self, w: Window, size: Size, pos: Position) -> Window {
+        let attr = self.get_window_attributes(w);
+        //let pos = Position {x: attr.x, y: attr.y};
+        //let size = Size {width: attr.width, height: attr.height};
+        let frame = self.create_simple_window(
+            self.get_root(),
+            pos,
+            size,
+            0,
+            CONFIG.border_color,
+            CONFIG.background_color
+        );
+        self.select_input(frame, SubstructureRedirectMask | SubstructureNotifyMask);
+        self.add_to_save_set(w);
+        self.reparent(w, frame);
+        //self.map_window(frame);
+        frame
+    }
 
     pub fn get_top_level_windows(&self) -> Vec<Window> {
         unsafe {

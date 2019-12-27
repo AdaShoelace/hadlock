@@ -20,15 +20,14 @@ use {
 
 impl Reducer<action::MapRequest> for State {
     fn reduce(&mut self, action: action::MapRequest) {
-
+        debug!("MapRequest");
         match self.windows.get_mut(&action.win) {
             Some(w) => w.handle_state = HandleState::Map.into(),
             None => {
                 if self.lib.should_be_managed(action.win) {
                     let pos = Position{x: 200, y: 300};
                     let size = Size{ width: 600, height: 400 };
-                    let mut ww = WindowWrapper::new(action.win, Rect::new(pos, size));
-                    self.windows.insert(action.win, ww);
+                    self.windows.insert(action.win, WindowWrapper::new(action.win, Rect::new(pos, size)));
                 }
             }
         }
