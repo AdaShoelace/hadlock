@@ -20,16 +20,16 @@ pub enum HandleState {
 
 #[derive(Clone, Debug)]
 pub struct WindowWrapper {
-    dec: Option<Window>,
-    window: Window,
-    window_rect: Rect,
+    pub dec: Option<Window>,
+    pub window: Window,
+    pub window_rect: Rect,
     pub is_visible: bool,
-    dec_rect: Option<Rect>,
-    restore_position: Position,
-    restore_size: Size,
+    pub dec_rect: Option<Rect>,
+    pub restore_position: Position,
+    pub restore_size: Size,
     pub handle_state: RefCell<HandleState>,
-    current_state: WindowState,
-    previous_state: WindowState,
+    pub current_state: WindowState,
+    pub previous_state: WindowState,
     
 }
 
