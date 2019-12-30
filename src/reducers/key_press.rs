@@ -1,6 +1,7 @@
 use {
     crate::{
         models::{
+            WindowState,
             Direction,
             window_type::WindowType,
             rect::*,
@@ -15,6 +16,7 @@ use {
         config::CONFIG,
     },
     std::rc::Rc,
+    std::cell::RefCell,
     std::process::Command,
     reducer::*
 };
@@ -83,38 +85,52 @@ fn managed_client(state: &mut State, action: action::KeyPress, mod_not_shift: bo
         let old_size = state.monitors.get(&state.current_monitor).unwrap().get_client(state.focus_w).unwrap().get_size();
         if state.lib.str_to_keycode("Right").expect("key_press: 3") == keycode {
             let mon = state.monitors.get_mut(&state.current_monitor).expect("KeyPress - monitor - get_mut");
-            let size = Size {width: old_size.width + 10, height: old_size.height};
-            let (_dec_size, size) = mon.resize_window(state.focus_w, size.width, size.height);
-            let ww = state.monitors.get_mut(&state.current_monitor).expect("KeyPress - monitor - get_mut").get_client_mut(state.focus_w).unwrap();
-            ww.set_size(size);
-            ww.handle_state.replace(HandleState::Resize);
+            let (_dec_size, size) = mon.resize_window(state.focus_w, old_size.width + 10, old_size.height);
+            let ww = mon.remove_window(state.focus_w);
+            let new_ww = WindowWrapper {
+                window_rect: Rect::new(ww.get_position(), size),
+                handle_state: HandleState::Resize.into(),
+                ..ww
+            };
+            mon.add_window(state.focus_w, new_ww);
+
             return
         }
         if state.lib.str_to_keycode("Left").expect("key_press: 4") == keycode {
             let mon = state.monitors.get_mut(&state.current_monitor).expect("KeyPress - monitor - get_mut");
-            let size = Size {width: old_size.width - 10, height: old_size.height};
-            let (_dec_size, size) = mon.resize_window(state.focus_w, size.width, size.height);
-            let ww = state.monitors.get_mut(&state.current_monitor).expect("KeyPress - monitor - get_mut").get_client_mut(state.focus_w).unwrap();
-            ww.set_size(size);
-            ww.handle_state.replace(HandleState::Resize);
+            let (_dec_size, size) = mon.resize_window(state.focus_w, old_size.width - 10, old_size.height);
+            let ww = mon.remove_window(state.focus_w);
+            let new_ww = WindowWrapper {
+                window_rect: Rect::new(ww.get_position(), size),
+                handle_state: HandleState::Resize.into(),
+                ..ww
+            };
+            mon.add_window(state.focus_w, new_ww);
+
             return
         }
         if state.lib.str_to_keycode("Down").expect("key_press: 5") == keycode {
             let mon = state.monitors.get_mut(&state.current_monitor).expect("KeyPress - monitor - get_mut");
-            let size = Size {width: old_size.width, height: old_size.height + 10};
-            let (_dec_size, size) = mon.resize_window(state.focus_w, size.width, size.height);
-            let ww = state.monitors.get_mut(&state.current_monitor).expect("KeyPress - monitor - get_mut").get_client_mut(state.focus_w).unwrap();
-            ww.set_size(size);
-            ww.handle_state.replace(HandleState::Resize);
+            let (_dec_size, size) = mon.resize_window(state.focus_w, old_size.width, old_size.height + 10);
+            let ww = mon.remove_window(state.focus_w);
+            let new_ww = WindowWrapper {
+                window_rect: Rect::new(ww.get_position(), size),
+                handle_state: HandleState::Resize.into(),
+                ..ww
+            };
+            mon.add_window(state.focus_w, new_ww);
             return
         }
         if state.lib.str_to_keycode("Up").expect("key_press: 6") == keycode {
             let mon = state.monitors.get_mut(&state.current_monitor).expect("KeyPress - monitor - get_mut");
-            let size = Size {width: old_size.width, height: old_size.height - 10};
-            let (_dec_size, size) = mon.resize_window(state.focus_w, size.width, size.height);
-            let ww = state.monitors.get_mut(&state.current_monitor).expect("KeyPress - monitor - get_mut").get_client_mut(state.focus_w).unwrap();
-            ww.set_size(size);
-            ww.handle_state.replace(HandleState::Resize);
+            let (_dec_size, size) = mon.resize_window(state.focus_w, old_size.width, old_size.height - 10);
+            let ww = mon.remove_window(state.focus_w);
+            let new_ww = WindowWrapper {
+                window_rect: Rect::new(ww.get_position(), size),
+                handle_state: HandleState::Resize.into(),
+                ..ww
+            };
+            mon.add_window(state.focus_w, new_ww);
             return
         }
         if state.lib.str_to_keycode("q").expect("key_press: 7") == keycode {
@@ -146,45 +162,20 @@ fn managed_client(state: &mut State, action: action::KeyPress, mod_not_shift: bo
             //wm.toggle_maximize(wm.focus_w);
         }
         if state.lib.str_to_keycode("Right").expect("key_press: 9") == keycode || state.lib.str_to_keycode("l").expect("key_press: 10") == keycode {
-            //wm.shift_window(wm.focus_w, Direction::East);
-            let mon = state.monitors.get_mut(&state.current_monitor).expect("KeyPress - monitor - get_mut");
-            let (pos, size) = mon.shift_window(state.focus_w, Direction::East);
-            let ww = state.monitors.get_mut(&state.current_monitor).expect("KeyPress - monitor - get_mut").get_client_mut(state.focus_w).unwrap();
-            ww.set_size(size);
-            ww.set_position(pos);
-            ww.handle_state.replace(HandleState::Shift);
-            state.lib.center_cursor(state.focus_w);
+            shift_window(state, Direction::East);
             return;
         }
         if state.lib.str_to_keycode("Left").expect("key_press: 11") == keycode || state.lib.str_to_keycode("h").expect("key_press: 12") == keycode {
-            let mon = state.monitors.get_mut(&state.current_monitor).expect("KeyPress - monitor - get_mut");
-            let (pos, size) = mon.shift_window(state.focus_w, Direction::West);
-            let ww = state.monitors.get_mut(&state.current_monitor).expect("KeyPress - monitor - get_mut").get_client_mut(state.focus_w).unwrap();
-            ww.set_size(size);
-            ww.set_position(pos);
-            ww.handle_state.replace(HandleState::Shift);
-            state.lib.center_cursor(state.focus_w);
+            shift_window(state, Direction::West);
             return;
         }
         if state.lib.str_to_keycode("Down").expect("key_press: 13") == keycode || state.lib.str_to_keycode("j").expect("key_press: 14") == keycode  {
-            let mon = state.monitors.get_mut(&state.current_monitor).expect("KeyPress - monitor - get_mut");
-            let (pos, size) = mon.shift_window(state.focus_w, Direction::South);
-            let ww = state.monitors.get_mut(&state.current_monitor).expect("KeyPress - monitor - get_mut").get_client_mut(state.focus_w).unwrap();
-            ww.set_size(size);
-            ww.set_position(pos);
-            ww.handle_state.replace(HandleState::Shift);
-            state.lib.center_cursor(state.focus_w);
+            shift_window(state, Direction::South);
             return;
         }
         if state.lib.str_to_keycode("Up").expect("key_press: \"Up\"") == keycode || state.lib.str_to_keycode("k").expect("key_press: 16") == keycode  {
             debug!("Snap up");
-            let mon = state.monitors.get_mut(&state.current_monitor).expect("KeyPress - monitor - get_mut");
-            let (pos, size) = mon.shift_window(state.focus_w, Direction::North);
-            let ww = state.monitors.get_mut(&state.current_monitor).expect("KeyPress - monitor - get_mut").get_client_mut(state.focus_w).unwrap();
-            ww.set_size(size);
-            ww.set_position(pos);
-            ww.handle_state.replace(HandleState::Shift);
-            state.lib.center_cursor(state.focus_w);
+            shift_window(state, Direction::North);
             return;
         }
         if state.lib.str_to_keycode("c").expect("key_press: \"c\"") == keycode {
@@ -203,6 +194,19 @@ fn managed_client(state: &mut State, action: action::KeyPress, mod_not_shift: bo
             //wm.set_current_ws(ws_num);
         }
     }
+}
+
+fn shift_window(state: &mut State, direction: Direction) {
+    let mon = state.monitors.get_mut(&state.current_monitor).expect("KeyPress - shift_window - monitor - get_mut");
+    let (pos, size) = mon.shift_window(state.focus_w, direction);
+    let ww = mon.remove_window(state.focus_w);
+    let ww = WindowWrapper {
+        window_rect: Rect::new(pos, size),
+        current_state: WindowState::Snapped,
+        handle_state: HandleState::Shift.into(),
+        ..ww
+    };
+    mon.add_window(state.focus_w, ww);
 }
 
 fn keycode_to_ws(keycode: u8) -> u32 {

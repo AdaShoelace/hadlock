@@ -447,6 +447,12 @@ impl XlibWrapper {
                 self.root,
                 self.xatom.NetActiveWindow
             );
+            (self.lib.XSetInputFocus)(
+                self.display,
+                self.root,
+                xlib::RevertToPointerRoot,
+                xlib::CurrentTime
+            );
         }
     }
 
