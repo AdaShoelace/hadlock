@@ -14,7 +14,8 @@ pub enum HandleState {
     Unfocus,
     Destroy,
     Move,
-    Resize
+    Shift,
+    Resize,
 }
 
 #[derive(Clone, Debug)]

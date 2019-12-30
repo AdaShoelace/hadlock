@@ -15,7 +15,7 @@ use crate::models::{
 use crate::xlibwrapper::xlibmodels::Window;
 
 pub trait Layout : std::fmt::Debug {
-    fn place_window(&self, dock_area: &DockArea, screen: &Screen, w: Window, ww: &WindowWrapper) -> (Size, Position) {
+    fn place_window(&self, dock_area: &DockArea, screen: &Screen, w: Window) -> (Size, Position) {
         unimplemented!();
     }
 
@@ -27,7 +27,7 @@ pub trait Layout : std::fmt::Debug {
         unimplemented!();
     }
 
-    fn resize_window(&self, ww: &WindowWrapper, w: Window, width: u32, height: u32) -> (Size, Size) {
+    fn resize_window(&self, ww: &WindowWrapper, w: Window, width: i32, height: i32) -> (Size, Size) {
         unimplemented!();
     }
 

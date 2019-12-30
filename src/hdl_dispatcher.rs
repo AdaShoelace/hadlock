@@ -18,7 +18,7 @@ use {
 
 pub fn run(xlib: Rc<XlibWrapper>) {
     let state = State::new(xlib.clone());
-    let mut store = Store::new(state.clone(), HdlReactor::new(xlib.clone(), state));
+    let mut store = Store::new(state, HdlReactor::new(xlib.clone()));
     loop {
         let xevent = xlib.next_event();
         match xevent.get_type() {
@@ -39,10 +39,10 @@ pub fn run(xlib: Rc<XlibWrapper>) {
                 let event = xlib::XMapRequestEvent::from(xevent);
                 store.dispatch(action::MapRequest{win: event.window})
             },
-            /*xlib::UnmapNotify => {
+            xlib::UnmapNotify => {
               let event = xlib::XUnmapEvent::from(xevent);
               store.dispatch(action::UnmapNotify{win: event.window})
-              },*/
+              },
             xlib::ButtonPress => {
                 let event = xlib::XButtonEvent::from(xevent);
                 store.dispatch(action::ButtonPress{
@@ -54,22 +54,22 @@ pub fn run(xlib: Rc<XlibWrapper>) {
                     state: event.state as u32
                 });
             },
-            /*xlib::ButtonRelease => {
-              let event = xlib::XButtonEvent::from(xevent);
-              action::ButtonRelease{
-              win: event.window,
-              sub_win: event.subwindow,
-              button: event.button,
-              x_root: event.x_root as u32,
-              y_root: event.y_root as u32,
-              state: event.state as u32
-              };
-              },
-              xlib::KeyPress => {
-              let event = xlib::XKeyEvent::from(xevent);
-              action::KeyPress{win: event.window, state: event.state, keycode: event.keycode};
-              },
-              xlib::KeyRelease => {
+            xlib::ButtonRelease => {
+                let event = xlib::XButtonEvent::from(xevent);
+                store.dispatch(action::ButtonRelease{
+                    win: event.window,
+                    sub_win: event.subwindow,
+                    button: event.button,
+                    x_root: event.x_root as u32,
+                    y_root: event.y_root as u32,
+                    state: event.state as u32
+                })
+            },
+            xlib::KeyPress => {
+                let event = xlib::XKeyEvent::from(xevent);
+                store.dispatch(action::KeyPress{win: event.window, state: event.state, keycode: event.keycode})
+            },
+            /*xlib::KeyRelease => {
               let event = xlib::XKeyEvent::from(xevent);
               action::KeyRelease{win: event.window, state: event.state, keycode: event.keycode};
               },*/
@@ -93,12 +93,12 @@ pub fn run(xlib: Rc<XlibWrapper>) {
             /*xlib::Expose => {
               let event = xlib::XExposeEvent::from(xevent);
               action::Expose{win: event.window};
-              },
-              xlib::DestroyNotify => {
-              let event = xlib::XDestroyWindowEvent::from(xevent);
-              action::DestroyNotify{win: event.window};
-              },
-              xlib::PropertyNotify => {
+              },*/
+            xlib::DestroyNotify => {
+                let event = xlib::XDestroyWindowEvent::from(xevent);
+                store.dispatch(action::DestroyNotify{win: event.window})
+            },
+            /*xlib::PropertyNotify => {
               let event = xlib::XPropertyEvent::from(xevent);
               action::PropertyNotify{win: event.window, atom: event.atom};
               },

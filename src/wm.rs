@@ -22,3 +22,9 @@ use crate::{
         Direction
     }
 };
+
+pub fn window_inside_screen(w_geom: &Geometry, screen: &Screen) -> bool {
+    let inside_width = w_geom.x >= screen.x && w_geom.x < screen.x + screen.width;
+    let inside_height = w_geom.y >= screen.y && w_geom.y < screen.y + screen.height;
+    inside_width && inside_height
+}
