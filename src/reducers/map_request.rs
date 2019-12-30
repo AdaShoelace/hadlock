@@ -1,9 +1,11 @@
 use {
     crate::{
+        wm,
         models::{
             window_type::WindowType,
             rect::*,
             windowwrapper::*,
+            monitor::Monitor
         },
         xlibwrapper::action,
         xlibwrapper::core::*,
@@ -21,14 +23,34 @@ use {
 impl Reducer<action::MapRequest> for State {
     fn reduce(&mut self, action: action::MapRequest) {
         debug!("MapRequest");
-        match self.windows.get_mut(&action.win) {
-            Some(w) => w.handle_state = HandleState::Map.into(),
+        if self.lib.get_window_type(action.win) == WindowType::Dock {
+            match self.lib.get_window_strut_array(action.win) {
+                Some(dock) => {
+                    let w_geom = self.lib.get_geometry(action.win);
+                    let mon = self.monitors
+                        .values_mut()
+                        .filter(|mon| wm::window_inside_screen(&w_geom, &mon.screen))
+                        .collect::<Vec<&mut Monitor>>().remove(0);
+                    mon.set_dock_area(dock);
+                    self.lib.map_window(action.win);
+                }
+                None => {
+                    return
+                }
+            }
+        }
+        let mon = self.monitors.get_mut(&self.current_monitor).expect("MapRequest: get_client_mut");
+        match mon.get_client_mut(action.win) {
+            Some(w) => {
+                debug!("MapRequest - already mapped");
+                w.handle_state = HandleState::Map.into()
+            },
             None => {
                 if self.lib.should_be_managed(action.win) {
-                    let pos = Position{x: 200, y: 300};
-                    let size = Size{ width: 600, height: 400 };
-                    self.windows.insert(action.win, WindowWrapper::new(action.win, Rect::new(pos, size)));
+                    let (size, pos) = mon.place_window(action.win);
+                    mon.add_window(action.win, WindowWrapper::new(action.win, Rect::new(pos, size)));
                 }
+                debug!("Should not be managed");
             }
         }
 

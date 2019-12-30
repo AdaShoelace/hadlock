@@ -18,12 +18,14 @@ use {
 };
 
 
-impl Reducer<action::EnterNotify> for State {
-    fn reduce(&mut self, action: action::EnterNotify) {
-        debug!("EnterNotify");
-        self.focus_w = action.win;
-        if let Some(w) = self.monitors.get_mut(&self.current_monitor).expect("EnterNotify - monitor - get_mut").get_client_mut(action.win) {
-                w.handle_state = HandleState::Focus.into();
+impl Reducer<action::DestroyNotify> for State {
+    fn reduce(&mut self, action: action::DestroyNotify) {
+        debug!("DestroyNotify");
+        if action.win == self.lib.get_root() { return }
+
+        let mon = self.monitors.get_mut(&self.current_monitor).expect("DestroyNotify - get_mut");
+        if mon.contains_window(action.win) {
+            mon.remove_window(action.win);
         }
     }
 }

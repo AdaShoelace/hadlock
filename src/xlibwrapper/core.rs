@@ -587,14 +587,15 @@ impl XlibWrapper {
         }
     }
 
-    pub fn center_cursor(&self, ww: &WindowWrapper) {
-        let size = ww.get_size();
-        let pos = Position{ x: (size.width / 2) as i32 , y: (size.height / 2) as i32};
+    pub fn center_cursor(&self, w: Window) {
+
+        let geom = self.get_geometry(w);
+        let pos = Position{ x: (geom.width / 2) as i32 , y: (geom.height / 2) as i32};
         unsafe {
             (self.lib.XWarpPointer)(
                 self.display,
                 0,
-                ww.window(),
+                w,
                 0,
                 0,
                 0,
