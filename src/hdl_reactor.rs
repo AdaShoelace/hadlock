@@ -9,6 +9,7 @@ use {
     },
     crate::models::{
         windowwrapper::*,
+        screen::Screen
     },
     x11_dl::xlib::{
         self,
@@ -24,7 +25,6 @@ use {
 
 pub struct HdlReactor {
     lib: Rc<XlibWrapper>,
-    state: RefCell<State>,
 }
 
 impl Reactor<State> for HdlReactor {
@@ -32,11 +32,15 @@ impl Reactor<State> for HdlReactor {
 
     fn react(&self, state: &State) {
         //debug!("{:#?}", state);
-        state.windows
+        let ws = state.monitors.get(&state.current_monitor).expect("Reactor current_monitor")
+            .get_current_ws().unwrap();
+
+        ws
+            .clients
             .iter()
             .for_each(|(key, val)| {
-                let state = *val.handle_state.borrow();
-                match state {
+                let handle_state = *val.handle_state.borrow();
+                match handle_state {
                     HandleState::New => {
                         self.lib.add_to_save_set(*key);
                         self.lib.add_to_root_net_client_list(*key);
@@ -48,14 +52,16 @@ impl Reactor<State> for HdlReactor {
                     },
                     HandleState::Map => {
                         self.lib.map_window(*key);
+                        val.handle_state.replace(HandleState::Handled);
                     },
                     HandleState::Move => {
                         self.lib.move_window(*key, val.get_position());
-                        self.lib.sync(false);
+                        val.handle_state.replace(HandleState::Handled);
                     },
                     HandleState::Resize => {
+                        debug!("Resize in reactor");
                         self.lib.resize_window(*key, val.get_size());
-                        self.lib.sync(false);
+                        val.handle_state.replace(HandleState::Handled);
                     },
                     HandleState::Focus => {
                         self.set_focus(*key);
@@ -65,19 +71,26 @@ impl Reactor<State> for HdlReactor {
                         self.unset_focus(*key);
                         val.handle_state.replace(HandleState::Handled);
                     },
+                    HandleState::Shift => {
+                        self.lib.move_window(*key, val.get_position());
+                        self.lib.resize_window(*key, val.get_size());
+                        val.handle_state.replace(HandleState::Handled);
+                    },
+                    HandleState::Destroy => {
+                        let windows = state.monitors.get(&state.current_monitor).expect("HdlReactor - Destroy").get_current_windows();
+                        self.kill_window(*key, windows);
+                    }
                     _ => ()
                 }
             });
         self.lib.sync(false);
-        //self.state.replace(state.clone());
     }
 }
 
 impl HdlReactor {
-    pub fn new(lib: Rc<XlibWrapper>, original_state: State) -> Self {
+    pub fn new(lib: Rc<XlibWrapper>) -> Self {
         Self {
             lib,
-            state: RefCell::new(original_state)
         }
     }
 
@@ -151,5 +164,17 @@ impl HdlReactor {
           self.lib.resize_window(w, size.width, size.height);*/
         self.lib.sync(false);
     }
+
+    pub fn kill_window(&self, w: Window, clients: Vec<Window>) {
+        if w == self.lib.get_root() {
+            return
+        }
+
+        if self.lib.kill_client(w) {
+            self.lib.update_net_client_list(clients);
+        }
+        info!("Top level windows: {}", self.lib.top_level_window_count());
+    }
+
 }
 

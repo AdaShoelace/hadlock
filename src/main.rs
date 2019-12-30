@@ -4,34 +4,31 @@ extern crate log;
 #[macro_use]
 extern crate derivative;
 
-//mod windowmanager;
 mod wm;
 mod xlibwrapper;
 mod models;
-//mod runner;
 mod config;
-//mod layout;
+mod layout;
 mod reducers;
 mod state;
 mod hdl_dispatcher;
 mod hdl_reactor;
 
-//use windowmanager::*;
-//use runner::*;
 use xlibwrapper::{
     core::*,
     xlibmodels::*,
 };
-use std::rc::Rc;
-use std::process::Command;
-use std::thread;
-use std::sync::mpsc;
+use std::{
+    rc::Rc,
+    process::Command,
+    thread,
+    sync::mpsc,
+};
+
 use fern;
 use chrono;
 use nix::sys::signal::{self, SigHandler, Signal};
 use crate::config::*;
-use reducer::*;
-use state::State;
 
 pub type HadlockResult<T> = Result<T, Box<dyn std::error::Error>>;
 pub type HadlockOption<T> = Option<T>;
@@ -53,7 +50,7 @@ fn main() -> HadlockResult<()> {
             _ => { return },
         }
     });
-    
+
     hdl_dispatcher::run(xlib);
 
     //Runner::new(xlib.clone(), WindowManager::new(xlib.clone())).run(tx);

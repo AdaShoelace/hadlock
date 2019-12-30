@@ -1,6 +1,10 @@
 mod map_request;
+mod unmap_notify;
 mod enter_notify;
 mod leave_notify;
 mod button_press;
+mod button_release;
+mod key_press;
 mod motion_notify;
+mod destroy_notify;
 mod unknown;
