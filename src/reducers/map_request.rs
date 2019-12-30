@@ -39,21 +39,17 @@ impl Reducer<action::MapRequest> for State {
                 }
             }
         }
+
         let mon = self.monitors.get_mut(&self.current_monitor).expect("MapRequest: get_client_mut");
-        match mon.get_client_mut(action.win) {
-            Some(w) => {
-                debug!("MapRequest - already mapped");
-                w.handle_state = HandleState::Map.into()
-            },
-            None => {
-                if self.lib.should_be_managed(action.win) {
-                    let (size, pos) = mon.place_window(action.win);
-                    mon.add_window(action.win, WindowWrapper::new(action.win, Rect::new(pos, size)));
-                }
-                debug!("Should not be managed");
+        if mon.contains_window(action.win) {
+            let ww = mon.remove_window(action.win);
+            mon.add_window(action.win, WindowWrapper { handle_state: HandleState::Map.into() , ..ww });
+        } else {
+            if self.lib.should_be_managed(action.win) {
+                let (size, pos) = mon.place_window(action.win);
+                mon.add_window(action.win, WindowWrapper::new(action.win, Rect::new(pos, size)));
             }
         }
-
 
     }
 }

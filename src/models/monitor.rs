@@ -104,6 +104,14 @@ impl Monitor {
         self.current_ws = ws;
     }
 
+    pub fn remove_ws(&mut self, ws: u32) -> Option<Workspace> {
+        self.workspaces.remove(&ws)
+    }
+    
+    pub fn add_ws(&mut self, ws: Workspace) {
+        self.workspaces.insert(ws.tag, ws);
+    }
+
     pub fn get_active_ws_tags(&self) -> Vec<u32> {
         self.workspaces
             .keys()
@@ -134,6 +142,7 @@ impl Monitor {
             .collect::<Vec<Window>>();
         windows
     }
+
 
     pub fn get_client_mut(&mut self, w: Window) -> Option<&mut WindowWrapper> {
         self.workspaces.get_mut(&self.current_ws)?.clients.get_mut(&w)

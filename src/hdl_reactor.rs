@@ -64,16 +64,17 @@ impl Reactor<State> for HdlReactor {
                         val.handle_state.replace(HandleState::Handled);
                     },
                     HandleState::Focus => {
-                        self.set_focus(*key);
+                        self.set_focus(*key, &val);
                         val.handle_state.replace(HandleState::Handled);
                     },
                     HandleState::Unfocus => {
-                        self.unset_focus(*key);
+                        self.unset_focus(*key, &val);
                         val.handle_state.replace(HandleState::Handled);
                     },
                     HandleState::Shift => {
                         self.lib.move_window(*key, val.get_position());
                         self.lib.resize_window(*key, val.get_size());
+                        self.lib.center_cursor(*key);
                         val.handle_state.replace(HandleState::Handled);
                     },
                     HandleState::Destroy => {
@@ -138,8 +139,9 @@ impl HdlReactor {
             .for_each(|key_sym| { self.lib.grab_keys(w, key_sym, Mod4Mask | Shift) });
     }
 
-    fn set_focus(&self, focus: Window) {
+    fn set_focus(&self, focus: Window, ww: &WindowWrapper) {
         if focus == self.lib.get_root() { return }
+        let size = ww.get_size();
         self.grab_buttons(focus);
         self.lib.sync(false);
         self.grab_keys(focus);
@@ -147,21 +149,20 @@ impl HdlReactor {
         self.lib.take_focus(focus);
         self.lib.set_border_width(focus, CONFIG.border_width as u32);
         self.lib.set_border_color(focus, CONFIG.border_color);
-        //self.lib.resize_window(focus, size.width - 2* CONFIG.border_width as u32, size.height - 2*CONFIG.border_width as u32);
-        self.lib.raise_window(focus);
+        self.lib.resize_window(focus, Size {width: size.width - 2 * CONFIG.border_width, height: size.height - 2 * CONFIG.border_width});
+        //self.lib.raise_window(focus);
         self.lib.sync(false);
     }
 
-    pub fn unset_focus(&self, w: Window) {
-        self.lib.remove_focus(w);
+    pub fn unset_focus(&self, w: Window, ww: &WindowWrapper) {
         self.lib.ungrab_all_buttons(w);
         self.lib.sync(false);
         self.lib.ungrab_keys(w);
         self.lib.sync(false);
         self.lib.set_border_width(w, 0);
         self.lib.set_border_color(w, CONFIG.background_color);
-        /*let size = ww.get_size();
-          self.lib.resize_window(w, size.width, size.height);*/
+        self.lib.resize_window(w, ww.get_size());
+        self.lib.remove_focus(w);
         self.lib.sync(false);
     }
 
