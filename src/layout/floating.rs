@@ -82,13 +82,16 @@ impl Layout for Floating {
         }
     }
 
-    fn maximize(&self, screen: &Screen, dock_area: &DockArea, ww: &WindowWrapper, w: Window) -> Size {
+    fn maximize(&self, screen: &Screen, dock_area: &DockArea, ww: &WindowWrapper, w: Window) -> (Position, Size) {
+                let pos = self.move_window(screen, dock_area, w, 0, 0);
         match dock_area.as_rect(&screen) {
             Some(dock) => {
-                Floating::get_size(&ww, self.resize_window(&ww, w, screen.width  - 2 * CONFIG.border_width , screen.height - CONFIG.border_width - dock.get_size().height))
+                let size = Floating::get_size(&ww, self.resize_window(&ww, w, screen.width  - 2 * CONFIG.border_width , screen.height - CONFIG.border_width - dock.get_size().height));
+                (pos.0, size)
             },
             None => {
-                Floating::get_size(&ww, self.resize_window(&ww, w, screen.width, screen.height))
+                let size = Floating::get_size(&ww, self.resize_window(&ww, w, screen.width, screen.height));
+                (pos.0, size)
             }
         }
     }

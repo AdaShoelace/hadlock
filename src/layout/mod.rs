@@ -31,7 +31,7 @@ pub trait Layout : std::fmt::Debug {
         unimplemented!();
     }
 
-    fn maximize(&self, screen: &Screen, dock_area: &DockArea, ww: &WindowWrapper, w: Window) -> Size {
+    fn maximize(&self, screen: &Screen, dock_area: &DockArea, ww: &WindowWrapper, w: Window) -> (Position, Size) {
         unimplemented!();
     }
 
