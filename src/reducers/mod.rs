@@ -7,4 +7,5 @@ mod button_release;
 mod key_press;
 mod motion_notify;
 mod destroy_notify;
+mod property_notify;
 mod unknown;

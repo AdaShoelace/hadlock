@@ -1,9 +1,11 @@
 use {
     crate::{
+        wm,
         models::{
             window_type::WindowType,
             rect::*,
             windowwrapper::*,
+            monitor::Monitor
         },
         xlibwrapper::action,
         xlibwrapper::core::*,
@@ -18,12 +20,9 @@ use {
 };
 
 
-impl Reducer<action::LeaveNotify> for State {
-    fn reduce(&mut self, action: action::LeaveNotify) {
-        //debug!("LeaveNotify");
-        if let Some(w) = self.monitors.get_mut(&self.current_monitor).expect("LeaveNotify - monitor - get_mut").get_client_mut(action.win) {
-                w.handle_state = HandleState::Unfocus.into();
-        }
+impl Reducer<action::PropertyNotify> for State {
+    fn reduce(&mut self, _action: action::PropertyNotify) {
+        debug!("PropertyNotify");
     }
 }
 
