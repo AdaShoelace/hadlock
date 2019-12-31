@@ -20,9 +20,9 @@ use super::{
 pub struct Monitor {
     pub id: MonitorId,
     pub screen: Screen,
-    workspaces: HashMap<u32, Workspace>,
-    dock_area: DockArea,
-    current_ws: u32,
+    pub workspaces: HashMap<u32, Workspace>,
+    pub dock_area: DockArea,
+    pub current_ws: u32,
 }
 
 impl Monitor {
@@ -169,8 +169,7 @@ impl Monitor {
         self.get_current_ws().expect("monitor: resize_window 2").layout.resize_window(&ww, w, width, height)
     }
 
-    pub fn maximize(&self, w: Window) -> Size {
-        let ww = self.get_client(w).expect("monitor: maximize 1").clone();
+    pub fn maximize(&self, w: Window, ww: &WindowWrapper) -> (Position, Size) {
         let screen = self.screen.clone();
         let dock_area = self.dock_area.clone();
         self.get_current_ws().expect("monitor: maximize 2").layout.maximize(&screen, &dock_area, &ww, w)

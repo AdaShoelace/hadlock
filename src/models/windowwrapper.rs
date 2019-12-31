@@ -10,12 +10,15 @@ pub enum HandleState {
     New,
     Handled,
     Map,
+    Unmap,
     Focus,
     Unfocus,
     Destroy,
     Move,
     Shift,
     Resize,
+    Maximize,
+    MaximizeRestore
 }
 
 #[derive(Clone, Debug)]
