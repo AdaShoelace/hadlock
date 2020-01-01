@@ -1,7 +1,7 @@
 use {
     crate::{
         config::CONFIG,
-        models::{rect::*, window_type::WindowType, windowwrapper::*, Direction, WindowState},
+        models::{rect::*, window_type::WindowType, windowwrapper::*, Direction, WindowState, HandleState},
         state::State,
         wm,
         xlibwrapper::action,
@@ -156,7 +156,7 @@ fn managed_client(
             true => {
                 let ws_num = keycode_to_ws(keycode);
                 //wm.move_to_ws(w, ws_num as u8);
-                wm::set_current_ws(state, ws_num);
+                wm::set_current_ws(state, ws_num)?;
             }
             _ => {}
         }
@@ -198,12 +198,10 @@ fn managed_client(
         if state.lib.str_to_keycode("Up")? == keycode
             || state.lib.str_to_keycode("k")? == keycode
         {
-            debug!("Snap up");
             shift_window(state, Direction::North);
             return Some(());
         }
         if state.lib.str_to_keycode("c")? == keycode {
-            debug!("Center window");
             //wm.place_window(wm.focus_w);
             //wm.center_cursor(wm.focus_w);
             return Some(());
@@ -216,7 +214,7 @@ fn managed_client(
         if ws_keys.contains(&keycode) {
             debug!("mod_not_shift switch ws");
             let ws_num = keycode_to_ws(keycode);
-            wm::set_current_ws(state, ws_num);
+            wm::set_current_ws(state, ws_num)?;
         }
     }
     Some(())

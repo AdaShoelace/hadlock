@@ -4,22 +4,8 @@ use crate::xlibwrapper::xlibmodels::*;
 use super::rect::*;
 use super::WindowState;
 use std::cell::RefCell;
+use super::HandleState;
 
-#[derive(Copy, Clone, Debug)]
-pub enum HandleState {
-    New,
-    Handled,
-    Map,
-    Unmap,
-    Focus,
-    Unfocus,
-    Destroy,
-    Move,
-    Shift,
-    Resize,
-    Maximize,
-    MaximizeRestore
-}
 
 #[derive(Clone, Debug)]
 pub struct WindowWrapper {

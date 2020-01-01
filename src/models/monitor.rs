@@ -13,8 +13,10 @@ use super::{
     screen::Screen,
     windowwrapper::WindowWrapper,
     dockarea::DockArea,
-    Direction
+    Direction,
+    HandleState
 };
+use std::cell::RefCell;
 
 #[derive(Debug)]
 pub struct Monitor {
@@ -23,6 +25,7 @@ pub struct Monitor {
     pub workspaces: HashMap<u32, Workspace>,
     pub dock_area: DockArea,
     pub current_ws: u32,
+    pub handle_state: RefCell<HandleState>
 }
 
 impl Monitor {
@@ -40,7 +43,8 @@ impl Monitor {
             screen,
             workspaces,
             dock_area: Default::default(),
-            current_ws
+            current_ws,
+            handle_state: RefCell::new(HandleState::Handled)
         }
     }
 
