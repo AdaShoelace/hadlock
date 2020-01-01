@@ -28,15 +28,7 @@ impl Reducer<action::KeyPress> for State {
                     .expect("key_press 1")
             })
         .collect();
-
-    let handled_windows = self.windows.keys().map(|key| *key).collect::<Vec<u64>>();
-    /*debug!(
-      "KeyPress - root: {}, window: {}, handled_windows: {:?}",
-      self.lib.get_root(),
-      action.win,
-      handled_windows
-      );*/
-
+    
     let mon = match self.monitors.get_mut(&self.current_monitor) {
         Some(mon) => mon,
         None => {
@@ -236,16 +228,16 @@ fn root(
     mod_not_shift: bool,
     mod_and_shift: bool,
     ws_keys: Vec<u8>,
-) {
+) -> Option<()> {
     let keycode = action.keycode as u8;
     if mod_not_shift {
-        if state.lib.str_to_keycode("Return").expect("key_press: 17") == keycode {
+        if state.lib.str_to_keycode("Return")? == keycode {
             spawn_process(CONFIG.term.as_str(), vec![]);
         }
-        if state.lib.str_to_keycode("d").expect("key_press: \"d\"") == keycode {
+        if state.lib.str_to_keycode("d")? == keycode {
             debug!("dmenu_run");
             spawn_process("dmenu_recency", vec![]);
-            return;
+            return Some(());
         }
 
         match ws_keys.contains(&keycode) {
@@ -257,17 +249,18 @@ fn root(
         }
     }
     if mod_and_shift {
-        if state.lib.str_to_keycode("e").expect("key_press: 18") == keycode {
+        if state.lib.str_to_keycode("e")? == keycode {
             state.lib.exit();
         }
     }
+    Some(())
 }
 
-fn shift_window(state: &mut State, direction: Direction) {
+fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
     let mon = state
         .monitors
-        .get_mut(&state.current_monitor)
-        .expect("KeyPress - shift_window - monitor - get_mut");
+        .get_mut(&state.current_monitor)?;
+
     let (pos, size) = mon.shift_window(state.focus_w, direction);
     let ww = mon.remove_window(state.focus_w);
     let ww = WindowWrapper {
@@ -277,6 +270,7 @@ fn shift_window(state: &mut State, direction: Direction) {
         ..ww
     };
     mon.add_window(state.focus_w, ww);
+    Some(())
 }
 
 fn keycode_to_ws(keycode: u8) -> u32 {
