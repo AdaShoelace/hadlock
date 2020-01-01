@@ -1,7 +1,7 @@
 use {
     crate::config::CONFIG,
-    crate::models::{screen::Screen, windowwrapper::*},
-    crate::state::State,
+    crate::models::{screen::Screen, windowwrapper::*, HandleState},
+    crate::state::*,
     crate::xlibwrapper::action::*,
     crate::xlibwrapper::core::XlibWrapper,
     crate::xlibwrapper::{action, masks::*, util::*, xlibmodels::*},
@@ -20,82 +20,89 @@ impl Reactor<State> for HdlReactor {
 
     fn react(&self, state: &State) {
         //debug!("{:#?}", state);
-        let mon = state
-            .monitors
-            .get(&state.current_monitor)
-            .expect("Reactor current_monitor");
 
-        mon.workspaces.values().for_each(|ws| {
-            ws.clients.iter().for_each(|(key, val)| {
-                let handle_state = *val.handle_state.borrow();
-                match handle_state {
-                    HandleState::New => {
-                        self.lib.add_to_save_set(*key);
-                        self.lib.add_to_root_net_client_list(*key);
-                        self.lib.move_window(*key, val.get_position());
-                        self.lib.resize_window(*key, val.get_size());
-                        self.subscribe_to_events(*key);
-                        self.lib.map_window(*key);
-                        val.handle_state.replace(HandleState::Handled);
+        state.monitors.values().for_each(|mon| {
+            let handle_state = *mon.handle_state.borrow();
+            match handle_state {
+                HandleState::Focus => {
+                    self.lib.update_desktops(mon.current_ws, None);
+
+                    mon.handle_state.replace(HandleState::Handled);
+                },
+                _ => ()
+            }
+            mon.workspaces.values().for_each(|ws| {
+                ws.clients.iter().for_each(|(key, val)| {
+                    let handle_state = *val.handle_state.borrow();
+                    match handle_state {
+                        HandleState::New => {
+                            self.lib.add_to_save_set(*key);
+                            self.lib.add_to_root_net_client_list(*key);
+                            self.lib.move_window(*key, val.get_position());
+                            self.lib.resize_window(*key, val.get_size());
+                            self.subscribe_to_events(*key);
+                            self.lib.map_window(*key);
+                            val.handle_state.replace(HandleState::Handled);
+                        }
+                        HandleState::Map => {
+                            self.lib.map_window(*key);
+                            val.handle_state.replace(HandleState::Handled);
+                        }
+                        HandleState::Unmap => {
+                            self.lib.unmap_window(*key);
+                            val.handle_state.replace(HandleState::Handled);
+                        }
+                        HandleState::Move => {
+                            self.lib.move_window(*key, val.get_position());
+                            val.handle_state.replace(HandleState::Handled);
+                        }
+                        HandleState::Resize => {
+                            debug!("Resize in reactor");
+                            self.lib.resize_window(*key, val.get_size());
+                            val.handle_state.replace(HandleState::Handled);
+                        }
+                        HandleState::Focus => {
+                            self.set_focus(*key, &val);
+                            val.handle_state.replace(HandleState::Handled);
+                        }
+                        HandleState::Unfocus => {
+                            self.unset_focus(*key, &val);
+                            val.handle_state.replace(HandleState::Handled);
+                        }
+                        HandleState::Shift => {
+                            self.lib.move_window(*key, val.get_position());
+                            self.lib.resize_window(*key, val.get_size());
+                            self.lib.center_cursor(*key);
+                            val.handle_state.replace(HandleState::Handled);
+                        }
+                        HandleState::Maximize => {
+                            self.lib.move_window(*key, val.get_position());
+                            self.lib.resize_window(*key, val.get_size());
+                            self.set_focus(*key, &val);
+                            self.lib.raise_window(*key);
+                            self.lib.center_cursor(*key);
+                            val.handle_state.replace(HandleState::Handled);
+                        }
+                        HandleState::MaximizeRestore => {
+                            self.lib.move_window(*key, val.get_position());
+                            self.lib.resize_window(*key, val.get_size());
+                            self.set_focus(*key, &val);
+                            self.lib.center_cursor(*key);
+                            val.handle_state.replace(HandleState::Handled);
+                        }
+                        HandleState::Destroy => {
+                            let windows = state
+                                .monitors
+                                .get(&state.current_monitor)
+                                .expect("HdlReactor - Destroy")
+                                .get_current_windows();
+                            self.kill_window(*key, windows);
+                        }
+                        _ => (),
                     }
-                    HandleState::Map => {
-                        self.lib.map_window(*key);
-                        val.handle_state.replace(HandleState::Handled);
-                    }
-                    HandleState::Unmap => {
-                        self.lib.unmap_window(*key);
-                        val.handle_state.replace(HandleState::Handled);
-                    }
-                    HandleState::Move => {
-                        self.lib.move_window(*key, val.get_position());
-                        val.handle_state.replace(HandleState::Handled);
-                    }
-                    HandleState::Resize => {
-                        debug!("Resize in reactor");
-                        self.lib.resize_window(*key, val.get_size());
-                        val.handle_state.replace(HandleState::Handled);
-                    }
-                    HandleState::Focus => {
-                        self.set_focus(*key, &val);
-                        val.handle_state.replace(HandleState::Handled);
-                    }
-                    HandleState::Unfocus => {
-                        self.unset_focus(*key, &val);
-                        val.handle_state.replace(HandleState::Handled);
-                    }
-                    HandleState::Shift => {
-                        self.lib.move_window(*key, val.get_position());
-                        self.lib.resize_window(*key, val.get_size());
-                        self.lib.center_cursor(*key);
-                        val.handle_state.replace(HandleState::Handled);
-                    }
-                    HandleState::Maximize => {
-                        self.lib.move_window(*key, val.get_position());
-                        self.lib.resize_window(*key, val.get_size());
-                        self.set_focus(*key, &val);
-                        self.lib.raise_window(*key);
-                        self.lib.center_cursor(*key);
-                        val.handle_state.replace(HandleState::Handled);
-                    }
-                    HandleState::MaximizeRestore => {
-                        self.lib.move_window(*key, val.get_position());
-                        self.lib.resize_window(*key, val.get_size());
-                        self.set_focus(*key, &val);
-                        self.lib.center_cursor(*key);
-                        val.handle_state.replace(HandleState::Handled);
-                    }
-                    HandleState::Destroy => {
-                        let windows = state
-                            .monitors
-                            .get(&state.current_monitor)
-                            .expect("HdlReactor - Destroy")
-                            .get_current_windows();
-                        self.kill_window(*key, windows);
-                    }
-                    _ => (),
-                }
+                });
+                self.lib.sync(false);
             });
-            self.lib.sync(false);
         });
     }
 }
@@ -135,9 +142,9 @@ impl HdlReactor {
             "q", "Left", "Up", "Right", "Down", "Return", "f", "e", "c", "h", "j", "k", "l", "d",
             "1", "2", "3", "4", "5", "6", "7", "8", "9",
         ]
-        .iter()
-        .map(|key| keysym_lookup::into_keysym(key).expect("Core: no such key"))
-        .for_each(|key_sym| self.lib.grab_keys(w, key_sym, Mod4Mask | Shift));
+            .iter()
+            .map(|key| keysym_lookup::into_keysym(key).expect("Core: no such key"))
+            .for_each(|key_sym| self.lib.grab_keys(w, key_sym, Mod4Mask | Shift));
     }
 
     fn set_focus(&self, focus: Window, ww: &WindowWrapper) {

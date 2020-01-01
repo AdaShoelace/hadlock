@@ -4,6 +4,7 @@ use {
             window_type::WindowType,
             rect::*,
             windowwrapper::*,
+            HandleState
         },
         xlibwrapper::action,
         xlibwrapper::core::*,

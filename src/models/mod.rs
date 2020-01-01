@@ -21,3 +21,19 @@ pub enum Direction {
     East,
     South
 }
+
+#[derive(Copy, Clone, Debug)]
+pub enum HandleState {
+    New,
+    Handled,
+    Map,
+    Unmap,
+    Focus,
+    Unfocus,
+    Destroy,
+    Move,
+    Shift,
+    Resize,
+    Maximize,
+    MaximizeRestore
+}
