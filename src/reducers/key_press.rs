@@ -27,32 +27,35 @@ impl Reducer<action::KeyPress> for State {
                     .str_to_keycode(&x.to_string())
                     .expect("key_press 1")
             })
-            .collect();
+        .collect();
 
-        let handled_windows = self.windows.keys().map(|key| *key).collect::<Vec<u64>>();
-        /*debug!(
-            "KeyPress - root: {}, window: {}, handled_windows: {:?}",
-            self.lib.get_root(),
-            action.win,
-            handled_windows
-        );*/
+    let handled_windows = self.windows.keys().map(|key| *key).collect::<Vec<u64>>();
+    /*debug!(
+      "KeyPress - root: {}, window: {}, handled_windows: {:?}",
+      self.lib.get_root(),
+      action.win,
+      handled_windows
+      );*/
 
-        let mon = self
-            .monitors
-            .get_mut(&self.current_monitor)
-            .expect("KeyPress - monitor - get_mut");
-
-        match mon.get_client(self.focus_w) {
-            Some(_) => {
-                managed_client(self, action, mod_not_shift, mod_and_shift, ws_keys);
-            }
-            None if action.win == self.lib.get_root() => {
-                root(self, action, mod_not_shift, mod_and_shift, ws_keys);
-            }
-            None => {
-                return;
-            }
+    let mon = match self.monitors.get_mut(&self.current_monitor) {
+        Some(mon) => mon,
+        None => {
+            warn!("No such monitor: {}", self.current_monitor);
+            return
         }
+    };
+
+    match mon.get_client(self.focus_w) {
+        Some(_) => {
+            managed_client(self, action, mod_not_shift, mod_and_shift, ws_keys);
+        }
+        None if action.win == self.lib.get_root() => {
+            root(self, action, mod_not_shift, mod_and_shift, ws_keys);
+        }
+        None => {
+            return;
+        }
+    }
     }
 }
 
@@ -62,27 +65,25 @@ fn managed_client(
     mod_not_shift: bool,
     mod_and_shift: bool,
     ws_keys: Vec<u8>,
-) {
+) -> Option<()> {
     debug!("Windows exists: KeyPress");
     let keycode = action.keycode as u8;
 
-    if mod_not_shift && state.lib.str_to_keycode("Return").expect("key_press: 2") == keycode {
+    if mod_not_shift && state.lib.str_to_keycode("Return")? == keycode {
         spawn_process(CONFIG.term.as_str(), vec![]);
     }
 
     if mod_and_shift {
         let old_size = state
             .monitors
-            .get(&state.current_monitor)
-            .unwrap()
-            .get_client(state.focus_w)
-            .unwrap()
+            .get(&state.current_monitor)?
+            .get_client(state.focus_w)?
             .get_size();
-        if state.lib.str_to_keycode("Right").expect("key_press: 3") == keycode {
+        if state.lib.str_to_keycode("Right")? == keycode {
             let mon = state
                 .monitors
-                .get_mut(&state.current_monitor)
-                .expect("KeyPress - monitor - get_mut");
+                .get_mut(&state.current_monitor)?;
+
             let (_dec_size, size) =
                 mon.resize_window(state.focus_w, old_size.width + 10, old_size.height);
             let ww = mon.remove_window(state.focus_w);
@@ -93,13 +94,13 @@ fn managed_client(
             };
             mon.add_window(state.focus_w, new_ww);
 
-            return;
+            return Some(());
         }
-        if state.lib.str_to_keycode("Left").expect("key_press: 4") == keycode {
+        if state.lib.str_to_keycode("Left")? == keycode {
             let mon = state
                 .monitors
-                .get_mut(&state.current_monitor)
-                .expect("KeyPress - monitor - get_mut");
+                .get_mut(&state.current_monitor)?;
+
             let (_dec_size, size) =
                 mon.resize_window(state.focus_w, old_size.width - 10, old_size.height);
             let ww = mon.remove_window(state.focus_w);
@@ -109,13 +110,13 @@ fn managed_client(
                 ..ww
             };
             mon.add_window(state.focus_w, new_ww);
-            return;
+            return Some(());
         }
-        if state.lib.str_to_keycode("Down").expect("key_press: 5") == keycode {
+        if state.lib.str_to_keycode("Down")? == keycode {
             let mon = state
                 .monitors
-                .get_mut(&state.current_monitor)
-                .expect("KeyPress - monitor - get_mut");
+                .get_mut(&state.current_monitor)?;
+
             let (_dec_size, size) =
                 mon.resize_window(state.focus_w, old_size.width, old_size.height + 10);
             let ww = mon.remove_window(state.focus_w);
@@ -125,13 +126,12 @@ fn managed_client(
                 ..ww
             };
             mon.add_window(state.focus_w, new_ww);
-            return;
+            return Some(());
         }
-        if state.lib.str_to_keycode("Up").expect("key_press: 6") == keycode {
+        if state.lib.str_to_keycode("Up")? == keycode {
             let mon = state
                 .monitors
-                .get_mut(&state.current_monitor)
-                .expect("KeyPress - monitor - get_mut");
+                .get_mut(&state.current_monitor)?;
             let (_dec_size, size) =
                 mon.resize_window(state.focus_w, old_size.width, old_size.height - 10);
             let ww = mon.remove_window(state.focus_w);
@@ -141,23 +141,22 @@ fn managed_client(
                 ..ww
             };
             mon.add_window(state.focus_w, new_ww);
-            return;
+            return Some(());
         }
-        if state.lib.str_to_keycode("q").expect("key_press: 7") == keycode {
+        if state.lib.str_to_keycode("q")? == keycode {
             let ww = state
                 .monitors
-                .get_mut(&state.current_monitor)
-                .expect("KeyPress - monitor - get_mut")
-                .get_client_mut(state.focus_w)
-                .unwrap();
+                .get_mut(&state.current_monitor)?
+                .get_client_mut(state.focus_w)?;
+
             ww.handle_state.replace(HandleState::Destroy);
-            return;
+            return Some(());
         }
-        if state.lib.str_to_keycode("e").expect("key_press: 8") == keycode {
+        if state.lib.str_to_keycode("e")? == keycode {
             state.lib.exit();
-            return;
+            return Some(());
         }
-        if state.lib.str_to_keycode("f").expect("key_press: 8") == keycode {
+        if state.lib.str_to_keycode("f")? == keycode {
             //wm.toggle_monocle(w);
         }
 
@@ -174,55 +173,53 @@ fn managed_client(
     if mod_not_shift {
         println!("Number pressed");
 
-        if state.lib.str_to_keycode("f").expect("Dafuq?!?!") == keycode {
+        if state.lib.str_to_keycode("f")? == keycode {
             let ww = state
                 .monitors
-                .get_mut(&state.current_monitor)
-                .expect("KeyPress - maximize - remove_window")
+                .get_mut(&state.current_monitor)?
                 .remove_window(state.focus_w);
             let new_ww = wm::toggle_maximize(state, ww);
             state
                 .monitors
-                .get_mut(&state.current_monitor)
-                .expect("KeyPress - maximize - add_window")
+                .get_mut(&state.current_monitor)?
                 .add_window(state.focus_w, new_ww);
-            return;
+            return Some(());
         }
-        if state.lib.str_to_keycode("Right").expect("key_press: 9") == keycode
-            || state.lib.str_to_keycode("l").expect("key_press: 10") == keycode
+        if state.lib.str_to_keycode("Right")? == keycode
+            || state.lib.str_to_keycode("l")? == keycode
         {
             shift_window(state, Direction::East);
-            return;
+            return Some(());
         }
-        if state.lib.str_to_keycode("Left").expect("key_press: 11") == keycode
-            || state.lib.str_to_keycode("h").expect("key_press: 12") == keycode
+        if state.lib.str_to_keycode("Left")? == keycode
+            || state.lib.str_to_keycode("h")? == keycode
         {
             shift_window(state, Direction::West);
-            return;
+            return Some(());
         }
-        if state.lib.str_to_keycode("Down").expect("key_press: 13") == keycode
-            || state.lib.str_to_keycode("j").expect("key_press: 14") == keycode
+        if state.lib.str_to_keycode("Down")? == keycode
+            || state.lib.str_to_keycode("j")? == keycode
         {
             shift_window(state, Direction::South);
-            return;
+            return Some(());
         }
-        if state.lib.str_to_keycode("Up").expect("key_press: \"Up\"") == keycode
-            || state.lib.str_to_keycode("k").expect("key_press: 16") == keycode
+        if state.lib.str_to_keycode("Up")? == keycode
+            || state.lib.str_to_keycode("k")? == keycode
         {
             debug!("Snap up");
             shift_window(state, Direction::North);
-            return;
+            return Some(());
         }
-        if state.lib.str_to_keycode("c").expect("key_press: \"c\"") == keycode {
+        if state.lib.str_to_keycode("c")? == keycode {
             debug!("Center window");
             //wm.place_window(wm.focus_w);
             //wm.center_cursor(wm.focus_w);
-            return;
+            return Some(());
         }
-        if state.lib.str_to_keycode("d").expect("key_press: \"d\"") == keycode {
+        if state.lib.str_to_keycode("d")? == keycode {
             debug!("dmenu_run");
             spawn_process("dmenu_recency", vec![]);
-            return;
+            return Some(());
         }
         if ws_keys.contains(&keycode) {
             debug!("mod_not_shift switch ws");
@@ -230,6 +227,7 @@ fn managed_client(
             wm::set_current_ws(state, ws_num);
         }
     }
+    Some(())
 }
 
 fn root(
