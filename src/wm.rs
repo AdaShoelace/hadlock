@@ -2,10 +2,13 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::{
+    state::*,
     config::*,
     models::{
+        monitor::Monitor,
         dockarea::*, rect::*, screen::*, window_type::*, windowwrapper::*, workspace::*, Direction,
         WindowState,
+        HandleState
     },
     state::State,
     xlibwrapper::{core::*, masks::*, util::*, xlibmodels::*},
@@ -47,14 +50,40 @@ pub fn toggle_maximize(state: &mut State, ww: WindowWrapper) -> WindowWrapper {
     }
 }
 
-pub fn set_current_ws(state: &mut State, ws: u32) {
-    let mon = state
+pub fn get_mon_by_ws(state: &State, ws: u32) -> Option<MonitorId> {
+    let mut ret_vec = state
         .monitors
-        .get_mut(&state.current_monitor)
-        .expect("Wm - set_current_state_ws - monitor - get_mut");
+        .iter()
+        .filter(|(_,val)| {
+            val.contains_ws(ws)
+        })
+    .map(|(key, _)| *key)
+        .collect::<Vec<MonitorId>>();
+    if ret_vec.len() != 1 {
+        None
+    } else {
+        Some(ret_vec.remove(0))
+    }
+}
+
+pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
+
+    let mon = match get_mon_by_ws(state, ws) {
+        Some(mon) => {
+            state.monitors.get_mut(&mon)?
+        },
+        None => {
+            state
+                .monitors
+                .get_mut(&state.current_monitor)?
+        }
+    };
 
     if ws == mon.current_ws {
-        return;
+        state.current_monitor = mon.id;
+        state.lib.move_cursor(Position { x: mon.screen.x + (mon.screen.width / 2), y: mon.screen.y + (mon.screen.height / 2) });
+        mon.handle_state.replace(HandleState::Focus);
+        return Some(());
     }
 
     let mut old_ws = mon.remove_ws(mon.current_ws).expect("Should be here..");
@@ -73,6 +102,9 @@ pub fn set_current_ws(state: &mut State, ws: u32) {
     } else {
         mon.add_ws(Workspace::new(ws));
     }
+    state.current_monitor = mon.id;
     mon.current_ws = ws;
-    state.lib.update_desktops(mon.current_ws, None);
+    state.lib.move_cursor(Position { x: mon.screen.x + (mon.screen.width / 2), y: mon.screen.y + (mon.screen.height / 2) });
+    mon.handle_state.replace(HandleState::Focus);
+    Some(())
 }

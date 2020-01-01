@@ -4,6 +4,7 @@ use {
             window_type::WindowType,
             rect::*,
             windowwrapper::*,
+            HandleState
         },
         xlibwrapper::action,
         xlibwrapper::masks::*,
@@ -22,7 +23,14 @@ use {
 impl Reducer<action::MotionNotify> for State {
     fn reduce(&mut self, action: action::MotionNotify) {
 
-        self.current_monitor = self.get_monitor_by_mouse();
+        if self.current_monitor != self.get_monitor_by_mouse() {
+            self.current_monitor = self.get_monitor_by_mouse();
+            self.monitors
+                .get(&self.current_monitor)
+                .expect("MotionNotify - monitor - get_mut - change handle state")
+                .handle_state.
+                replace(HandleState::Focus);
+        }
 
         let drag_pos = Position { x: action.x_root, y: action.y_root };
         let (delta_x, delta_y) =  (drag_pos.x - self.drag_start_pos.0,
@@ -34,7 +42,7 @@ impl Reducer<action::MotionNotify> for State {
 
         if (action.state & (Button1Mask | Mod4Mask)) == Button1Mask | Mod4Mask {
             let new_pos = Position{x: dest_pos.x, y: dest_pos.y};
-            let (pos, _) = self.monitors.get_mut(&self.current_monitor).expect("MotionNotify - monitor - get_mut").move_window(action.win, new_pos.x, new_pos.y); 
+            let (pos, _) = self.monitors.get_mut(&self.current_monitor).expect("MotionNotify - monitor - get_mut").move_window(action.win, new_pos.x, new_pos.y);
             let w = self.monitors.get_mut(&self.current_monitor).expect("MotionNotify - monitor - get_mut").get_client_mut(action.win).expect("motion_notify some window");
             w.set_position(pos);
             w.handle_state = HandleState::Move.into();

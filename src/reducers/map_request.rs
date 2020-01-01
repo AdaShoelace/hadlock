@@ -5,7 +5,8 @@ use {
             window_type::WindowType,
             rect::*,
             windowwrapper::*,
-            monitor::Monitor
+            monitor::Monitor,
+            HandleState
         },
         xlibwrapper::action,
         xlibwrapper::core::*,
