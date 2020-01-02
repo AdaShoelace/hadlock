@@ -107,7 +107,7 @@ pub fn run(xlib: Rc<XlibWrapper>) {
             }
             xlib::ClientMessage => {
                 let event = xlib::XClientMessageEvent::from(xevent);
-                action::ClientMessageRequest {
+                store.dispatch(action::ClientMessageRequest {
                     win: event.window,
                     message_type: event.message_type,
                     data: vec![
@@ -115,7 +115,7 @@ pub fn run(xlib: Rc<XlibWrapper>) {
                         event.data.get_long(1),
                         event.data.get_long(2),
                     ],
-                };
+                });
             }
             _ => store.dispatch(action::UnknownEvent),
         }
