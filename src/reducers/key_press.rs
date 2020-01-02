@@ -155,7 +155,7 @@ fn managed_client(
         match ws_keys.contains(&keycode) {
             true => {
                 let ws_num = keycode_to_ws(keycode);
-                //wm.move_to_ws(w, ws_num as u8);
+                wm::move_to_ws(state, state.focus_w, ws_num);
                 wm::set_current_ws(state, ws_num)?;
             }
             _ => {}

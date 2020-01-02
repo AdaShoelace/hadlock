@@ -26,7 +26,6 @@ impl Reactor<State> for HdlReactor {
             match handle_state {
                 HandleState::Focus => {
                     self.lib.update_desktops(mon.current_ws, None);
-
                     mon.handle_state.replace(HandleState::Handled);
                 },
                 _ => ()
@@ -45,6 +44,11 @@ impl Reactor<State> for HdlReactor {
                             val.handle_state.replace(HandleState::Handled);
                         }
                         HandleState::Map => {
+                            let pos = Position {
+                                x: mon.screen.x + val.get_position().x,
+                                y: mon.screen.y + val.get_position().y
+                            };
+                            self.lib.move_window(*key, pos);
                             self.lib.map_window(*key);
                             val.handle_state.replace(HandleState::Handled);
                         }
