@@ -1,9 +1,11 @@
 {
-	"decorate": true,
+	"decorate": false,
 	"decorationHeight": 20,
 	"borderWidth": 2,
 	"innerBorderWidth": 0,
-	"borderColor": 	"DefaultBorder",
+	"borderColor": 	{
+		"Custom": 15483002
+	},
 	"backgroundColor": "DefaultBackground",
 	"focusedBackgroundColor": "DefaultFocusedBackground",
 	"workspaces": {
@@ -24,7 +26,7 @@
 			"program": "feh",
 			"args": [
 				"--bg-scale",
-				"/home/pierre/Programming/rust/hobby/hadlock/wallpaper.jpg"
+				"/home/pierre/Programming/rust/hobby/redux-hadlock/material.jpg"
 			]
 		},
 		{

@@ -1,0 +1,40 @@
+{
+	"decorate": true,
+	"decorationHeight": 20,
+	"borderWidth": 2,
+	"innerBorderWidth": 0,
+	"borderColor": 	"DefaultBorder",
+	"backgroundColor": "DefaultBackground",
+	"focusedBackgroundColor": "DefaultFocusedBackground",
+	"workspaces": {
+		"1": "1",
+		"2": "2",
+		"3": "3",
+		"4": "4",
+		"5": "5",
+		"6": "6",
+		"7": "7",
+		"8": "8",
+		"9": "9"
+	},
+	"terminal" : "alacritty",
+	"commands": [
+		{
+			"execTime": "Pre",
+			"program": "feh",
+			"args": [
+				"--bg-scale",
+				"/home/pierre/Programming/rust/hobby/hadlock/synthwave.jpg"
+			]
+		},
+		{
+			"execTime": "Post",
+			"program": "polybar",
+			"args": [
+				"--config=./polyconf",
+				"--log=ERROR",
+				"example"
+			]
+		}
+	]
+}
