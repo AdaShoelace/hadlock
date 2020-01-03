@@ -83,7 +83,7 @@ impl Layout for Floating {
     }
 
     fn maximize(&self, screen: &Screen, dock_area: &DockArea, ww: &WindowWrapper, w: Window) -> (Position, Size) {
-        let pos = self.move_window(screen, dock_area, w, true, 0, 0);
+        let pos = self.move_window(screen, dock_area, w, true, screen.x, screen.y);
         match dock_area.as_rect(&screen) {
             Some(dock) => {
                 let size = Floating::get_size(&ww, self.resize_window(&ww, w, screen.width  - 2 * CONFIG.border_width , screen.height - CONFIG.border_width - dock.get_size().height));
@@ -98,7 +98,7 @@ impl Layout for Floating {
 
     fn monocle(&self, screen: &Screen, dock_area: &DockArea, ww: &WindowWrapper, w: Window) -> (Position, Size) {
         // TODO: implement for decorated windows
-        let pos = self.move_window(screen, dock_area, w, false, 0, 0);
+        let pos = self.move_window(screen, dock_area, w, false, screen.x, screen.y);
         let size = Floating::get_size(&ww, self.resize_window(&ww, w, screen.width, screen.height));
         (pos.0, size)
     }
