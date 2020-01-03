@@ -6,7 +6,7 @@ pub mod window_type;
 pub mod monitor;
 pub mod workspace;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum WindowState {
     Snapped,
     Maximized,
