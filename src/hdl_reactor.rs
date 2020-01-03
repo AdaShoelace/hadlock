@@ -44,11 +44,11 @@ impl Reactor<State> for HdlReactor {
                             val.handle_state.replace(HandleState::Handled);
                         }
                         HandleState::Map => {
-                            let pos = Position {
+                            /*let pos = Position {
                                 x: mon.screen.x + val.get_position().x,
                                 y: mon.screen.y + val.get_position().y
-                            };
-                            self.lib.move_window(*key, pos);
+                            };*/
+                            self.lib.move_window(*key, val.get_position());
                             self.lib.map_window(*key);
                             val.handle_state.replace(HandleState::Handled);
                         }
@@ -79,15 +79,17 @@ impl Reactor<State> for HdlReactor {
                             self.lib.center_cursor(*key);
                             val.handle_state.replace(HandleState::Handled);
                         }
-                        HandleState::Maximize => {
+                        HandleState::Maximize 
+                            | HandleState::Monocle => {
                             self.lib.move_window(*key, val.get_position());
                             self.lib.resize_window(*key, val.get_size());
                             self.set_focus(*key, &val);
                             self.lib.raise_window(*key);
                             self.lib.center_cursor(*key);
                             val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::MaximizeRestore => {
+                        },
+                        HandleState::MaximizeRestore 
+                            | HandleState::MonocleRestore => {
                             self.lib.move_window(*key, val.get_position());
                             self.lib.resize_window(*key, val.get_size());
                             self.set_focus(*key, &val);
@@ -170,7 +172,6 @@ impl HdlReactor {
                 height: size.height - 2 * CONFIG.border_width,
             },
         );
-        //self.lib.raise_window(focus);
         self.lib.sync(false);
     }
 

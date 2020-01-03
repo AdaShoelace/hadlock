@@ -22,6 +22,8 @@ use {
 
 
 impl Reducer<action::ClientMessageRequest> for State {
+
+    // Full credit for this solution goes to lex148
     fn reduce(&mut self, action: action::ClientMessageRequest) {
         debug!("ClientMessageRequest");
         let data_zero = *action.data.get(0).expect("client_message_request: cleanupt");
@@ -58,7 +60,7 @@ impl Reducer<action::ClientMessageRequest> for State {
                 self.lib.set_window_states_atoms(action.win, states);
                 let mon = self.monitors.get_mut(&self.current_monitor).expect("ClientMessageRequest - monitor - get_mut");
                 let old_ww = mon.remove_window(action.win);
-                let new_ww = wm::toggle_maximize(self, old_ww);
+                let new_ww = wm::toggle_monocle(self, old_ww);
                 self
                     .monitors
                     .get_mut(&self.current_monitor)
