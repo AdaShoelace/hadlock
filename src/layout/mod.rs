@@ -23,7 +23,7 @@ pub trait Layout : std::fmt::Debug {
         unimplemented!();
     }
 
-    fn move_window(&self, screen: &Screen, dock_area: &DockArea, w: Window, x: i32, y: i32) -> (Position, Position) {
+    fn move_window(&self, screen: &Screen, dock_area: &DockArea, w: Window, respect_dock: bool, x: i32, y: i32) -> (Position, Position) {
         unimplemented!();
     }
 
@@ -32,6 +32,10 @@ pub trait Layout : std::fmt::Debug {
     }
 
     fn maximize(&self, screen: &Screen, dock_area: &DockArea, ww: &WindowWrapper, w: Window) -> (Position, Size) {
+        unimplemented!();
+    }
+
+    fn monocle(&self, screen: &Screen, dock_area: &DockArea, ww: &WindowWrapper, w: Window) -> (Position, Size) {
         unimplemented!();
     }
 

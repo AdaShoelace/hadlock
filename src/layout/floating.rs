@@ -43,7 +43,7 @@ impl Layout for Floating {
             dh = ((screen.height + dock_rect.get_size().height as i32) - new_size.height as i32) / 2;
         }
         let ret = Position{x: screen.x + dw, y: screen.y + dh};
-        
+
         (new_size, ret)
     }
 
@@ -51,15 +51,15 @@ impl Layout for Floating {
         unimplemented!();
     }
 
-    fn move_window(&self, screen: &Screen, dock_area: &DockArea, w: Window, x: i32, y: i32) -> (Position, Position) {
+    fn move_window(&self, screen: &Screen, dock_area: &DockArea, w: Window, respect_dock: bool, x: i32, y: i32) -> (Position, Position) {
 
         let mut y = y;
         match dock_area.as_rect(&screen) {
-            Some(dock) => {
+            Some(dock) if respect_dock => {
                 if y < dock.get_size().height as i32 {
                     y = dock.get_size().height as i32 - CONFIG.border_width; }
             }
-            None => {}
+            Some(_) | None => {}
         }
 
         (Position{x, y},
@@ -83,7 +83,7 @@ impl Layout for Floating {
     }
 
     fn maximize(&self, screen: &Screen, dock_area: &DockArea, ww: &WindowWrapper, w: Window) -> (Position, Size) {
-                let pos = self.move_window(screen, dock_area, w, 0, 0);
+        let pos = self.move_window(screen, dock_area, w, true, 0, 0);
         match dock_area.as_rect(&screen) {
             Some(dock) => {
                 let size = Floating::get_size(&ww, self.resize_window(&ww, w, screen.width  - 2 * CONFIG.border_width , screen.height - CONFIG.border_width - dock.get_size().height));
@@ -96,11 +96,18 @@ impl Layout for Floating {
         }
     }
 
+    fn monocle(&self, screen: &Screen, dock_area: &DockArea, ww: &WindowWrapper, w: Window) -> (Position, Size) {
+        // TODO: implement for decorated windows
+        let pos = self.move_window(screen, dock_area, w, false, 0, 0);
+        let size = Floating::get_size(&ww, self.resize_window(&ww, w, screen.width, screen.height));
+        (pos.0, size)
+    }
+
     fn shift_window(&self, screen: &Screen, ww: &WindowWrapper, dock_area: &DockArea, w: Window, direction: Direction) -> (Position, Size) {
         let origin = Position { x: screen.x, y: screen.y };
         match direction {
             Direction::North => {
-                let pos = self.move_window(&screen, &dock_area, w, screen.x, screen.y).0;
+                let pos = self.move_window(&screen, &dock_area, w, true, screen.x, screen.y).0;
                 let size = if ww.is_decorated() {
                     Size { width: screen.width - 2 * CONFIG.border_width, height: (screen.height) / 2 - 2 * CONFIG.border_width}
                 } else {
@@ -113,7 +120,7 @@ impl Layout for Floating {
                 (pos, size)
             },
             Direction::East => {
-                let pos = self.move_window(&screen, &dock_area, w, screen.x + screen.width / 2, screen.y).0;
+                let pos = self.move_window(&screen, &dock_area, w, true, screen.x + screen.width / 2, screen.y).0;
                 let size = if ww.is_decorated() {
                     Size{ width: (screen.width) / 2 - 2 * CONFIG.border_width, height: screen.height - CONFIG.border_width}
 
@@ -127,7 +134,7 @@ impl Layout for Floating {
                 (pos, size)
             },
             Direction::West => {
-                let pos = self.move_window(&screen, &dock_area, w, screen.x, screen.y).0;
+                let pos = self.move_window(&screen, &dock_area, w, true, screen.x, screen.y).0;
                 let size = if ww.is_decorated() {
                     Size{ width: (screen.width) / 2 - 2 * CONFIG.border_width, height: (screen.height) - CONFIG.border_width}
                 } else {
@@ -140,7 +147,7 @@ impl Layout for Floating {
                 (pos, size)
             },
             Direction::South => {
-                let mut pos = self.move_window(&screen, &dock_area, w, screen.x, screen.height / 2).0;
+                let mut pos = self.move_window(&screen, &dock_area, w, true, screen.x, screen.height / 2).0;
                 let size = if ww.is_decorated() {
                     Size{ width: screen.width - 2 * CONFIG.border_width, height: (screen.height) / 2 - 2 * CONFIG.border_width}
                 } else {
