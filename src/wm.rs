@@ -160,6 +160,7 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
     if ws == mon.current_ws {
         let (size, pos) = mon.place_window(w);
         let new_ww = WindowWrapper {
+            restore_position: pos,
             window_rect: Rect::new(pos, size),
             handle_state: HandleState::Map.into(),
             ..ww
@@ -173,6 +174,7 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         let mut old_ws = mon.remove_ws(ws)?;
         let (size, pos) = mon.place_window(w);
         let new_ww = WindowWrapper {
+            restore_position: pos,
             window_rect: Rect::new(pos, size),
             handle_state: HandleState::Map.into(),
             ..ww
@@ -184,6 +186,7 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         let mut new_ws = Workspace::new(ws);
         let (size, pos) = mon.place_window(w);
         let new_ww = WindowWrapper {
+            restore_position: pos,
             window_rect: Rect::new(pos, size),
             handle_state: HandleState::Map.into(),
             ..ww
