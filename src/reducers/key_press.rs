@@ -149,7 +149,15 @@ fn managed_client(
             return Some(());
         }
         if state.lib.str_to_keycode("f")? == keycode {
-            //wm.toggle_monocle(w);
+            let ww = state
+                .monitors
+                .get_mut(&state.current_monitor)?
+                .remove_window(state.focus_w);
+            let new_ww = wm::toggle_monocle(state, ww);
+            state
+                .monitors
+                .get_mut(&state.current_monitor)?
+                .add_window(state.focus_w, new_ww);
         }
 
         match ws_keys.contains(&keycode) {
