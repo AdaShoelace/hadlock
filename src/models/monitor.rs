@@ -165,7 +165,7 @@ impl Monitor {
     pub fn move_window(&mut self, w: Window, x: i32, y: i32) -> (Position, Position) {
         let screen = self.screen.clone();
         let dock_area = self.dock_area.clone();
-        self.get_current_ws_mut().expect("monitor: move_window").layout.move_window(&screen, &dock_area, w, x, y)
+        self.get_current_ws_mut().expect("monitor: move_window").layout.move_window(&screen, &dock_area, w, true, x, y)
     }
 
     pub fn resize_window(&self, w: Window, width: i32, height: i32) -> (Size, Size) {
@@ -177,6 +177,12 @@ impl Monitor {
         let screen = self.screen.clone();
         let dock_area = self.dock_area.clone();
         self.get_current_ws().expect("monitor: maximize 2").layout.maximize(&screen, &dock_area, &ww, w)
+    }
+
+    pub fn monocle(&self, w: Window, ww: &WindowWrapper) -> (Position, Size) {
+        let screen = self.screen.clone();
+        let dock_area = self.dock_area.clone();
+        self.get_current_ws().expect("monitor: maximize 2").layout.monocle(&screen, &dock_area, &ww, w)
     }
 
     pub fn shift_window(&mut self, w: Window, direction: Direction) -> (Position, Size) {

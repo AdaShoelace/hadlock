@@ -10,6 +10,7 @@ pub mod workspace;
 pub enum WindowState {
     Snapped,
     Maximized,
+    Monocle,
     Free,
     _Tiled
 }
@@ -35,5 +36,7 @@ pub enum HandleState {
     Shift,
     Resize,
     Maximize,
-    MaximizeRestore
+    MaximizeRestore,
+    Monocle,
+    MonocleRestore,
 }
