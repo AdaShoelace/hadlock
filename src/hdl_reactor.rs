@@ -1,6 +1,6 @@
 use {
     crate::config::CONFIG,
-    crate::models::{screen::Screen, windowwrapper::*, HandleState},
+    crate::models::{screen::Screen, windowwrapper::*, HandleState, WindowState},
     crate::state::*,
     crate::xlibwrapper::action::*,
     crate::xlibwrapper::core::XlibWrapper,
@@ -45,9 +45,9 @@ impl Reactor<State> for HdlReactor {
                         }
                         HandleState::Map => {
                             /*let pos = Position {
-                                x: mon.screen.x + val.get_position().x,
-                                y: mon.screen.y + val.get_position().y
-                            };*/
+                              x: mon.screen.x + val.get_position().x,
+                              y: mon.screen.y + val.get_position().y
+                              };*/
                             self.lib.move_window(*key, val.get_position());
                             self.lib.map_window(*key);
                             val.handle_state.replace(HandleState::Handled);
@@ -66,6 +66,7 @@ impl Reactor<State> for HdlReactor {
                             val.handle_state.replace(HandleState::Handled);
                         }
                         HandleState::Focus => {
+                            debug!("Focus");
                             self.set_focus(*key, &val);
                             val.handle_state.replace(HandleState::Handled);
                         }
@@ -79,23 +80,23 @@ impl Reactor<State> for HdlReactor {
                             self.lib.center_cursor(*key);
                             val.handle_state.replace(HandleState::Handled);
                         }
-                        HandleState::Maximize 
+                        HandleState::Maximize
                             | HandleState::Monocle => {
-                            self.lib.move_window(*key, val.get_position());
-                            self.lib.resize_window(*key, val.get_size());
-                            self.set_focus(*key, &val);
-                            self.lib.raise_window(*key);
-                            self.lib.center_cursor(*key);
-                            val.handle_state.replace(HandleState::Handled);
-                        },
-                        HandleState::MaximizeRestore 
-                            | HandleState::MonocleRestore => {
-                            self.lib.move_window(*key, val.get_position());
-                            self.lib.resize_window(*key, val.get_size());
-                            self.set_focus(*key, &val);
-                            self.lib.center_cursor(*key);
-                            val.handle_state.replace(HandleState::Handled);
-                        }
+                                self.lib.move_window(*key, val.get_position());
+                                self.lib.resize_window(*key, val.get_size());
+                                self.set_focus(*key, &val);
+                                self.lib.raise_window(*key);
+                                self.lib.center_cursor(*key);
+                                val.handle_state.replace(HandleState::Handled);
+                            },
+                            HandleState::MaximizeRestore
+                                | HandleState::MonocleRestore => {
+                                    self.lib.move_window(*key, val.get_position());
+                                    self.lib.resize_window(*key, val.get_size());
+                                    self.set_focus(*key, &val);
+                                    self.lib.center_cursor(*key);
+                                    val.handle_state.replace(HandleState::Handled);
+                                }
                         HandleState::Destroy => {
                             let windows = state
                                 .monitors

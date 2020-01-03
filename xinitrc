@@ -21,4 +21,5 @@ polybar --config="./polyconf" example 2>polylog &
 
 # 2. Start our window manager.
 
-exec $(RUST_LOG=hadlock ./target/debug/hadlock ~/Programming/rust/hobby/hadlock/config/hadlok.json)
+#exec $(RUST_LOG=hadlock ./target/debug/hadlock ~/Programming/rust/hobby/hadlock/config/hadlok.json)
+exec $(RUST_LOG=hadlock ./target/debug/hadlock ~/Programming/rust/hobby/redux-hadlock/config/hadlock.json)
