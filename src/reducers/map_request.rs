@@ -49,6 +49,8 @@ impl Reducer<action::MapRequest> for State {
             if self.lib.should_be_managed(action.win) {
                 let (size, pos) = mon.place_window(action.win);
                 mon.add_window(action.win, WindowWrapper::new(action.win, Rect::new(pos, size)));
+            } else {
+                self.lib.map_window(action.win);
             }
         }
 
