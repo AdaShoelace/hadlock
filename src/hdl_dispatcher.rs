@@ -15,19 +15,19 @@ pub fn run(xlib: Rc<XlibWrapper>) {
     loop {
         let xevent = xlib.next_event();
         match xevent.get_type() {
-            /*xlib::ConfigureRequest => {
-            let event = xlib::XConfigureRequestEvent::from(xevent);
-            let window_changes = WindowChanges {
-            x: event.x,
-            y: event.y,
-            width: event.width,
-            height: event.height,
-            border_width: event.border_width,
-            sibling: event.above,
-            stack_mode: event.detail
-            };
-            store.dispatch(action::ConfigurationRequest{win: event.window, win_changes: window_changes, value_mask: event.value_mask})
-            },*/
+            xlib::ConfigureRequest => {
+                let event = xlib::XConfigureRequestEvent::from(xevent);
+                let window_changes = WindowChanges {
+                    x: event.x,
+                    y: event.y,
+                    width: event.width,
+                    height: event.height,
+                    border_width: event.border_width,
+                    sibling: event.above,
+                    stack_mode: event.detail
+                };
+                store.dispatch(action::ConfigurationRequest{win: event.window, win_changes: window_changes, value_mask: event.value_mask})
+            },
             xlib::MapRequest => {
                 let event = xlib::XMapRequestEvent::from(xevent);
                 store.dispatch(action::MapRequest { win: event.window })
@@ -67,13 +67,14 @@ pub fn run(xlib: Rc<XlibWrapper>) {
                 })
             }
             /*xlib::KeyRelease => {
-            let event = xlib::XKeyEvent::from(xevent);
-            action::KeyRelease{win: event.window, state: event.state, keycode: event.keycode};
-            },*/
+              let event = xlib::XKeyEvent::from(xevent);
+              action::KeyRelease{win: event.window, state: event.state, keycode: event.keycode};
+              },*/
             xlib::MotionNotify => {
                 let event = xlib::XMotionEvent::from(xevent);
                 store.dispatch(action::MotionNotify {
                     win: event.window,
+                    sub_win: event.subwindow,
                     x_root: event.x_root,
                     y_root: event.y_root,
                     state: event.state,
@@ -91,9 +92,9 @@ pub fn run(xlib: Rc<XlibWrapper>) {
                 store.dispatch(action::LeaveNotify { win: event.window })
             }
             /*xlib::Expose => {
-            let event = xlib::XExposeEvent::from(xevent);
-            action::Expose{win: event.window};
-            },*/
+              let event = xlib::XExposeEvent::from(xevent);
+              action::Expose{win: event.window};
+              },*/
             xlib::DestroyNotify => {
                 let event = xlib::XDestroyWindowEvent::from(xevent);
                 store.dispatch(action::DestroyNotify { win: event.window })
