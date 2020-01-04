@@ -59,26 +59,4 @@ impl State {
         }
     }
 
-    pub fn pointer_is_inside(&self, screen: &Screen) -> bool {
-        let pointer_pos = self.lib.pointer_pos();
-        //debug!("pointer pos: {:?}", pointer_pos);
-        let inside_height = pointer_pos.y >= screen.y &&
-            pointer_pos.y <= screen.y + screen.height as i32;
-
-        let inside_width = pointer_pos.x >= screen.x &&
-            pointer_pos.x <= screen.x + screen.width as i32;
-
-        inside_height && inside_width
-    }
-    pub fn get_monitor_by_mouse(&self) -> MonitorId {
-        let mon_vec = self.monitors
-            .iter()
-            .filter(|(_key, mon)| self.pointer_is_inside(&mon.screen))
-            .map(|(key, _mon)| *key)
-            .collect::<Vec<u32>>();
-        match mon_vec.get(0) {
-            Some(mon_id) => *mon_id,
-            None => self.current_monitor
-        }
-    }
 }

@@ -2,9 +2,12 @@ use {
     crate::config::CONFIG,
     crate::models::{screen::Screen, windowwrapper::*, HandleState, WindowState},
     crate::state::*,
-    crate::xlibwrapper::action::*,
-    crate::xlibwrapper::core::XlibWrapper,
-    crate::xlibwrapper::{action, masks::*, util::*, xlibmodels::*},
+    crate::{
+        xlibwrapper::xlibmodels::*,
+        xlibwrapper::action::*,
+        xlibwrapper::core::XlibWrapper,
+        xlibwrapper::{action, masks::*, util::*, xlibmodels::*},
+    },
     reducer::*,
     std::cell::RefCell,
     std::rc::Rc,
@@ -44,10 +47,6 @@ impl Reactor<State> for HdlReactor {
                             val.handle_state.replace(HandleState::Handled);
                         }
                         HandleState::Map => {
-                            /*let pos = Position {
-                              x: mon.screen.x + val.get_position().x,
-                              y: mon.screen.y + val.get_position().y
-                              };*/
                             self.lib.move_window(*key, val.get_position());
                             self.lib.map_window(*key);
                             val.handle_state.replace(HandleState::Handled);
@@ -108,7 +107,7 @@ impl Reactor<State> for HdlReactor {
                         _ => (),
                     }
                 });
-                self.lib.sync(false);
+                self.lib.flush();
             });
         });
     }
@@ -122,9 +121,15 @@ impl HdlReactor {
     fn subscribe_to_events(&self, w: Window) {
         self.lib.select_input(
             w,
-            EnterWindowMask | LeaveWindowMask | FocusChangeMask | PropertyChangeMask,
+            SubstructureNotifyMask
+            | SubstructureRedirectMask
+            | EnterWindowMask
+            | LeaveWindowMask
+            | FocusChangeMask
+            | PropertyChangeMask
+            | PointerMotionMask,
         );
-        self.lib.sync(false);
+        self.lib.flush();
     }
 
     fn grab_buttons(&self, w: Window) {
