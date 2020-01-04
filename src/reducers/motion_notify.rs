@@ -23,7 +23,6 @@ use {
 
 impl Reducer<action::MotionNotify> for State {
     fn reduce(&mut self, action: action::MotionNotify) {
-        debug!("MotionNotify");
         if self.current_monitor != wm::get_monitor_by_point(self, action.x_root, action.y_root) {
             self.current_monitor = wm::get_monitor_by_point(self, action.x_root, action.y_root);
             self.monitors
