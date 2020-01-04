@@ -58,6 +58,7 @@ pub struct KeyRelease{
 
 pub struct MotionNotify{
     pub win: Window, 
+    pub sub_win: Window,
     pub x_root: i32, 
     pub y_root: i32, 
     pub state: u32

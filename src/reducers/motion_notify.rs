@@ -1,5 +1,6 @@
 use {
     crate::{
+        wm,
         models::{
             window_type::WindowType,
             rect::*,
@@ -22,25 +23,14 @@ use {
 
 impl Reducer<action::MotionNotify> for State {
     fn reduce(&mut self, action: action::MotionNotify) {
-
-        if self.current_monitor != self.get_monitor_by_mouse() {
-            self.current_monitor = self.get_monitor_by_mouse();
+        debug!("MotionNotify");
+        if self.current_monitor != wm::get_monitor_by_point(self, action.x_root, action.y_root) {
+            self.current_monitor = wm::get_monitor_by_point(self, action.x_root, action.y_root);
             self.monitors
                 .get(&self.current_monitor)
                 .expect("MotionNotify - monitor - get_mut - change handle state")
                 .handle_state
                 .replace(HandleState::Focus);
-        }
-
-        if action.win != self.focus_w {
-            let mut mon = self.monitors
-                .get_mut(&self.current_monitor)
-                .expect("MotionNotify - monitor - get_mut - change handle state");
-            let ww = mon.remove_window(action.win);
-            let new_ww = WindowWrapper {
-                handle_state: HandleState::Focus.into(),
-                ..ww
-            };
         }
 
         let drag_pos = Position { x: action.x_root, y: action.y_root };

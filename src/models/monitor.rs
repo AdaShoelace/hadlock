@@ -71,7 +71,12 @@ impl Monitor {
     }
 
     pub fn remove_window(&mut self, w: Window) -> WindowWrapper {
-        self.workspaces.get_mut(&self.current_ws).expect("monitor: remove_window").remove_window(w)
+        self
+            .workspaces
+            .get_mut(&self.current_ws)
+            .expect("monitor: remove_window")
+            .remove_window(w)
+            .expect(&format!("no such client: {} in ws:{}", w, self.current_ws))
     }
 
     pub fn contains_window(&self, w: Window) -> bool {
@@ -111,7 +116,7 @@ impl Monitor {
     pub fn remove_ws(&mut self, ws: u32) -> Option<Workspace> {
         self.workspaces.remove(&ws)
     }
-    
+
     pub fn add_ws(&mut self, ws: Workspace) {
         self.workspaces.insert(ws.tag, ws);
     }

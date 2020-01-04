@@ -550,7 +550,7 @@ impl XlibWrapper {
         }
     }
 
-    pub fn pointer_pos(&self) -> Position {
+    pub fn pointer_pos(&self, w: Window) -> Position {
         unsafe {
             let mut root_return = 0;
             let mut child_return = 0;
@@ -561,7 +561,8 @@ impl XlibWrapper {
             let mut mask = 0u32;
             if (self.lib.XQueryPointer)(
                 self.display,
-                self.root,
+                //self.root,
+                w,
                 &mut root_return,
                 &mut child_return,
                 &mut root_x,
@@ -973,6 +974,12 @@ impl XlibWrapper {
     pub fn sync(&self, discard: bool) {
         unsafe {
             (self.lib.XSync)(self.display, discard as i32);
+        }
+    }
+
+    pub fn flush(&self) {
+        unsafe {
+            (&self.lib.XFlush)(self.display);
         }
     }
 
