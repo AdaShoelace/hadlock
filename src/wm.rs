@@ -95,8 +95,24 @@ pub fn get_mon_by_ws(state: &State, ws: u32) -> Option<MonitorId> {
     }
 }
 
+pub fn get_mon_by_window(state: &State, w: Window) -> Option<MonitorId> {
+    let mut ret_vec = state
+        .monitors
+        .iter()
+        .filter(|(_,val)| {
+            val.contains_window(w)
+        })
+    .map(|(key, _)| *key)
+        .collect::<Vec<MonitorId>>();
+    if ret_vec.len() != 1 {
+        None
+    } else {
+        Some(ret_vec.remove(0))
+    }
+}
+
 pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
-    
+
     let mon = match get_mon_by_ws(state, ws) {
         Some(mon) => {
             state.monitors.get_mut(&mon)?
@@ -197,4 +213,50 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
     }
 
     Some(())
+}
+
+pub fn pointer_is_inside(state: &State, screen: &Screen) -> bool {
+    let pointer_pos = state.lib.pointer_pos(state.focus_w);
+    //debug!("pointer pos: {:?}", pointer_pos);
+    let inside_height = pointer_pos.y >= screen.y &&
+        pointer_pos.y <= screen.y + screen.height as i32;
+
+    let inside_width = pointer_pos.x >= screen.x &&
+        pointer_pos.x <= screen.x + screen.width as i32;
+
+    inside_height && inside_width
+}
+
+pub fn point_is_inside(state: &State, screen: &Screen, x: i32, y: i32) -> bool {
+    let inside_height = y >= screen.y &&
+        y <= screen.y + screen.height as i32;
+
+    let inside_width = x >= screen.x &&
+        x <= screen.x + screen.width as i32;
+
+    inside_height && inside_width
+}
+
+pub fn get_monitor_by_mouse(state: &State) -> MonitorId {
+    let mon_vec = state.monitors
+        .iter()
+        .filter(|(_key, mon)| pointer_is_inside(state, &mon.screen))
+        .map(|(key, _mon)| *key)
+        .collect::<Vec<u32>>();
+    match mon_vec.get(0) {
+        Some(mon_id) => *mon_id,
+        None => state.current_monitor
+    }
+}
+
+pub fn get_monitor_by_point(state: &State, x: i32, y: i32) -> MonitorId {
+    let mon_vec = state.monitors
+        .iter()
+        .filter(|(_key, mon)| point_is_inside(state, &mon.screen, x, y))
+        .map(|(key, _mon)| *key)
+        .collect::<Vec<u32>>();
+    match mon_vec.get(0) {
+        Some(mon_id) => *mon_id,
+        None => state.current_monitor
+    }
 }

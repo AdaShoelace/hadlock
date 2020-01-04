@@ -41,8 +41,8 @@ impl Workspace {
         self.clients.insert(w, ww);
     }
 
-    pub fn remove_window(&mut self, w: Window) -> WindowWrapper {
-        self.clients.remove(&w).expect(&format!("no such client: {} in ws:{}", w, self.tag))
+    pub fn remove_window(&mut self, w: Window) -> Option<WindowWrapper> {
+        self.clients.remove(&w)
     }
 }
 
