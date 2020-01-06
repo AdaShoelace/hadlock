@@ -1,18 +1,14 @@
-use std::collections::HashMap;
-use std::rc::Rc;
+#![allow(dead_code)]
+
 
 use crate::{
-    state::*,
-    config::*,
     models::{
-        monitor::Monitor,
-        dockarea::*, rect::*, screen::*, window_type::*, windowwrapper::*, workspace::*, Direction,
+        rect::*, screen::*, windowwrapper::*, workspace::*,
         WindowState,
         HandleState
     },
     state::State,
-    xlibwrapper::{core::*, masks::*, util::*, xlibmodels::*},
-    HadlockOption,
+    xlibwrapper::{util::*, xlibmodels::*},
 };
 
 pub fn window_inside_screen(w_geom: &Geometry, screen: &Screen) -> bool {
@@ -233,7 +229,7 @@ pub fn pointer_is_inside(state: &State, screen: &Screen) -> bool {
     inside_height && inside_width
 }
 
-pub fn point_is_inside(state: &State, screen: &Screen, x: i32, y: i32) -> bool {
+pub fn point_is_inside(_state: &State, screen: &Screen, x: i32, y: i32) -> bool {
     let inside_height = y >= screen.y &&
         y <= screen.y + screen.height as i32;
 

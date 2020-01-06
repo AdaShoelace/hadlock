@@ -1,3 +1,4 @@
+#![allow(unused_imports)]
 use {
     crate::{
         models::{
@@ -19,7 +20,7 @@ use {
 
 
 impl Reducer<action::UnmapNotify> for State {
-    fn reduce(&mut self, action: action::UnmapNotify) {
+    fn reduce(&mut self, _action: action::UnmapNotify) {
         debug!("UnmapNotify");
     }
 }

@@ -3,7 +3,7 @@ pub use x11_dl::xlib;
 use std::os::raw::*;
 use std::ffi::CString;
 use std::mem;
-use lazy_static::*;
+
 
 use super::{
     masks::*,
@@ -19,8 +19,7 @@ use crate::config::*;
 use crate::models::{
     screen::Screen,
     dockarea::DockArea,
-    window_type::WindowType,
-    windowwrapper::WindowWrapper
+    window_type::WindowType
 };
 
 

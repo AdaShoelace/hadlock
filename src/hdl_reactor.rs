@@ -1,17 +1,14 @@
 use {
     crate::config::CONFIG,
-    crate::models::{screen::Screen, windowwrapper::*, HandleState, WindowState},
+    crate::models::{windowwrapper::*, HandleState, WindowState},
     crate::state::*,
     crate::{
         xlibwrapper::xlibmodels::*,
-        xlibwrapper::action::*,
         xlibwrapper::core::XlibWrapper,
-        xlibwrapper::{action, masks::*, util::*, xlibmodels::*},
+        xlibwrapper::{masks::*, util::*},
     },
     reducer::*,
-    std::cell::RefCell,
     std::rc::Rc,
-    x11_dl::xlib::{self, XEvent},
 };
 
 pub struct HdlReactor {
