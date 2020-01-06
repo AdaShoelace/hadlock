@@ -28,12 +28,15 @@ pub fn toggle_maximize(state: &mut State, ww: WindowWrapper) -> WindowWrapper {
         .get_mut(&state.current_monitor)
         .expect("toggle_maximize - monitor - get_mut");
     match ww_state {
-        WindowState::Maximized => WindowWrapper {
-            window_rect: Rect::new(ww.restore_position, ww.restore_size),
-            previous_state: ww.current_state,
-            current_state: ww.previous_state,
-            handle_state: HandleState::MaximizeRestore.into(),
-            ..ww
+        WindowState::Maximized => {
+            debug!("Toggle back to: {:?} - Maximize", ww.previous_state);
+            WindowWrapper {
+                window_rect: Rect::new(ww.restore_position, ww.restore_size),
+                previous_state: ww.current_state,
+                current_state: ww.previous_state,
+                handle_state: HandleState::MaximizeRestore.into(),
+                ..ww
+            }
         },
         _ => {
             let (pos, size) = mon.maximize(ww.window(), &ww);
@@ -57,13 +60,16 @@ pub fn toggle_monocle(state: &mut State, ww: WindowWrapper) -> WindowWrapper {
         .get_mut(&state.current_monitor)
         .expect("toggle_maximize - monitor - get_mut");
     match ww_state {
-        WindowState::Monocle => WindowWrapper {
-            window_rect: Rect::new(ww.restore_position, ww.restore_size),
-            previous_state: ww.current_state,
-            current_state: ww.previous_state,
-            handle_state: HandleState::MonocleRestore.into(),
-            ..ww
-        },
+        WindowState::Monocle => {
+            debug!("Toggle back to: {:?} - Monocle", ww.previous_state);
+            WindowWrapper {
+                window_rect: Rect::new(ww.restore_position, ww.restore_size),
+                previous_state: ww.current_state,
+                current_state: ww.previous_state,
+                handle_state: HandleState::MonocleRestore.into(),
+                ..ww
+            }
+        }
         _ => {
             let (pos, size) = mon.monocle(ww.window(), &ww);
             WindowWrapper {

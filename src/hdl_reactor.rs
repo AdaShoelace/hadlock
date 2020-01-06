@@ -40,8 +40,14 @@ impl Reactor<State> for HdlReactor {
                         HandleState::New => {
                             self.lib.add_to_save_set(*key);
                             self.lib.add_to_root_net_client_list(*key);
+                            self.lib.set_border_width(*key, CONFIG.border_width as u32);
                             self.lib.move_window(*key, val.get_position());
-                            self.lib.resize_window(*key, val.get_size());
+                            let old_size = val.get_size();
+                            let new_size = Size {
+                                width: old_size.width - 2 * CONFIG.border_width,
+                                height: old_size.height - 2 * CONFIG.border_width
+                            };
+                            self.lib.resize_window(*key, new_size);
                             self.subscribe_to_events(*key);
                             self.lib.map_window(*key);
                             val.handle_state.replace(HandleState::Handled);
@@ -57,6 +63,13 @@ impl Reactor<State> for HdlReactor {
                         }
                         HandleState::Move => {
                             self.lib.move_window(*key, val.get_position());
+                            val.handle_state.replace(HandleState::Handled);
+                        }
+                        HandleState::Center => {
+                            self.lib.move_window(*key, val.get_position());
+                            self.lib.resize_window(*key, val.get_size());
+                            self.lib.raise_window(*key);
+                            self.set_focus(*key, val);
                             val.handle_state.replace(HandleState::Handled);
                         }
                         HandleState::Resize => {
@@ -77,6 +90,7 @@ impl Reactor<State> for HdlReactor {
                             self.lib.move_window(*key, val.get_position());
                             self.lib.resize_window(*key, val.get_size());
                             self.lib.center_cursor(*key);
+                            self.set_focus(*key, val);
                             val.handle_state.replace(HandleState::Handled);
                         }
                         HandleState::Maximize
@@ -84,6 +98,7 @@ impl Reactor<State> for HdlReactor {
                                 self.lib.move_window(*key, val.get_position());
                                 self.lib.resize_window(*key, val.get_size());
                                 self.set_focus(*key, &val);
+                                self.lib.set_border_width(*key, 0);
                                 self.lib.raise_window(*key);
                                 self.lib.center_cursor(*key);
                                 val.handle_state.replace(HandleState::Handled);
@@ -163,21 +178,16 @@ impl HdlReactor {
         if focus == self.lib.get_root() {
             return;
         }
-        let size = ww.get_size();
         self.grab_buttons(focus);
         self.lib.sync(false);
         self.grab_keys(focus);
         self.lib.sync(false);
         self.lib.take_focus(focus);
-        self.lib.set_border_width(focus, CONFIG.border_width as u32);
+        if !(ww.current_state == WindowState::Monocle
+            || ww.current_state == WindowState::Maximized) {
+            self.lib.set_border_width(focus, CONFIG.border_width as u32);
+        }
         self.lib.set_border_color(focus, CONFIG.border_color);
-        self.lib.resize_window(
-            focus,
-            Size {
-                width: size.width - 2 * CONFIG.border_width,
-                height: size.height - 2 * CONFIG.border_width,
-            },
-        );
         self.lib.sync(false);
     }
 
@@ -186,7 +196,6 @@ impl HdlReactor {
         self.lib.sync(false);
         self.lib.ungrab_keys(w);
         self.lib.sync(false);
-        self.lib.set_border_width(w, 0);
         self.lib.set_border_color(w, CONFIG.background_color);
         self.lib.resize_window(w, ww.get_size());
         self.lib.remove_focus(w);
