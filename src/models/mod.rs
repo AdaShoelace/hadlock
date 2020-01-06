@@ -34,6 +34,7 @@ pub enum HandleState {
     Unfocus,
     Destroy,
     Move,
+    Center,
     Shift,
     Resize,
     Maximize,

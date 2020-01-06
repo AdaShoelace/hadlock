@@ -28,7 +28,7 @@ impl Reducer<action::KeyPress> for State {
                     .expect("key_press 1")
             })
         .collect();
-    
+
     let mon = match self.monitors.get_mut(&self.current_monitor) {
         Some(mon) => mon,
         None => {
@@ -210,8 +210,19 @@ fn managed_client(
             return Some(());
         }
         if state.lib.str_to_keycode("c")? == keycode {
-            //wm.place_window(wm.focus_w);
-            //wm.center_cursor(wm.focus_w);
+            let mon = state
+                .monitors
+                .get_mut(&state.current_monitor)?;
+            let ww = mon.remove_window(state.focus_w);
+            let (pos, size) = mon.place_window(ww.window());
+            let new_ww = WindowWrapper {
+                window_rect: Rect::new(size, pos),
+                previous_state: ww.current_state,
+                current_state: WindowState::Free,
+                handle_state: HandleState::Center.into(),
+                ..ww
+            };
+            mon.add_window(state.focus_w, new_ww);
             return Some(());
         }
         if state.lib.str_to_keycode("d")? == keycode {
@@ -271,6 +282,7 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
     let ww = mon.remove_window(state.focus_w);
     let ww = WindowWrapper {
         window_rect: Rect::new(pos, size),
+        previous_state: ww.current_state,
         current_state: WindowState::Snapped,
         handle_state: HandleState::Shift.into(),
         ..ww

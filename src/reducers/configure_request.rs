@@ -24,8 +24,7 @@ use {
 impl Reducer<action::ConfigurationRequest> for State {
     fn reduce(&mut self, action: action::ConfigurationRequest) {
         debug!("ConfigurationRequest");
-        // Grant this request or not?
-        //self.lib.configure_window(action.win, action.value_mask as i64, action.win_changes);
+        self.lib.configure_window(action.win, action.value_mask as i64, action.win_changes);
     }
 }
 
