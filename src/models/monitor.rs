@@ -59,17 +59,6 @@ impl Monitor {
         }
     }
 
-    pub fn add_window_to_ws(&mut self, w: Window, ww: WindowWrapper, ws: u32) {
-        match self.workspaces.get_mut(&ws) {
-            Some(ws) => ws.add_window(w, ww),
-            None => {
-                self.workspaces.insert(ws.into(), Workspace::new(ws));
-                let new_ws = self.workspaces.get_mut(&ws).unwrap();
-                new_ws.add_window(w, ww);
-            }
-        }
-    }
-
     pub fn remove_window(&mut self, w: Window) -> WindowWrapper {
         self
             .workspaces
@@ -96,22 +85,6 @@ impl Monitor {
     pub fn get_current_ws(&self) -> Option<&Workspace> {
         self.workspaces.get(&self.current_ws)
     }
-    pub fn get_current_ws_tag(&self) -> u32 {
-        self.current_ws
-    }
-    pub fn set_current_ws(&mut self, ws: u32) {
-        if let Some(temp_ws) = self.workspaces.get(&self.current_ws) {
-            if temp_ws.clients.is_empty() {
-                self.workspaces.remove(&self.current_ws);
-            }
-        }
-        if !self.workspaces.contains_key(&ws) {
-            self.workspaces.insert(ws.into(), Workspace::new(ws));
-        }
-
-
-        self.current_ws = ws;
-    }
 
     pub fn remove_ws(&mut self, ws: u32) -> Option<Workspace> {
         self.workspaces.remove(&ws)
@@ -120,14 +93,6 @@ impl Monitor {
     pub fn add_ws(&mut self, ws: Workspace) {
         self.workspaces.insert(ws.tag, ws);
     }
-
-    pub fn get_active_ws_tags(&self) -> Vec<u32> {
-        self.workspaces
-            .keys()
-            .map(|key| *key)
-            .collect::<Vec<u32>>()
-    }
-
 
     pub fn get_current_windows(&self) -> Vec<Window> {
         match self.get_current_ws() {

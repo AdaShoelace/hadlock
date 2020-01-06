@@ -1,3 +1,4 @@
+#![allow(unused_imports)]
 use {
     crate::{
         models::{
@@ -18,7 +19,7 @@ use {
 
 
 impl Reducer<action::UnknownEvent> for State {
-    fn reduce(&mut self, action: action::UnknownEvent) {
+    fn reduce(&mut self, _action: action::UnknownEvent) {
     }
 }
 
