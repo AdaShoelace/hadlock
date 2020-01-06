@@ -2,7 +2,7 @@
 
 ### Work in progress
 Hadlock is a (soon to be) tiling window manager for X.  
-Built for learning purposes.  
+The architecture behind hadlock is inspired by redux but is not as strict as can be.  
 
 ---
 ![](hadlock-multi-monitor.gif)
@@ -18,7 +18,7 @@ Built for learning purposes.
 - [x] Workspaces
 - [x] Multimonitor support 
 - [x] Window decorations
-- [x] Undecorated windows
+- [ ] Decorated windows
 - [ ] Text in decoration  
 ### Floating  
 - [x] Move windows  
@@ -33,9 +33,65 @@ Built for learning purposes.
 
 ## Installation
 _TBD_
+Create `/usr/share/xsessions/hadlock.desktop` containing:  
+```
+[Desktop Entry]
+Encoding=UTF-8
+Name=Hadlock
+Exec=hadlock 
+Comment=Hadlock - a wm for x
+Type=Application
+
+```
+
 
 ## Configuration
-_TBD_
+The config file is written is json and should be placed in `~/.config/hadlock`  
+```
+{
+	"decorationHeight": 20,
+	"borderWidth": 2,
+	"innerBorderWidth": 0,
+	"borderColor": 	{
+		"Custom": 9437222
+	},
+	"backgroundColor": "DefaultBackground",
+	"focusedBackgroundColor": "DefaultFocusedBackground",
+	"workspaces": {
+		"1": "1",
+		"2": "2",
+		"3": "3",
+		"4": "4",
+		"5": "5",
+		"6": "6",
+		"7": "7",
+		"8": "8",
+		"9": "9"
+	},
+	"terminal" : "alacritty",
+	"commands": [
+		{
+			"execTime": "Pre",
+			"program": "feh",
+			"args": [
+				"--bg-scale",
+				"~/Pictures/triangles.jpg"
+			]
+		},
+		{
+			"execTime": "Post",
+			"program": "polybar",
+			"args": [
+				"--config=./polyconf",
+				"--log=ERROR",
+				"example"
+			]
+		}
+	]
+}
+
+```  
+At the moment decorations is not available and custom color codes is written in dec, this will change!  
 
 ## Testing
 In order to test/run hadlock some dependencies are needed:
