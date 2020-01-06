@@ -2,9 +2,6 @@
 #[macro_use]
 extern crate log;
 
-#[macro_use]
-extern crate derivative;
-
 mod wm;
 mod xlibwrapper;
 mod models;
@@ -17,7 +14,6 @@ mod hdl_reactor;
 
 use xlibwrapper::{
     core::*,
-    xlibmodels::*,
 };
 use std::{
     rc::Rc,
@@ -36,7 +32,7 @@ pub type HadlockOption<T> = Option<T>;
 
 fn main() -> HadlockResult<()> {
     init_logger()?;
-    let (tx, rx) = mpsc::channel::<bool>();
+    let (_tx, rx) = mpsc::channel::<bool>();
 
     let xlib = Rc::new(XlibWrapper::new());
     info!("Screens on startup: {:?}", xlib.get_screens());
