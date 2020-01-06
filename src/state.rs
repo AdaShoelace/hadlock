@@ -5,16 +5,12 @@ use {
         monitor::Monitor,
         workspace::Workspace,
         windowwrapper::WindowWrapper,
-        screen::Screen,
     },
     crate::xlibwrapper::{
-        masks::*,
         xlibmodels::*,
         core::*,
-        xatom::*,
     },
     derivative::*,
-    std::cell::RefCell,
 };
 
 #[derive(Derivative)]

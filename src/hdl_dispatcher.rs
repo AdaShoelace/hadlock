@@ -1,12 +1,11 @@
 use {
     crate::hdl_reactor::HdlReactor,
     crate::state::State,
-    crate::xlibwrapper::action::*,
     crate::xlibwrapper::core::XlibWrapper,
     crate::xlibwrapper::{action, xlibmodels::*},
     reducer::*,
     std::rc::Rc,
-    x11_dl::xlib::{self, XEvent},
+    x11_dl::xlib,
 };
 
 pub fn run(xlib: Rc<XlibWrapper>) {
