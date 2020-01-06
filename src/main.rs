@@ -53,9 +53,6 @@ fn main() -> HadlockResult<()> {
     });
 
     hdl_dispatcher::run(xlib);
-
-    //Runner::new(xlib.clone(), WindowManager::new(xlib.clone())).run(tx);
-
     Ok(())
 }
 
@@ -102,7 +99,6 @@ fn init_logger() -> HadlockResult<()> {
         })
     .level(log::LogLevelFilter::Debug)
         .chain(std::io::stderr())
-        //.chain(fern::log_file("/var/log/hadlock/output.log")?)
         .apply()?;
     Ok(())
 }

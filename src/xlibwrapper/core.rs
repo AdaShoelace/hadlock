@@ -1,4 +1,4 @@
-#![allow(unused_variables, deprecated)]
+#![allow(unused_variables, deprecated, dead_code)]
 pub use x11_dl::xlib;
 use std::os::raw::*;
 use std::ffi::CString;
@@ -1167,6 +1167,7 @@ impl XlibWrapper {
             self.xatom.NetWMWindowTypeToolbar,
             self.xatom.NetWMWindowTypeUtility,
             self.xatom.NetWMWindowTypeDialog,
+            self.xatom.NetWMWindowTypeSplash,
             self.xatom.NetWMWindowTypeMenu].contains(&prop_val) {
                 return false;
             }
