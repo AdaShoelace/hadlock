@@ -1166,14 +1166,12 @@ impl XlibWrapper {
             self.xatom.NetWMWindowTypeToolbar,
             self.xatom.NetWMWindowTypeUtility,
             self.xatom.NetWMWindowTypeDialog,
-            self.xatom.NetWMWindowTypeSplash,
             self.xatom.NetWMWindowTypeMenu].contains(&prop_val) {
                 return false;
             }
         }
 
         if self.get_window_attributes(w).override_redirect {
-            self.map_window(w);
             return false;
         }
         true
