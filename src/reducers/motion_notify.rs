@@ -18,20 +18,9 @@ use {
 
 impl Reducer<action::MotionNotify> for State {
     fn reduce(&mut self, action: action::MotionNotify) {
+        debug!("MotionNotify");
         let actual_mon = wm::get_monitor_by_point(self, action.x_root, action.y_root);
         let old_mon = self.current_monitor;
-
-        if action.win != self.lib.get_root() {
-            let ww = self.monitors
-                .get_mut(&old_mon)
-                .expect("MotionNotify - old_mon - get_mut")
-                .remove_window(action.win);
-
-            let _ = self.monitors
-                .get_mut(&actual_mon)
-                .expect("MotionNotify - old_mon - get_mut")
-                .add_window(action.win, ww);
-        }
 
         if self.current_monitor != actual_mon {
             self.current_monitor = actual_mon;
@@ -41,6 +30,8 @@ impl Reducer<action::MotionNotify> for State {
                 .handle_state
                 .replace(HandleState::Focus);
         }
+
+
 
         let drag_pos = Position {
             x: action.x_root,
@@ -58,6 +49,17 @@ impl Reducer<action::MotionNotify> for State {
         if (action.state & (Button1Mask | Mod4Mask)) == Button1Mask | Mod4Mask {
             if action.win == self.lib.get_root() { return }
 
+            if action.win != self.lib.get_root() {
+                let ww = self.monitors
+                    .get_mut(&old_mon)
+                    .expect("MotionNotify - old_mon - get_mut")
+                    .remove_window(action.win);
+
+                let _ = self.monitors
+                    .get_mut(&actual_mon)
+                    .expect("MotionNotify - old_mon - get_mut")
+                    .add_window(action.win, ww);
+            }
             let new_pos = Position {
                 x: dest_pos.x,
                 y: dest_pos.y,
