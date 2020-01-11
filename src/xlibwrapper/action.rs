@@ -9,7 +9,8 @@ pub struct ConfigurationNotification{
 pub struct ConfigurationRequest{
     pub win: Window, 
     pub win_changes: WindowChanges, 
-    pub value_mask: u64
+    pub value_mask: u64,
+    pub parent: Window
 }
 
 pub struct ClientMessageRequest{
@@ -19,7 +20,8 @@ pub struct ClientMessageRequest{
 }
 
 pub struct MapRequest{
-    pub win: Window
+    pub win: Window,
+    pub parent: Window,
 }
 
 pub struct UnmapNotify{
