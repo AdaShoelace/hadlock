@@ -25,11 +25,11 @@ pub fn run(xlib: Rc<XlibWrapper>) {
                     sibling: event.above,
                     stack_mode: event.detail
                 };
-                store.dispatch(action::ConfigurationRequest{win: event.window, win_changes: window_changes, value_mask: event.value_mask})
+                store.dispatch(action::ConfigurationRequest{win: event.window, win_changes: window_changes, value_mask: event.value_mask, parent: event.parent})
             },
             xlib::MapRequest => {
                 let event = xlib::XMapRequestEvent::from(xevent);
-                store.dispatch(action::MapRequest { win: event.window })
+                store.dispatch(action::MapRequest { win: event.window, parent: event.parent })
             }
             xlib::UnmapNotify => {
                 let event = xlib::XUnmapEvent::from(xevent);
