@@ -31,8 +31,6 @@ impl Reducer<action::MotionNotify> for State {
                 .replace(HandleState::Focus);
         }
 
-
-
         let drag_pos = Position {
             x: action.x_root,
             y: action.y_root,

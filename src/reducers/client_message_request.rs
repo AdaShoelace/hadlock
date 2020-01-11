@@ -28,8 +28,6 @@ impl Reducer<action::ClientMessageRequest> for State {
     fn reduce(&mut self, action: action::ClientMessageRequest) {
         let name = self.lib.xatom.get_name(action.message_type);
 
-
-
         let data_zero = *action.data.get(0).expect("client_message_request: cleanupt");
         let data_one = *action.data.get(1).expect("client_message_request: cleanupt");
         let data_two = *action.data.get(2).expect("client_message_request: cleanupt");
