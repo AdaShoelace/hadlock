@@ -24,7 +24,7 @@ use {
 
 impl Reducer<action::MapRequest> for State {
     fn reduce(&mut self, action: action::MapRequest) {
-        debug!("MapRequest");
+        debug!("MapRequest - window: {} - Parent: {}", action.win, action.parent);
         if self.lib.get_window_type(action.win) == WindowType::Dock {
             match self.lib.get_window_strut_array(action.win) {
                 Some(dock) => {
@@ -48,6 +48,11 @@ impl Reducer<action::MapRequest> for State {
             mon.add_window(action.win, WindowWrapper { handle_state: HandleState::Map.into() , ..ww });
         } else {
             if self.lib.should_be_managed(action.win) {
+                if mon.contains_window(action.parent) {
+                    debug!("Child to existing window");
+                    self.lib.map_window(action.win);
+                    return
+                }
                 let (size, pos) = mon.place_window(action.win);
                 mon.add_window(action.win, WindowWrapper::new(action.win, Rect::new(pos, size)));
             } else {
