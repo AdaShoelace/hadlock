@@ -25,7 +25,27 @@ use {
 impl Reducer<action::ConfigurationRequest> for State {
     fn reduce(&mut self, action: action::ConfigurationRequest) {
         debug!("ConfigurationRequest");
-        self.lib.configure_window(action.win, action.value_mask as i64, action.win_changes);
+        let mon = self.monitors.get_mut(&self.current_monitor).expect("ConfigurationRequest - monitor - get_mut");
+
+        if action.value_mask & (xlib::CWX | xlib::CWY) as u64 == (xlib::CWX | xlib::CWY) as u64 { return }
+
+        if mon.contains_window(action.win) {
+            let ww = mon.remove_window(action.win);
+            self.lib.configure_window(
+                action.win,
+                action.value_mask as i64,
+                WindowChanges {
+                    x: ww.window_rect.get_position().x,
+                    y: ww.window_rect.get_position().y,
+                    width: ww.window_rect.get_size().width,
+                    height: ww.window_rect.get_size().height,
+                    ..action.win_changes
+                }
+            );
+            mon.add_window(ww.window(), ww);
+        } else {
+            self.lib.configure_window(action.win, action.value_mask as i64, action.win_changes);
+        }
     }
 }
 
