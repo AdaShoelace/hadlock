@@ -26,7 +26,7 @@
 			"program": "feh",
 			"args": [
 				"--bg-scale",
-				"/home/pierre/Programming/rust/hobby/redux-hadlock/triangles.jpg"
+				"/home/pierre/Programming/rust/hobby/redux-hadlock/resources/triangles.jpg"
 			]
 		},
 		{

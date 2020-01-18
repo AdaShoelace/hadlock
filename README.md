@@ -5,7 +5,7 @@ Hadlock is a (soon to be) tiling window manager for X.
 The architecture behind hadlock is inspired by redux but is not as strict as can be.  
 
 ---
-![](multimonitor.gif)
+![](./resources/multimonitor.gif)
 ---
 
 ## Progress
