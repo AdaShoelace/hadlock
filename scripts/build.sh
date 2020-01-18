@@ -10,7 +10,7 @@ fi
 
 cargo build
 
-sudo cp target/debug/hadlock $DIR
+sudo cp ../target/debug/hadlock $DIR
 
 LOG=~/hadlock.log
 
