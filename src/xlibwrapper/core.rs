@@ -549,6 +549,38 @@ impl XlibWrapper {
         }
     }
 
+    pub fn window_under_pointer(&self) -> Option<Window> {
+
+        unsafe {
+            let mut root_return = 0;
+            let mut child_return = 0;
+            let mut root_x = 0i32;
+            let mut root_y = 0i32;
+            let mut win_x = 0i32;
+            let mut win_y = 0i32;
+            let mut mask = 0u32;
+            if (self.lib.XQueryPointer)(
+                self.display,
+                self.root,
+                &mut root_return,
+                &mut child_return,
+                &mut root_x,
+                &mut root_y,
+                &mut win_x,
+                &mut win_y,
+                &mut mask
+            ) == 0 {
+                warn!("Query pointer retured false")
+            }
+
+            if child_return != 0 {
+                Some(child_return)
+            } else {
+                None
+            }
+        }
+    }
+
     pub fn pointer_pos(&self, w: Window) -> Position {
         unsafe {
             let mut root_return = 0;
@@ -1097,7 +1129,7 @@ impl XlibWrapper {
             None => None
         }
     }
-    
+
     fn reparent(&self, w: Window, new_parent: Window) {
         unsafe {
             (self.lib.XReparentWindow)(
@@ -1107,7 +1139,7 @@ impl XlibWrapper {
                 CONFIG.border_width,
                 CONFIG.decoration_height + CONFIG.border_width,
             );
-        }        
+        }
     }
 
     pub fn reparent_client(&self, w: Window, size: Size, pos: Position) -> Window {
