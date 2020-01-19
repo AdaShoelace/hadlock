@@ -6,11 +6,13 @@ use {
     reducer::*,
     std::rc::Rc,
     x11_dl::xlib,
+    std::sync::mpsc::*,
 };
 
 pub fn run(xlib: Rc<XlibWrapper>) {
+    let (tx, rx) = channel::<()>();
     let state = State::new(xlib.clone());
-    let mut store = Store::new(state, HdlReactor::new(xlib.clone()));
+    let mut store = Store::new(state, HdlReactor::new(xlib.clone(), tx));
     loop {
         let xevent = xlib.next_event();
         match xevent.get_type() {
@@ -117,7 +119,17 @@ pub fn run(xlib: Rc<XlibWrapper>) {
                     ],
                 });
             }
-            _ => store.dispatch(action::UnknownEvent),
+            _ => store.dispatch(action::UnknownEvent)
+        }
+
+        match rx.try_recv() {
+            Ok(_) => {
+                debug!("Motion dispatch focus");
+                if let Some(w) = xlib.window_under_pointer() {
+                    store.dispatch(action::Focus{win: w})
+                }
+            },
+            Err(_) => ()
         }
     }
 }

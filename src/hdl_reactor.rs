@@ -9,10 +9,12 @@ use {
     },
     reducer::*,
     std::rc::Rc,
+    std::sync::mpsc::Sender,
 };
 
 pub struct HdlReactor {
     lib: Rc<XlibWrapper>,
+    tx: Sender<()>
 }
 
 impl Reactor<State> for HdlReactor {
@@ -80,8 +82,10 @@ impl Reactor<State> for HdlReactor {
                             val.handle_state.replace(HandleState::Handled);
                         }
                         HandleState::Unfocus => {
+                            debug!("Unfocus");
                             self.unset_focus(*key, &val);
                             val.handle_state.replace(HandleState::Handled);
+                            self.tx.send(());
                         }
                         HandleState::Shift => {
                             self.lib.move_window(*key, val.get_position());
@@ -124,10 +128,10 @@ impl Reactor<State> for HdlReactor {
         });
     }
 }
-
 impl HdlReactor {
-    pub fn new(lib: Rc<XlibWrapper>) -> Self {
-        Self { lib }
+
+    pub fn new(lib: Rc<XlibWrapper>, tx: Sender<()>) -> Self {
+        Self { lib, tx }
     }
 
     fn subscribe_to_events(&self, w: Window) {

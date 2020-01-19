@@ -88,6 +88,10 @@ pub struct DestroyNotify{
     pub win: Window
 }
 
+pub struct Focus {
+    pub win: Window
+}
+
 pub struct ButtonReleased;
 
 pub struct UnknownEvent;

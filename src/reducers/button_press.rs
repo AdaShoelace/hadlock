@@ -1,6 +1,7 @@
 #![allow(unused_imports)]
 use {
     crate::{
+        wm,
         models::{
             window_type::WindowType,
             rect::*,
