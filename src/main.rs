@@ -53,13 +53,9 @@ fn main() -> HadlockResult<()> {
 }
 
 fn call_commands(exec_time: ExecTime) {
+    if CONFIG.commands.len() < 1 { return }
 
-    let commands = match &CONFIG.commands {
-        Some(commands) => commands.clone(),
-        None => { return }
-    };
-
-    let commands: Vec<Command> = commands
+    let commands: Vec<Command> = CONFIG.commands
         .iter()
         .filter(|cmd| {
             cmd.exec_time == exec_time
