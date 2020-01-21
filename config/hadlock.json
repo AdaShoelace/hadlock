@@ -6,7 +6,7 @@
 	"borderColor": 	{
 		"Custom": 9437222
 	},
-	"backgroundColor": "DefaultBackground",
+	"backgroundColor": "SolarizedBlue",
 	"focusedBackgroundColor": "DefaultFocusedBackground",
 	"workspaces": {
 		"1": "1",
