@@ -1,7 +1,6 @@
 
 use super::{
-    config_data::*,
-    Config
+    config::Config
 };
 use std::path::*;
 use std::fs;
@@ -20,7 +19,7 @@ pub(super) fn load_config() -> Config {
 
         x => {
             println!("Wrong number of arguments:{}\nDefault config will be applied", x);
-            "/home/pierre/.config/hadlock/hadlock.json"
+            ""
         }
     };
 
@@ -30,11 +29,10 @@ pub(super) fn load_config() -> Config {
         let mut file = fs::File::open(path).expect(&format!("Failed to open file: {:?}", path));
         let mut file_content = String::new();
         file.read_to_string(&mut file_content).expect(&format!("Failed to read file content: {:?}", path));
-        let config: ConfigData = serde_json::from_str(&file_content).expect("Failed to map config");
+        let config: Config = serde_json::from_str(&file_content).expect("Failed to map config");
         Config::from(config)         
     } else {
-        let def = ConfigData::default();
-        Config::from(def)
+        Config::default()
     }
 }
 
