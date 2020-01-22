@@ -32,7 +32,7 @@ pub type HadlockOption<T> = Option<T>;
 
 fn main() -> HadlockResult<()> {
     init_logger()?;
-    let (_tx, rx) = mpsc::channel::<bool>();
+    let (tx, rx) = mpsc::channel::<bool>();
 
     let xlib = Rc::new(XlibWrapper::new());
     info!("Screens on startup: {:?}", xlib.get_screens());
@@ -48,7 +48,7 @@ fn main() -> HadlockResult<()> {
         }
     });
 
-    hdl_dispatcher::run(xlib);
+    hdl_dispatcher::run(xlib, tx);
     Ok(())
 }
 
@@ -71,6 +71,7 @@ fn call_commands(exec_time: ExecTime) {
     }).collect::<Vec<Command>>();
 
     commands.into_iter().for_each(|mut cmd| {
+        debug!("Executing: {:?}", cmd);
         match cmd.spawn() {
             Ok(_) => {},
             Err(e) => println!("Failed to run command. Error: {}", e)

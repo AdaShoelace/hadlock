@@ -32,7 +32,7 @@
 			"execTime": "Post",
 			"program": "polybar",
 			"args": [
-				"--config=./polyconf",
+				"--config=/home/pierre/Programming/rust/hobby/hadlock/config/polyconf",
 				"--log=ERROR",
 				"example"
 			]
