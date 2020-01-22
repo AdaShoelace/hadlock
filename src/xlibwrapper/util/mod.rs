@@ -1,6 +1,6 @@
 pub mod keysym_lookup;
 
-use serde::{Deserialize, Serialize};
+use serde::{self, Deserialize, Deserializer, Serialize, de};
 
 
 #[derive(Copy, Clone, Debug)]
@@ -22,7 +22,19 @@ pub enum Color {
     DefaultBackground,
     DefaultFocusedBackground,
     DefaultBorder,
+    #[serde(deserialize_with="color_deserialize")]
     Custom(u64)
+}
+
+fn color_deserialize<'de ,D>(desierializer: D) -> Result<u64, D::Error> 
+where D: Deserializer<'de>
+{
+    let s: String = Deserialize::deserialize(desierializer)?;
+    let without_prefix = s.trim_start_matches("#");
+    match u64::from_str_radix(without_prefix, 16) {
+        Ok(res) => Ok(res),
+        Err(e) => Err(de::Error::custom(format!("Failed to deserialize color: {}",e)))
+    }
 }
 
 impl Color {
