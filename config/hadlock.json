@@ -1,12 +1,11 @@
 {
-	"decorate": false,
-	"decorationHeight": 20,
-	"borderWidth": 2,
-	"innerBorderWidth": 0,
+	"borderWidth": 1,
 	"borderColor": 	{
-		"Custom": 9437222
+		"Custom": "#480222"
 	},
-	"backgroundColor": "SolarizedBlue",
+	"backgroundColor": {
+		"Custom": "#939393"
+	},
 	"focusedBackgroundColor": "DefaultFocusedBackground",
 	"workspaces": {
 		"1": "1",
@@ -26,7 +25,7 @@
 			"program": "feh",
 			"args": [
 				"--bg-scale",
-				"/home/pierre/Programming/rust/hobby/redux-hadlock/resources/triangles.jpg"
+				"/home/pierre/Programming/rust/hobby/hadlock/resources/triangles.jpg"
 			]
 		},
 		{

@@ -1,5 +1,5 @@
 use crate::xlibwrapper::util::Color;
-use serde::{Deserialize, Serialize};
+use serde::{self, Deserialize, Serialize, Deserializer};
 use std::collections::BTreeMap;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -10,7 +10,7 @@ pub struct Config {
     #[serde(rename = "decorationHeight", default = "default_decoration_height")]
     pub decoration_height: i32,
 
-    #[serde(rename = "borderWidth", default = "default_decoration_height")]
+    #[serde(rename = "borderWidth", default = "default_border_width")]
     pub border_width: i32,
 
     #[serde(rename = "innerBorderWidth", default = "default_inner_border_width")]
@@ -43,7 +43,7 @@ fn default_decoration_height() -> i32 {
     20
 }
 
-fn default_border_borde_width() -> i32 {
+fn default_border_width() -> i32 {
     2
 }
 
