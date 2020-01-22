@@ -32,6 +32,7 @@ pub(super) fn load_config() -> Config {
         let config: Config = serde_json::from_str(&file_content).expect("Failed to map config");
         Config::from(config)         
     } else {
+        debug!("Path either doesn't exist or is not a file");
         Config::default()
     }
 }
