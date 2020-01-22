@@ -9,10 +9,24 @@ use {
     std::sync::mpsc::*,
 };
 
-pub fn run(xlib: Rc<XlibWrapper>) {
+pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
+
+
+
     let (tx, rx) = channel::<()>();
     let state = State::new(xlib.clone());
     let mut store = Store::new(state, HdlReactor::new(xlib.clone(), tx));
+
+    //setup 
+    xlib.grab_server();
+    let _ = xlib.get_top_level_windows()
+        .iter()
+        .map(|w| {
+            store.dispatch(action::MapRequest{win: *w, parent: xlib.get_root()});
+        });
+    xlib.ungrab_server();
+    let _ = sender.send(true);
+
     loop {
         let xevent = xlib.next_event();
         match xevent.get_type() {
