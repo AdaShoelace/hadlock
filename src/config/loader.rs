@@ -13,7 +13,7 @@ pub(super) fn load_config() -> Config {
 
     let path = match args.len() {
         2 => {
-            println!("Path to config: {}", args.get(1).unwrap());
+            debug!("Path to config: {}", args.get(1).unwrap());
             args.get(1).expect("Get config path")
         },
 

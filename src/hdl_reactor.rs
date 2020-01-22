@@ -39,6 +39,7 @@ impl Reactor<State> for HdlReactor {
                         HandleState::New => {
                             self.lib.add_to_save_set(*key);
                             self.lib.add_to_root_net_client_list(*key);
+                            debug!("BorderWidth on new: {}", CONFIG.border_width);
                             self.lib.set_border_width(*key, CONFIG.border_width as u32);
                             self.lib.move_window(*key, val.get_position());
                             let old_size = val.get_size();
