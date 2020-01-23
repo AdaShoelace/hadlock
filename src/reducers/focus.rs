@@ -1,36 +1,39 @@
 #![allow(unused_imports)]
 use {
     crate::{
-        wm,
+        config::CONFIG,
         models::{
-            window_type::WindowType,
-            rect::*,
-            windowwrapper::*,
-            monitor::Monitor,
-            HandleState
+            monitor::Monitor, rect::*, window_type::WindowType, windowwrapper::*, HandleState,
         },
+        state::State,
+        wm,
         xlibwrapper::action,
         xlibwrapper::core::*,
         xlibwrapper::util::*,
-        state::State,
         xlibwrapper::xlibmodels::*,
-        config::CONFIG,
     },
-    std::rc::Rc,
     reducer::*,
     std::cell::RefCell,
+    std::rc::Rc,
 };
-
 
 impl Reducer<action::Focus> for State {
     fn reduce(&mut self, action: action::Focus) {
-        if action.win == self.lib.get_root() { return }
+        if action.win == self.lib.get_root() {
+            return;
+        }
 
         match wm::get_mon_by_window(self, action.win) {
             Some(mon) => {
                 let (class, something) = self.lib.get_class_hint(action.win);
-                debug!("Sending clients top window is not root. Win ({},{}) is in mon {}", class, something, mon);
-                let curr_mon = self.monitors.get_mut(&self.current_monitor).expect("ClientMessageRequest - get_monitor");
+                debug!(
+                    "Sending clients top window is not root. Win ({},{}) is in mon {}",
+                    class, something, mon
+                );
+                let curr_mon = self
+                    .monitors
+                    .get_mut(&self.current_monitor)
+                    .expect("ClientMessageRequest - get_monitor");
 
                 //unset focus
                 if self.focus_w != self.lib.get_root() {
@@ -50,9 +53,8 @@ impl Reducer<action::Focus> for State {
                     ..new_focus
                 };
                 curr_mon.add_window(self.focus_w, new_focus);
-            },
-            None => ()
+            }
+            None => (),
         }
     }
 }
-

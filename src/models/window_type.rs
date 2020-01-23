@@ -1,4 +1,3 @@
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum WindowType {
     Desktop,
@@ -22,8 +21,7 @@ impl WindowType {
             WindowType::Splash => "Splash".into(),
             WindowType::Utility => "Utility".into(),
             WindowType::Normal => "Normal".into(),
-            _ => "Unknown".into()
+            _ => "Unknown".into(),
         }
     }
 }
-

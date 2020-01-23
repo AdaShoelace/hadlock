@@ -2,7 +2,6 @@ use super::rect::*;
 use super::screen::*;
 use crate::xlibwrapper::util::*;
 
-
 #[derive(Clone, Debug, Default)]
 pub struct DockArea {
     top: i32,
@@ -70,21 +69,20 @@ impl DockArea {
             Size {
                 width: self.top_end_x - self.top_start_x,
                 height: self.top,
-            }
+            },
         )
     }
 
     fn rect_from_bottom(&self, screen_height: i32) -> Rect {
         Rect::new(
             Position {
-
                 x: self.bottom_start_x,
                 y: screen_height - self.bottom,
             },
             Size {
                 width: self.bottom_end_x - self.bottom_start_x,
                 height: self.bottom,
-            }
+            },
         )
     }
 
@@ -97,7 +95,7 @@ impl DockArea {
             Size {
                 width: self.left,
                 height: self.left_end_y - self.left_start_y,
-            }
+            },
         )
     }
 
@@ -110,7 +108,7 @@ impl DockArea {
             Size {
                 width: self.right,
                 height: self.right_end_y - self.right_start_y,
-            }
+            },
         )
     }
 }

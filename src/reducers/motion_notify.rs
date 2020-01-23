@@ -30,7 +30,6 @@ impl Reducer<action::MotionNotify> for State {
                 .replace(HandleState::Focus);
         }
 
-
         let drag_pos = Position {
             x: action.x_root,
             y: action.y_root,
@@ -45,15 +44,19 @@ impl Reducer<action::MotionNotify> for State {
         };
 
         if (action.state & (Button1Mask | Mod4Mask)) == Button1Mask | Mod4Mask {
-            if action.win == self.lib.get_root() { return }
+            if action.win == self.lib.get_root() {
+                return;
+            }
 
             if action.win != self.lib.get_root() {
-                let ww = self.monitors
+                let ww = self
+                    .monitors
                     .get_mut(&old_mon)
                     .expect("MotionNotify - old_mon - get_mut")
                     .remove_window(action.win);
 
-                let _ = self.monitors
+                let _ = self
+                    .monitors
                     .get_mut(&actual_mon)
                     .expect("MotionNotify - old_mon - get_mut")
                     .add_window(action.win, ww);
@@ -77,7 +80,7 @@ impl Reducer<action::MotionNotify> for State {
                 w.set_position(pos);
                 w.handle_state = HandleState::Move.into();
             }
-            return
+            return;
         }
     }
 }
