@@ -1,29 +1,21 @@
 #![allow(unused_variables, deprecated, dead_code)]
-pub use x11_dl::xlib;
-use std::os::raw::*;
 use std::ffi::CString;
 use std::mem;
+use std::os::raw::*;
+pub use x11_dl::xlib;
 
-
-use super::{
-    masks::*,
-    util::*,
-    xatom::*,
-    xlibmodels::*,
-};
+use super::{masks::*, util::*, xatom::*, xlibmodels::*};
 
 use super::cursor::Cursor;
 use super::util::Position;
 use crate::config::*;
 
-use crate::models::{
-    screen::Screen,
-    dockarea::DockArea,
-    window_type::WindowType
-};
+use crate::models::{dockarea::DockArea, screen::Screen, window_type::WindowType};
 
-
-pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> i32 {
+pub(crate) unsafe extern "C" fn error_handler(
+    _: *mut xlib::Display,
+    e: *mut xlib::XErrorEvent,
+) -> i32 {
     let err = *e;
     if err.error_code == xlib::BadWindow {
         return 0;
@@ -31,7 +23,10 @@ pub(crate) unsafe extern "C" fn error_handler(_: *mut xlib::Display, e: *mut xli
     1
 }
 
-pub(crate) unsafe extern "C" fn on_wm_detected(_: *mut xlib::Display, e: *mut xlib::XErrorEvent) -> i32 {
+pub(crate) unsafe extern "C" fn on_wm_detected(
+    _: *mut xlib::Display,
+    e: *mut xlib::XErrorEvent,
+) -> i32 {
     if (*e).error_code == xlib::BadAccess {
         error!("Other wm registered!");
         return 1;
@@ -44,7 +39,7 @@ pub struct XlibWrapper {
     pub xatom: XAtom,
     display: *mut Display,
     root: Window,
-    cursors: Cursor
+    cursors: Cursor,
 }
 
 impl XlibWrapper {
@@ -71,13 +66,12 @@ impl XlibWrapper {
             (disp, root, lib, xatom, cursors)
         };
 
-
         let mut ret = Self {
             lib,
             xatom,
             display: disp,
             root,
-            cursors
+            cursors,
         };
         ret.init();
         ret.init_desktops_hints();
@@ -105,7 +99,7 @@ impl XlibWrapper {
                     screen.root = self.root;
                     screen
                 })
-            .collect::<Vec<Screen>>()
+                .collect::<Vec<Screen>>()
         } else {
             let roots: Vec<WindowAttributes> = self
                 .get_roots()
@@ -119,21 +113,18 @@ impl XlibWrapper {
     fn get_non_xinerama_screens(&self) -> Vec<xlib::Screen> {
         let mut screens = Vec::new();
         let count = unsafe { (self.lib.XScreenCount)(self.display) };
-        let _ = (0..count)
-            .enumerate()
-            .for_each(|(i, x)| {
-                let screen = unsafe { *(self.lib.XScreenOfDisplay)(self.display, i as i32) };
-                screens.push(screen);
-            });
+        let _ = (0..count).enumerate().for_each(|(i, x)| {
+            let screen = unsafe { *(self.lib.XScreenOfDisplay)(self.display, i as i32) };
+            screens.push(screen);
+        });
         screens
     }
 
     fn get_roots(&self) -> Vec<Window> {
         self.get_non_xinerama_screens()
             .into_iter()
-            .map(|mut screen| {
-                unsafe { (self.lib.XRootWindowOfScreen)(&mut screen) }
-            }).collect()
+            .map(|mut screen| unsafe { (self.lib.XRootWindowOfScreen)(&mut screen) })
+            .collect()
     }
 
     fn init(&mut self) {
@@ -173,29 +164,23 @@ impl XlibWrapper {
                 32,
                 xlib::PropModeReplace,
                 supp_ptr as *const u8,
-                size
+                size,
             );
             mem::forget(supported);
             (self.lib.XUngrabKey)(self.display, xlib::AnyKey, xlib::AnyModifier, self.root);
             (self.lib.XDeleteProperty)(self.display, self.root, self.xatom.NetClientList);
             let keys = vec![
-                "Left",
-                "Right",
-                "Up",
-                "Down",
-                "Return",
-                "q",
-                "d",
-                "e",
-                "1", "2", "3", "4", "5", "6", "7", "8", "9"
+                "Left", "Right", "Up", "Down", "Return", "q", "d", "e", "1", "2", "3", "4", "5",
+                "6", "7", "8", "9",
             ];
 
             let _ = keys
                 .iter()
-                .map(|key| { keysym_lookup::into_keysym(key).expect("Core: no such key") })
-                .for_each(|key_sym| { self.grab_keys(self.get_root(), key_sym, xlib::Mod4Mask | xlib::ShiftMask) });
-
-            }
+                .map(|key| keysym_lookup::into_keysym(key).expect("Core: no such key"))
+                .for_each(|key_sym| {
+                    self.grab_keys(self.get_root(), key_sym, xlib::Mod4Mask | xlib::ShiftMask)
+                });
+        }
         self.sync(false);
     }
 
@@ -210,7 +195,7 @@ impl XlibWrapper {
             Some(num) => {
                 let data = vec![num];
                 self.set_desktop_prop(&data, self.xatom.NetNumberOfDesktops);
-            },
+            }
             None => {}
         }
         self.sync(false);
@@ -229,9 +214,14 @@ impl XlibWrapper {
         //set desktop names
         let mut text: xlib::XTextProperty = unsafe { mem::uninitialized() };
         unsafe {
-            let mut clist_tags: Vec<*mut c_char> = CONFIG.workspaces
+            let mut clist_tags: Vec<*mut c_char> = CONFIG
+                .workspaces
                 .values()
-                .map(|x| CString::new(x.to_string().clone()).expect("xlibwrapper::core: init_desktops_hints").into_raw())
+                .map(|x| {
+                    CString::new(x.to_string().clone())
+                        .expect("xlibwrapper::core: init_desktops_hints")
+                        .into_raw()
+                })
                 .collect();
             let ptr = clist_tags.as_mut_ptr();
             (self.lib.Xutf8TextListToTextProperty)(
@@ -263,7 +253,7 @@ impl XlibWrapper {
                 2,
                 ::std::ptr::null_mut(),
                 1 << 9,
-                attrib_ptr as *mut xlib::XSetWindowAttributes
+                attrib_ptr as *mut xlib::XSetWindowAttributes,
             ) as u64;
 
             let mut child: u32 = ewmh as u32;
@@ -271,41 +261,49 @@ impl XlibWrapper {
 
             let window = self.get_atom("WINDOW");
 
-            (self.lib.XChangeProperty)(self.display,
+            (self.lib.XChangeProperty)(
+                self.display,
                 ewmh as c_ulong,
                 self.xatom.NetSupportingWmCheck as c_ulong,
                 window as c_ulong,
                 32,
                 0,
                 child_ptr as *mut c_uchar,
-                1);
+                1,
+            );
 
-            (self.lib.XChangeProperty)(self.display,
+            (self.lib.XChangeProperty)(
+                self.display,
                 ewmh as c_ulong,
                 self.xatom.NetWMName as c_ulong,
                 self.xatom.NetUtf8String as c_ulong,
                 8,
                 0,
                 "Hadlok".as_ptr() as *mut c_uchar,
-                5);
+                5,
+            );
 
-            (self.lib.XChangeProperty)(self.display,
+            (self.lib.XChangeProperty)(
+                self.display,
                 self.root,
                 self.xatom.NetSupportingWmCheck as c_ulong,
                 window as c_ulong,
                 32,
                 0,
                 child_ptr as *mut c_uchar,
-                1);
+                1,
+            );
 
-            (self.lib.XChangeProperty)(self.display,
+            (self.lib.XChangeProperty)(
+                self.display,
                 self.root,
                 self.xatom.NetWMName as c_ulong,
                 self.xatom.NetUtf8String as c_ulong,
                 8,
                 0,
                 "Hadlok".as_ptr() as *mut c_uchar,
-                5);
+                5,
+            );
         }
 
         //set the WM NAME
@@ -320,13 +318,14 @@ impl XlibWrapper {
         //set a viewport
         let data = vec![0 as u32, 0 as u32];
         self.set_desktop_prop(&data, self.xatom.NetDesktopViewport);
-
     }
 
     fn get_atom(&self, s: &str) -> u64 {
         unsafe {
             match CString::new(s) {
-                Ok(b) => (self.lib.XInternAtom)(self.display, b.as_ptr() as *const c_char, 0) as u64,
+                Ok(b) => {
+                    (self.lib.XInternAtom)(self.display, b.as_ptr() as *const c_char, 0) as u64
+                }
                 _ => panic!("Invalid atom! {}", s),
             }
         }
@@ -357,7 +356,8 @@ impl XlibWrapper {
                 #[allow(clippy::cast_lossless, clippy::cast_ptr_alignment)]
                 //let result = *(prop_return as *const u32);
                 let ptr = prop_return as *const u64;
-                let results: &[xlib::Atom] = std::slice::from_raw_parts(ptr, nitems_return as usize);
+                let results: &[xlib::Atom] =
+                    std::slice::from_raw_parts(ptr, nitems_return as usize);
                 return results.to_vec();
             }
             vec![]
@@ -441,16 +441,12 @@ impl XlibWrapper {
 
     pub fn remove_focus(&self, _w: Window) {
         unsafe {
-            (self.lib.XDeleteProperty)(
-                self.display,
-                self.root,
-                self.xatom.NetActiveWindow
-            );
+            (self.lib.XDeleteProperty)(self.display, self.root, self.xatom.NetActiveWindow);
             (self.lib.XSetInputFocus)(
                 self.display,
                 self.root,
                 xlib::RevertToPointerRoot,
-                xlib::CurrentTime
+                xlib::CurrentTime,
             );
         }
     }
@@ -461,7 +457,7 @@ impl XlibWrapper {
                 self.display,
                 w,
                 xlib::RevertToPointerRoot,
-                xlib::CurrentTime
+                xlib::CurrentTime,
             );
             let list = vec![w];
             (self.lib.XChangeProperty)(
@@ -472,14 +468,13 @@ impl XlibWrapper {
                 32,
                 xlib::PropModeReplace,
                 list.as_ptr() as *const u8,
-                1
+                1,
             );
             mem::forget(list);
         }
         self.send_xevent_atom(w, self.xatom.WMTakeFocus);
         self.sync(false);
     }
-
 
     fn expects_xevent_atom(&self, window: Window, atom: xlib::Atom) -> bool {
         unsafe {
@@ -510,24 +505,16 @@ impl XlibWrapper {
 
     pub fn set_window_background_color(&self, w: Window, color: Color) {
         if w == self.root {
-            return
+            return;
         }
         let color = color.value();
         unsafe {
-            let res = (self.lib.XSetWindowBackground)(
-                self.display,
-                w,
-                color
-            );
+            let res = (self.lib.XSetWindowBackground)(self.display, w, color);
             self.unmap_window(w);
             self.map_window(w);
-            (self.lib.XSync)(
-                self.display,
-                0
-            );
+            (self.lib.XSync)(self.display, 0);
         }
     }
-
 
     pub fn set_border_color(&self, w: Window, color: Color) {
         if w == self.root {
@@ -537,20 +524,12 @@ impl XlibWrapper {
         let color = color.value();
 
         unsafe {
-            (self.lib.XSetWindowBorder)(
-                self.display,
-                w,
-                color
-            );
-            (self.lib.XSync)(
-                self.display,
-                0
-            );
+            (self.lib.XSetWindowBorder)(self.display, w, color);
+            (self.lib.XSync)(self.display, 0);
         }
     }
 
     pub fn window_under_pointer(&self) -> Option<Window> {
-
         unsafe {
             let mut root_return = 0;
             let mut child_return = 0;
@@ -568,8 +547,9 @@ impl XlibWrapper {
                 &mut root_y,
                 &mut win_x,
                 &mut win_y,
-                &mut mask
-            ) == 0 {
+                &mut mask,
+            ) == 0
+            {
                 warn!("Query pointer retured false")
             }
 
@@ -600,55 +580,38 @@ impl XlibWrapper {
                 &mut root_y,
                 &mut win_x,
                 &mut win_y,
-                &mut mask
-            ) == 0 {
+                &mut mask,
+            ) == 0
+            {
                 warn!("Query pointer retured false")
             }
-            Position { x: root_x, y: root_y }
+            Position {
+                x: root_x,
+                y: root_y,
+            }
         }
     }
 
     pub fn move_cursor(&self, pos: Position) {
         unsafe {
-            (self.lib.XWarpPointer)(
-                self.display,
-                0,
-                self.root,
-                0,
-                0,
-                0,
-                0,
-                pos.x,
-                pos.y
-            );
+            (self.lib.XWarpPointer)(self.display, 0, self.root, 0, 0, 0, 0, pos.x, pos.y);
             (self.lib.XFlush)(self.display);
         }
     }
 
     pub fn center_cursor(&self, w: Window) {
-
         let geom = self.get_geometry(w);
-        let pos = Position{ x: (geom.width / 2) as i32 , y: (geom.height / 2) as i32};
+        let pos = Position {
+            x: (geom.width / 2) as i32,
+            y: (geom.height / 2) as i32,
+        };
         unsafe {
-            (self.lib.XWarpPointer)(
-                self.display,
-                0,
-                w,
-                0,
-                0,
-                0,
-                0,
-                pos.x,
-                pos.y
-            );
+            (self.lib.XWarpPointer)(self.display, 0, w, 0, 0, 0, 0, pos.x, pos.y);
             (self.lib.XFlush)(self.display);
         }
     }
 
-    pub fn configure_window(&self,
-        window: Window,
-        value_mask: Mask,
-        changes: WindowChanges) {
+    pub fn configure_window(&self, window: Window, value_mask: Mask, changes: WindowChanges) {
         unsafe {
             let mut raw_changes = xlib::XWindowChanges {
                 x: changes.x,
@@ -657,7 +620,7 @@ impl XlibWrapper {
                 height: changes.height,
                 border_width: changes.border_width,
                 sibling: changes.sibling,
-                stack_mode: changes.stack_mode
+                stack_mode: changes.stack_mode,
             };
 
             (self.lib.XConfigureWindow)(self.display, window, value_mask as u32, &mut raw_changes);
@@ -676,36 +639,41 @@ impl XlibWrapper {
                 32,
                 xlib::PropModeAppend,
                 list.as_ptr() as *const u8,
-                1
+                1,
             );
             mem::forget(list);
         }
-
     }
 
     pub fn update_net_client_list(&self, clients: Vec<Window>) {
         unsafe {
             (self.lib.XDeleteProperty)(self.display, self.root, self.xatom.NetClientList);
-            clients
-                .iter()
-                .for_each(|c| {
-                    let list = vec![c];
-                    (self.lib.XChangeProperty)(
-                        self.display,
-                        self.root,
-                        self.xatom.NetClientList,
-                        xlib::XA_WINDOW,
-                        32,
-                        xlib::PropModeAppend,
-                        list.as_ptr() as *const u8,
-                        1
-                    );
-                    mem::forget(list);
-                })
+            clients.iter().for_each(|c| {
+                let list = vec![c];
+                (self.lib.XChangeProperty)(
+                    self.display,
+                    self.root,
+                    self.xatom.NetClientList,
+                    xlib::XA_WINDOW,
+                    32,
+                    xlib::PropModeAppend,
+                    list.as_ptr() as *const u8,
+                    1,
+                );
+                mem::forget(list);
+            })
         }
     }
 
-    pub fn create_simple_window(&self, w: Window, pos: Position, size: Size, border_width: u32, border_color: Color, bg_color: Color) -> Window {
+    pub fn create_simple_window(
+        &self,
+        w: Window,
+        pos: Position,
+        size: Size,
+        border_width: u32,
+        border_color: Color,
+        bg_color: Color,
+    ) -> Window {
         unsafe {
             (self.lib.XCreateSimpleWindow)(
                 self.display,
@@ -716,7 +684,7 @@ impl XlibWrapper {
                 size.height as u32,
                 border_width,
                 border_color.value(),
-                bg_color.value()
+                bg_color.value(),
             )
         }
     }
@@ -728,7 +696,6 @@ impl XlibWrapper {
     }
 
     pub fn get_geometry(&self, w: Window) -> Geometry {
-
         unsafe {
             let mut attr: xlib::XWindowAttributes = mem::uninitialized();
             let _status = (self.lib.XGetWindowAttributes)(self.display, w, &mut attr);
@@ -756,43 +723,30 @@ impl XlibWrapper {
 
     pub fn grab_server(&self) {
         unsafe {
-            (self.lib.XGrabServer)(
-                self.display
-            );
+            (self.lib.XGrabServer)(self.display);
         }
     }
 
     pub fn ungrab_server(&self) {
         unsafe {
-            (self.lib.XUngrabServer)(
-                self.display
-            );
+            (self.lib.XUngrabServer)(self.display);
         }
     }
 
     pub fn ungrab_keys(&self, _w: Window) {
         unsafe {
-            (self.lib.XUngrabKey)(
-                self.display,
-                xlib::AnyKey,
-                xlib::AnyModifier,
-                self.root
-            );
+            (self.lib.XUngrabKey)(self.display, xlib::AnyKey, xlib::AnyModifier, self.root);
         }
     }
 
     pub fn ungrab_all_buttons(&self, w: Window) {
         unsafe {
-            (self.lib.XUngrabButton)(
-                self.display,
-                xlib::AnyButton as u32,
-                xlib::AnyModifier,
-                w
-            );
+            (self.lib.XUngrabButton)(self.display, xlib::AnyButton as u32, xlib::AnyModifier, w);
         }
     }
 
-    pub fn grab_button(&self,
+    pub fn grab_button(
+        &self,
         button: u32,
         modifiers: u32,
         grab_window: Window,
@@ -801,7 +755,7 @@ impl XlibWrapper {
         pointer_mode: i32,
         keyboard_mode: i32,
         confine_to: Window,
-        cursor: u64
+        cursor: u64,
     ) {
         unsafe {
             (self.lib.XGrabButton)(
@@ -814,7 +768,7 @@ impl XlibWrapper {
                 pointer_mode,
                 keyboard_mode,
                 confine_to,
-                cursor
+                cursor,
             );
         }
     }
@@ -822,14 +776,12 @@ impl XlibWrapper {
     pub fn str_to_keycode(&self, key: &str) -> Option<KeyCode> {
         match keysym_lookup::into_keysym(key) {
             Some(key) => Some(self.key_sym_to_keycode(key.into())),
-            None => None
+            None => None,
         }
     }
 
     pub fn key_sym_to_keycode(&self, keysym: u64) -> KeyCode {
-        unsafe {
-            (self.lib.XKeysymToKeycode)(self.display, keysym)
-        }
+        unsafe { (self.lib.XKeysymToKeycode)(self.display, keysym) }
     }
 
     pub fn get_window_type_atom(&self, w: Window) -> Option<xlib::Atom> {
@@ -838,13 +790,21 @@ impl XlibWrapper {
 
     pub fn get_class_hint(&self, w: Window) -> (String, String) {
         unsafe {
-            let mut hint_return = xlib::XClassHint{res_class: mem::uninitialized(), res_name: mem::uninitialized()};
-            (self.lib.XGetClassHint)(
-                self.display,
-                w,
-                &mut hint_return
-            );
-            (CString::from_raw(hint_return.res_class).to_str().expect("res_class fucked up").to_string(), CString::from_raw(hint_return.res_name).to_str().expect("res_name fucked up").to_string())
+            let mut hint_return = xlib::XClassHint {
+                res_class: mem::uninitialized(),
+                res_name: mem::uninitialized(),
+            };
+            (self.lib.XGetClassHint)(self.display, w, &mut hint_return);
+            (
+                CString::from_raw(hint_return.res_class)
+                    .to_str()
+                    .expect("res_class fucked up")
+                    .to_string(),
+                CString::from_raw(hint_return.res_name)
+                    .to_str()
+                    .expect("res_name fucked up")
+                    .to_string(),
+            )
         }
     }
 
@@ -889,30 +849,30 @@ impl XlibWrapper {
             modifiers,
             modifiers & !Shift,
             modifiers | xlib::Mod2Mask,
-            modifiers | xlib::LockMask
+            modifiers | xlib::LockMask,
         ];
 
-        let _ = mods
-            .into_iter()
-            .for_each(|m| {
-                self.grab_key(
-                    code as u32,
-                    m,
-                    self.root,
-                    true,
-                    GrabModeAsync,
-                    GrabModeAsync
-                )
-            });
+        let _ = mods.into_iter().for_each(|m| {
+            self.grab_key(
+                code as u32,
+                m,
+                self.root,
+                true,
+                GrabModeAsync,
+                GrabModeAsync,
+            )
+        });
     }
 
-    pub fn grab_key(&self,
+    pub fn grab_key(
+        &self,
         key_code: u32,
         modifiers: u32,
         grab_window: Window,
         owner_event: bool,
         pointer_mode: i32,
-        keyboard_mode: i32) {
+        keyboard_mode: i32,
+    ) {
         unsafe {
             // add error handling.. Like really come up with a strategy!
             (self.lib.XGrabKey)(
@@ -922,7 +882,7 @@ impl XlibWrapper {
                 grab_window,
                 to_c_bool(owner_event),
                 pointer_mode,
-                keyboard_mode
+                keyboard_mode,
             );
         }
     }
@@ -948,7 +908,7 @@ impl XlibWrapper {
     }
 
     pub fn move_window(&self, w: Window, position: Position) {
-        let Position{x, y} = position;
+        let Position { x, y } = position;
         unsafe {
             (self.lib.XMoveWindow)(self.display, w, x, y);
         }
@@ -971,25 +931,15 @@ impl XlibWrapper {
         }
     }
 
-
     pub fn resize_window(&self, w: Window, size: Size) {
         unsafe {
-            (self.lib.XResizeWindow)(
-                self.display,
-                w,
-                size.width as u32,
-                size.height as u32
-            );
+            (self.lib.XResizeWindow)(self.display, w, size.width as u32, size.height as u32);
         }
     }
 
     pub fn select_input(&self, window: xlib::Window, masks: Mask) {
         unsafe {
-            (self.lib.XSelectInput)(
-                self.display,
-                window,
-                masks
-            );
+            (self.lib.XSelectInput)(self.display, window, masks);
         }
     }
 
@@ -1126,7 +1076,7 @@ impl XlibWrapper {
     pub fn get_upmost_window(&self) -> Option<Window> {
         match self.get_top_level_windows().last() {
             Some(x) => Some(*x),
-            None => None
+            None => None,
         }
     }
 
@@ -1152,7 +1102,7 @@ impl XlibWrapper {
             size,
             0,
             CONFIG.border_color,
-            CONFIG.background_color
+            CONFIG.background_color,
         );
         self.select_input(frame, SubstructureRedirectMask | SubstructureNotifyMask);
         self.add_to_save_set(w);
@@ -1173,10 +1123,11 @@ impl XlibWrapper {
                 &mut returned_root,
                 &mut returned_parent,
                 &mut top_level_windows,
-                &mut num_top_level_windows
+                &mut num_top_level_windows,
             );
 
-            let windows = std::slice::from_raw_parts(top_level_windows, num_top_level_windows as usize);
+            let windows =
+                std::slice::from_raw_parts(top_level_windows, num_top_level_windows as usize);
             Vec::from(windows)
         }
     }
@@ -1194,11 +1145,15 @@ impl XlibWrapper {
 
     pub fn should_be_managed(&self, w: Window) -> bool {
         if let Some(prop_val) = self.get_window_type_atom(w) {
-            if vec![self.xatom.NetWMWindowTypeDock,
-            self.xatom.NetWMWindowTypeToolbar,
-            self.xatom.NetWMWindowTypeUtility,
-            self.xatom.NetWMWindowTypeDialog,
-            self.xatom.NetWMWindowTypeMenu].contains(&prop_val) {
+            if vec![
+                self.xatom.NetWMWindowTypeDock,
+                self.xatom.NetWMWindowTypeToolbar,
+                self.xatom.NetWMWindowTypeUtility,
+                self.xatom.NetWMWindowTypeDialog,
+                self.xatom.NetWMWindowTypeMenu,
+            ]
+            .contains(&prop_val)
+            {
                 return false;
             }
         }
@@ -1213,10 +1168,4 @@ impl XlibWrapper {
             (self.lib.XCloseDisplay)(self.display);
         }
     }
-
 }
-
-
-
-
-

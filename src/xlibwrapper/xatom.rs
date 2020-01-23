@@ -49,7 +49,7 @@ pub struct XAtom {
 
     pub WMTransientFor: xlib::Atom,
     pub WMNormalHints: xlib::Atom,
-    pub NetUtf8String: xlib::Atom
+    pub NetUtf8String: xlib::Atom,
 }
 
 impl XAtom {
@@ -88,7 +88,7 @@ impl XAtom {
             self.NetWMDesktop,
             self.NetWMStrutPartial,
             self.NetWMStrut,
-            ]
+        ]
     }
 
     pub fn get_name(&self, atom: xlib::Atom) -> &str {
@@ -151,7 +151,7 @@ impl XAtom {
             return "NetWMStateBelow";
         }
         if atom == self.NetWMStateDemandsAttention {
-            return "NET_WM_STATE_DEMANDS_ATTENTION"
+            return "NET_WM_STATE_DEMANDS_ATTENTION";
         }
         if atom == self.NetWMWindowType {
             return "_NET_WM_WINDOW_TYPE";
@@ -187,10 +187,10 @@ impl XAtom {
             return "_NET_WM_STRUT";
         }
         if atom == self.WMTransientFor {
-            return "WM_TRANSIENT_FOR"
+            return "WM_TRANSIENT_FOR";
         }
         if atom == self.NetUtf8String {
-            return "UTF8_STRING"
+            return "UTF8_STRING";
         }
         "(UNKNOWN)"
     }
@@ -240,7 +240,7 @@ impl XAtom {
 
             WMNormalHints: from(xlib, dpy, "WM_NORMAL_HINTS"),
             WMTransientFor: from(xlib, dpy, "WM_TRANSIENT_FOR"),
-            NetUtf8String: from(xlib, dpy, "UTF8_STRING")
+            NetUtf8String: from(xlib, dpy, "UTF8_STRING"),
         }
     }
 }
@@ -248,4 +248,3 @@ impl XAtom {
 fn from(xlib: &xlib::Xlib, dpy: *mut xlib::Display, s: &str) -> xlib::Atom {
     unsafe { (xlib.XInternAtom)(dpy, CString::new(s).unwrap().into_raw(), xlib::False) }
 }
-

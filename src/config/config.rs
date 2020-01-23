@@ -1,5 +1,5 @@
 use crate::xlibwrapper::util::Color;
-use serde::{self, Deserialize, Serialize, Deserializer};
+use serde::{self, Deserialize, Deserializer, Serialize};
 use std::collections::BTreeMap;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -22,7 +22,10 @@ pub struct Config {
     #[serde(rename = "backgroundColor", default = "default_background_color")]
     pub background_color: Color,
 
-    #[serde(rename = "focusedBackgroundColor", default = "default_focused_background_color")]
+    #[serde(
+        rename = "focusedBackgroundColor",
+        default = "default_focused_background_color"
+    )]
     pub focused_background_color: Color,
 
     #[serde(rename = "workspaces", default = "default_workspaces")]

@@ -1,4 +1,3 @@
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum WindowType {
     Desktop,
@@ -10,4 +9,3 @@ pub enum WindowType {
     Dialog,
     Normal,
 }
-
