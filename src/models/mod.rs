@@ -1,10 +1,9 @@
-
-pub mod windowwrapper;
+pub mod dockarea;
+pub mod monitor;
 pub mod rect;
 pub mod screen;
-pub mod dockarea;
 pub mod window_type;
-pub mod monitor;
+pub mod windowwrapper;
 pub mod workspace;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -13,7 +12,7 @@ pub enum WindowState {
     Maximized,
     Monocle,
     Free,
-    _Tiled
+    _Tiled,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -21,7 +20,7 @@ pub enum Direction {
     North,
     West,
     East,
-    South
+    South,
 }
 
 #[derive(Copy, Clone, Debug)]

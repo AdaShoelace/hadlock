@@ -1358,5 +1358,3 @@ pub fn into_keysym(key: &str) -> Option<XKeysym> {
         _ => None,
     }
 }
-
-

@@ -5,25 +5,23 @@ use {
     crate::xlibwrapper::{action, xlibmodels::*},
     reducer::*,
     std::rc::Rc,
-    x11_dl::xlib,
     std::sync::mpsc::*,
+    x11_dl::xlib,
 };
 
 pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
-
-
-
     let (tx, rx) = channel::<()>();
     let state = State::new(xlib.clone());
     let mut store = Store::new(state, HdlReactor::new(xlib.clone(), tx));
 
     //setup
     xlib.grab_server();
-    let _ = xlib.get_top_level_windows()
-        .iter()
-        .map(|w| {
-            store.dispatch(action::MapRequest{win: *w, parent: xlib.get_root()});
+    let _ = xlib.get_top_level_windows().iter().map(|w| {
+        store.dispatch(action::MapRequest {
+            win: *w,
+            parent: xlib.get_root(),
         });
+    });
     xlib.ungrab_server();
     let _ = sender.send(true);
 
@@ -40,14 +38,25 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
                     height: event.height,
                     border_width: event.border_width,
                     sibling: event.above,
-                    stack_mode: event.detail
+                    stack_mode: event.detail,
                 };
-                store.dispatch(action::ConfigurationRequest{win: event.window, win_changes: window_changes, value_mask: event.value_mask, parent: event.parent})
-            },
+                store.dispatch(action::ConfigurationRequest {
+                    win: event.window,
+                    win_changes: window_changes,
+                    value_mask: event.value_mask,
+                    parent: event.parent,
+                })
+            }
             xlib::MapRequest => {
                 let event = xlib::XMapRequestEvent::from(xevent);
-                debug!("window type: {}", xlib.get_window_type(event.window).get_name());
-                store.dispatch(action::MapRequest { win: event.window, parent: event.parent })
+                debug!(
+                    "window type: {}",
+                    xlib.get_window_type(event.window).get_name()
+                );
+                store.dispatch(action::MapRequest {
+                    win: event.window,
+                    parent: event.parent,
+                })
             }
             xlib::UnmapNotify => {
                 let event = xlib::XUnmapEvent::from(xevent);
@@ -84,9 +93,9 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
                 })
             }
             /*xlib::KeyRelease => {
-              let event = xlib::XKeyEvent::from(xevent);
-              action::KeyRelease{win: event.window, state: event.state, keycode: event.keycode};
-              },*/
+            let event = xlib::XKeyEvent::from(xevent);
+            action::KeyRelease{win: event.window, state: event.state, keycode: event.keycode};
+            },*/
             xlib::MotionNotify => {
                 let event = xlib::XMotionEvent::from(xevent);
                 store.dispatch(action::MotionNotify {
@@ -109,9 +118,9 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
                 store.dispatch(action::LeaveNotify { win: event.window })
             }
             /*xlib::Expose => {
-              let event = xlib::XExposeEvent::from(xevent);
-              action::Expose{win: event.window};
-              },*/
+            let event = xlib::XExposeEvent::from(xevent);
+            action::Expose{win: event.window};
+            },*/
             xlib::DestroyNotify => {
                 let event = xlib::XDestroyWindowEvent::from(xevent);
                 store.dispatch(action::DestroyNotify { win: event.window })
@@ -135,17 +144,17 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
                     ],
                 });
             }
-            _ => store.dispatch(action::UnknownEvent)
+            _ => store.dispatch(action::UnknownEvent),
         }
 
         match rx.try_recv() {
             Ok(_) => {
                 debug!("Motion dispatch focus");
                 if let Some(w) = xlib.window_under_pointer() {
-                    store.dispatch(action::Focus{win: w})
+                    store.dispatch(action::Focus { win: w })
                 }
-            },
-            Err(_) => ()
+            }
+            Err(_) => (),
         }
     }
 }

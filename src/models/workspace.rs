@@ -1,19 +1,10 @@
 #![allow(dead_code)]
-use std::{
-    collections::HashMap,
-};
+use std::collections::HashMap;
 
 use crate::{
-    xlibwrapper::{
-        xlibmodels::Window,
-    },
-    models::{
-        windowwrapper::WindowWrapper,
-    },
-    layout::{
-        Layout,
-        floating,
-    },
+    layout::{floating, Layout},
+    models::windowwrapper::WindowWrapper,
+    xlibwrapper::xlibmodels::Window,
 };
 
 #[derive(Debug)]
@@ -28,10 +19,10 @@ impl Workspace {
         Self {
             tag,
             clients: HashMap::default(),
-            layout: Box::new(floating::Floating)
+            layout: Box::new(floating::Floating),
         }
     }
-    
+
     pub fn contains_window(&self, w: Window) -> bool {
         self.clients.contains_key(&w)
     }
