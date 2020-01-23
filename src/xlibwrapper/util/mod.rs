@@ -1,13 +1,18 @@
 pub mod keysym_lookup;
 
-use serde::{self, Deserialize, Deserializer, Serialize, de};
-
-
-#[derive(Copy, Clone, Debug)]
-pub struct Position { pub x: i32, pub y: i32 }
+use serde::{self, de, Deserialize, Deserializer, Serialize};
 
 #[derive(Copy, Clone, Debug)]
-pub struct Size { pub width: i32, pub height: i32 }
+pub struct Position {
+    pub x: i32,
+    pub y: i32,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct Size {
+    pub width: i32,
+    pub height: i32,
+}
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum Color {
@@ -22,18 +27,22 @@ pub enum Color {
     DefaultBackground,
     DefaultFocusedBackground,
     DefaultBorder,
-    #[serde(deserialize_with="color_deserialize")]
-    Custom(u64)
+    #[serde(deserialize_with = "color_deserialize")]
+    Custom(u64),
 }
 
-fn color_deserialize<'de ,D>(desierializer: D) -> Result<u64, D::Error> 
-where D: Deserializer<'de>
+fn color_deserialize<'de, D>(desierializer: D) -> Result<u64, D::Error>
+where
+    D: Deserializer<'de>,
 {
     let s: String = Deserialize::deserialize(desierializer)?;
     let without_prefix = s.trim_start_matches("#");
     match u64::from_str_radix(without_prefix, 16) {
         Ok(res) => Ok(res),
-        Err(e) => Err(de::Error::custom(format!("Failed to deserialize color: {}",e)))
+        Err(e) => Err(de::Error::custom(format!(
+            "Failed to deserialize color: {}",
+            e
+        ))),
     }
 }
 
@@ -51,7 +60,7 @@ impl Color {
             Color::DefaultBackground => 0x5A3C85,
             Color::DefaultFocusedBackground => 0x9E416D,
             Color::DefaultBorder => 0x94c507,
-            Color::Custom(value) => value
+            Color::Custom(value) => value,
         }
     }
 }
@@ -71,4 +80,3 @@ pub fn to_c_bool(b: bool) -> i32 {
         0
     }
 }
-

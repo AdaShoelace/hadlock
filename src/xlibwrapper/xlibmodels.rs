@@ -1,7 +1,6 @@
 #![allow(unused_variables, dead_code, deprecated)]
-use x11_dl::xlib;
 use super::util::*;
-
+use x11_dl::xlib;
 
 pub(crate) type Mask = i64;
 pub(crate) type Window = xlib::Window;
@@ -55,7 +54,7 @@ pub struct WindowAttributes<'a> {
     pub screen: &'a mut xlib::Screen,
 }
 
-impl <'a> From<xlib::XWindowAttributes> for WindowAttributes<'a> {
+impl<'a> From<xlib::XWindowAttributes> for WindowAttributes<'a> {
     fn from(attr: xlib::XWindowAttributes) -> Self {
         unsafe {
             Self {
@@ -87,14 +86,14 @@ impl <'a> From<xlib::XWindowAttributes> for WindowAttributes<'a> {
     }
 }
 
-impl <'a> Into<xlib::XWindowAttributes> for WindowAttributes<'a> {
+impl<'a> Into<xlib::XWindowAttributes> for WindowAttributes<'a> {
     fn into(self) -> xlib::XWindowAttributes {
         unsafe {
             let mut ret: xlib::XWindowAttributes = std::mem::uninitialized();
             ret.x = self.x;
             ret.y = self.y;
             ret.width = self.width;
-            ret.height =  self.height;
+            ret.height = self.height;
             ret.border_width = self.border_width;
             ret.depth = self.depth;
             ret.visual = &mut *self.visual;

@@ -2,7 +2,9 @@
 use {
     crate::{
         config::CONFIG,
-        models::{rect::*, window_type::WindowType, windowwrapper::*, Direction, WindowState, HandleState},
+        models::{
+            rect::*, window_type::WindowType, windowwrapper::*, Direction, HandleState, WindowState,
+        },
         state::State,
         wm,
         xlibwrapper::action,
@@ -28,27 +30,27 @@ impl Reducer<action::KeyPress> for State {
                     .str_to_keycode(&x.to_string())
                     .expect("key_press 1")
             })
-        .collect();
+            .collect();
 
-    let mon = match self.monitors.get_mut(&self.current_monitor) {
-        Some(mon) => mon,
-        None => {
-            warn!("No such monitor: {}", self.current_monitor);
-            return
-        }
-    };
+        let mon = match self.monitors.get_mut(&self.current_monitor) {
+            Some(mon) => mon,
+            None => {
+                warn!("No such monitor: {}", self.current_monitor);
+                return;
+            }
+        };
 
-    match mon.get_client(self.focus_w) {
-        Some(_) => {
-            managed_client(self, action, mod_not_shift, mod_and_shift, ws_keys);
+        match mon.get_client(self.focus_w) {
+            Some(_) => {
+                managed_client(self, action, mod_not_shift, mod_and_shift, ws_keys);
+            }
+            None if action.win == self.lib.get_root() => {
+                root(self, action, mod_not_shift, mod_and_shift, ws_keys);
+            }
+            None => {
+                return;
+            }
         }
-        None if action.win == self.lib.get_root() => {
-            root(self, action, mod_not_shift, mod_and_shift, ws_keys);
-        }
-        None => {
-            return;
-        }
-    }
     }
 }
 
@@ -73,9 +75,7 @@ fn managed_client(
             .get_client(state.focus_w)?
             .get_size();
         if state.lib.str_to_keycode("Right")? == keycode {
-            let mon = state
-                .monitors
-                .get_mut(&state.current_monitor)?;
+            let mon = state.monitors.get_mut(&state.current_monitor)?;
 
             let (_dec_size, size) =
                 mon.resize_window(state.focus_w, old_size.width + 10, old_size.height);
@@ -90,9 +90,7 @@ fn managed_client(
             return Some(());
         }
         if state.lib.str_to_keycode("Left")? == keycode {
-            let mon = state
-                .monitors
-                .get_mut(&state.current_monitor)?;
+            let mon = state.monitors.get_mut(&state.current_monitor)?;
 
             let (_dec_size, size) =
                 mon.resize_window(state.focus_w, old_size.width - 10, old_size.height);
@@ -106,9 +104,7 @@ fn managed_client(
             return Some(());
         }
         if state.lib.str_to_keycode("Down")? == keycode {
-            let mon = state
-                .monitors
-                .get_mut(&state.current_monitor)?;
+            let mon = state.monitors.get_mut(&state.current_monitor)?;
 
             let (_dec_size, size) =
                 mon.resize_window(state.focus_w, old_size.width, old_size.height + 10);
@@ -122,9 +118,7 @@ fn managed_client(
             return Some(());
         }
         if state.lib.str_to_keycode("Up")? == keycode {
-            let mon = state
-                .monitors
-                .get_mut(&state.current_monitor)?;
+            let mon = state.monitors.get_mut(&state.current_monitor)?;
             let (_dec_size, size) =
                 mon.resize_window(state.focus_w, old_size.width, old_size.height - 10);
             let ww = mon.remove_window(state.focus_w);
@@ -192,28 +186,22 @@ fn managed_client(
             shift_window(state, Direction::East);
             return Some(());
         }
-        if state.lib.str_to_keycode("Left")? == keycode
-            || state.lib.str_to_keycode("h")? == keycode
+        if state.lib.str_to_keycode("Left")? == keycode || state.lib.str_to_keycode("h")? == keycode
         {
             shift_window(state, Direction::West);
             return Some(());
         }
-        if state.lib.str_to_keycode("Down")? == keycode
-            || state.lib.str_to_keycode("j")? == keycode
+        if state.lib.str_to_keycode("Down")? == keycode || state.lib.str_to_keycode("j")? == keycode
         {
             shift_window(state, Direction::South);
             return Some(());
         }
-        if state.lib.str_to_keycode("Up")? == keycode
-            || state.lib.str_to_keycode("k")? == keycode
-        {
+        if state.lib.str_to_keycode("Up")? == keycode || state.lib.str_to_keycode("k")? == keycode {
             shift_window(state, Direction::North);
             return Some(());
         }
         if state.lib.str_to_keycode("c")? == keycode {
-            let mon = state
-                .monitors
-                .get_mut(&state.current_monitor)?;
+            let mon = state.monitors.get_mut(&state.current_monitor)?;
             let ww = mon.remove_window(state.focus_w);
             let (pos, size) = mon.place_window(ww.window());
             let new_ww = WindowWrapper {
@@ -275,9 +263,7 @@ fn root(
 }
 
 fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
-    let mon = state
-        .monitors
-        .get_mut(&state.current_monitor)?;
+    let mon = state.monitors.get_mut(&state.current_monitor)?;
 
     let (pos, size) = mon.shift_window(state.focus_w, direction);
     let ww = mon.remove_window(state.focus_w);

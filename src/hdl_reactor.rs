@@ -3,8 +3,8 @@ use {
     crate::models::{windowwrapper::*, HandleState, WindowState},
     crate::state::*,
     crate::{
-        xlibwrapper::xlibmodels::*,
         xlibwrapper::core::XlibWrapper,
+        xlibwrapper::xlibmodels::*,
         xlibwrapper::{masks::*, util::*},
     },
     reducer::*,
@@ -14,7 +14,7 @@ use {
 
 pub struct HdlReactor {
     lib: Rc<XlibWrapper>,
-    tx: Sender<()>
+    tx: Sender<()>,
 }
 
 impl Reactor<State> for HdlReactor {
@@ -29,8 +29,8 @@ impl Reactor<State> for HdlReactor {
                 HandleState::Focus => {
                     self.lib.update_desktops(mon.current_ws, None);
                     mon.handle_state.replace(HandleState::Handled);
-                },
-                _ => ()
+                }
+                _ => (),
             }
             mon.workspaces.values().for_each(|ws| {
                 ws.clients.iter().for_each(|(key, val)| {
@@ -45,7 +45,7 @@ impl Reactor<State> for HdlReactor {
                             let old_size = val.get_size();
                             let new_size = Size {
                                 width: old_size.width - 2 * CONFIG.border_width,
-                                height: old_size.height - 2 * CONFIG.border_width
+                                height: old_size.height - 2 * CONFIG.border_width,
                             };
                             self.lib.resize_window(*key, new_size);
                             self.subscribe_to_events(*key);
@@ -95,24 +95,22 @@ impl Reactor<State> for HdlReactor {
                             self.set_focus(*key, val);
                             val.handle_state.replace(HandleState::Handled);
                         }
-                        HandleState::Maximize
-                            | HandleState::Monocle => {
-                                self.lib.move_window(*key, val.get_position());
-                                self.lib.resize_window(*key, val.get_size());
-                                self.set_focus(*key, &val);
-                                self.lib.set_border_width(*key, 0);
-                                self.lib.raise_window(*key);
-                                self.lib.center_cursor(*key);
-                                val.handle_state.replace(HandleState::Handled);
-                            },
-                            HandleState::MaximizeRestore
-                                | HandleState::MonocleRestore => {
-                                    self.lib.move_window(*key, val.get_position());
-                                    self.lib.resize_window(*key, val.get_size());
-                                    self.set_focus(*key, &val);
-                                    self.lib.center_cursor(*key);
-                                    val.handle_state.replace(HandleState::Handled);
-                                }
+                        HandleState::Maximize | HandleState::Monocle => {
+                            self.lib.move_window(*key, val.get_position());
+                            self.lib.resize_window(*key, val.get_size());
+                            self.set_focus(*key, &val);
+                            self.lib.set_border_width(*key, 0);
+                            self.lib.raise_window(*key);
+                            self.lib.center_cursor(*key);
+                            val.handle_state.replace(HandleState::Handled);
+                        }
+                        HandleState::MaximizeRestore | HandleState::MonocleRestore => {
+                            self.lib.move_window(*key, val.get_position());
+                            self.lib.resize_window(*key, val.get_size());
+                            self.set_focus(*key, &val);
+                            self.lib.center_cursor(*key);
+                            val.handle_state.replace(HandleState::Handled);
+                        }
                         HandleState::Destroy => {
                             let windows = state
                                 .monitors
@@ -130,7 +128,6 @@ impl Reactor<State> for HdlReactor {
     }
 }
 impl HdlReactor {
-
     pub fn new(lib: Rc<XlibWrapper>, tx: Sender<()>) -> Self {
         Self { lib, tx }
     }
@@ -139,12 +136,12 @@ impl HdlReactor {
         self.lib.select_input(
             w,
             SubstructureNotifyMask
-            | SubstructureRedirectMask
-            | EnterWindowMask
-            | LeaveWindowMask
-            | FocusChangeMask
-            | PropertyChangeMask
-            | PointerMotionMask,
+                | SubstructureRedirectMask
+                | EnterWindowMask
+                | LeaveWindowMask
+                | FocusChangeMask
+                | PropertyChangeMask
+                | PointerMotionMask,
         );
         self.lib.flush();
     }
@@ -171,9 +168,9 @@ impl HdlReactor {
             "q", "Left", "Up", "Right", "Down", "Return", "f", "e", "c", "h", "j", "k", "l", "d",
             "1", "2", "3", "4", "5", "6", "7", "8", "9",
         ]
-            .iter()
-            .map(|key| keysym_lookup::into_keysym(key).expect("Core: no such key"))
-            .for_each(|key_sym| self.lib.grab_keys(w, key_sym, Mod4Mask | Shift));
+        .iter()
+        .map(|key| keysym_lookup::into_keysym(key).expect("Core: no such key"))
+        .for_each(|key_sym| self.lib.grab_keys(w, key_sym, Mod4Mask | Shift));
     }
 
     fn set_focus(&self, focus: Window, ww: &WindowWrapper) {
@@ -185,8 +182,8 @@ impl HdlReactor {
         self.grab_keys(focus);
         self.lib.sync(false);
         //self.lib.take_focus(focus);
-        if !(ww.current_state == WindowState::Monocle
-            || ww.current_state == WindowState::Maximized) {
+        if !(ww.current_state == WindowState::Monocle || ww.current_state == WindowState::Maximized)
+        {
             self.lib.set_border_width(focus, CONFIG.border_width as u32);
         }
         self.lib.set_border_color(focus, CONFIG.border_color);
