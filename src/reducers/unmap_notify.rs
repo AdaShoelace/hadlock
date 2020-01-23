@@ -20,8 +20,9 @@ use {
 
 
 impl Reducer<action::UnmapNotify> for State {
-    fn reduce(&mut self, _action: action::UnmapNotify) {
-        debug!("UnmapNotify");
+    fn reduce(&mut self, action: action::UnmapNotify) {
+        //debug!("UnmapNotify");
+        //self.lib.unmap_window(action.win);
     }
 }
 

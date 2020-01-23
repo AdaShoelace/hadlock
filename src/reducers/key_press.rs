@@ -59,7 +59,7 @@ fn managed_client(
     mod_and_shift: bool,
     ws_keys: Vec<u8>,
 ) -> Option<()> {
-    debug!("Windows exists: KeyPress");
+    //debug!("Windows exists: KeyPress");
     let keycode = action.keycode as u8;
 
     if mod_not_shift && state.lib.str_to_keycode("Return")? == keycode {
@@ -227,12 +227,12 @@ fn managed_client(
             return Some(());
         }
         if state.lib.str_to_keycode("d")? == keycode {
-            debug!("dmenu_run");
+            //debug!("dmenu_run");
             spawn_process("dmenu_recency", vec![]);
             return Some(());
         }
         if ws_keys.contains(&keycode) {
-            debug!("mod_not_shift switch ws");
+            //debug!("mod_not_shift switch ws");
             let ws_num = keycode_to_ws(keycode);
             wm::set_current_ws(state, ws_num)?;
         }
@@ -253,7 +253,7 @@ fn root(
             spawn_process(CONFIG.term.as_str(), vec![]);
         }
         if state.lib.str_to_keycode("d")? == keycode {
-            debug!("dmenu_run");
+            //debug!("dmenu_run");
             spawn_process("dmenu_recency", vec![]);
             return Some(());
         }

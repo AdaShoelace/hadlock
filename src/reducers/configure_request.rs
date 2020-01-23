@@ -24,7 +24,7 @@ use {
 
 impl Reducer<action::ConfigurationRequest> for State {
     fn reduce(&mut self, action: action::ConfigurationRequest) {
-        debug!("ConfigurationRequest for window: {} - {:?}", action.win, action.win_changes);
+        //debug!("ConfigurationRequest for window: {} - {:?}", action.win, action.win_changes);
         let mon = self.monitors.get_mut(&self.current_monitor).expect("ConfigurationRequest - monitor - get_mut");
 
 

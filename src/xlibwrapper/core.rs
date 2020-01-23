@@ -1185,6 +1185,23 @@ impl XlibWrapper {
         self.get_top_level_windows().len() as u32
     }
 
+    pub fn transient_for_hint(&self, w: Window) -> Option<Window> {
+        unsafe {
+            let mut prop_window = mem::uninitialized();
+            let res = (self.lib.XGetTransientForHint)(
+                self.display,
+                w,
+                &mut prop_window
+            );
+
+            if from_c_bool(res) {
+                Some(prop_window)
+            } else {
+                None
+            }
+        }
+    }
+
     pub fn unmap_window(&self, w: Window) {
         unsafe {
             (self.lib.XUnmapWindow)(self.display, w);
@@ -1198,6 +1215,7 @@ impl XlibWrapper {
             self.xatom.NetWMWindowTypeToolbar,
             self.xatom.NetWMWindowTypeUtility,
             self.xatom.NetWMWindowTypeDialog,
+            self.xatom.NetWMWindowTypeSplash,
             self.xatom.NetWMWindowTypeMenu].contains(&prop_val) {
                 return false;
             }
