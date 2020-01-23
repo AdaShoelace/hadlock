@@ -1,9 +1,8 @@
 #![allow(dead_code)]
-use x11_dl::xlib::{Window};
-use x11_dl::xinerama::XineramaScreenInfo as XSInfo;
-use crate::xlibwrapper::xlibmodels::{WindowAttributes as WinAttr};
+use crate::xlibwrapper::xlibmodels::WindowAttributes as WinAttr;
 use std::convert::From;
-
+use x11_dl::xinerama::XineramaScreenInfo as XSInfo;
+use x11_dl::xlib::Window;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Screen {
@@ -11,7 +10,7 @@ pub struct Screen {
     pub height: i32,
     pub width: i32,
     pub x: i32,
-    pub y: i32
+    pub y: i32,
 }
 
 impl Screen {
@@ -21,7 +20,7 @@ impl Screen {
             width,
             height,
             x,
-            y
+            y,
         }
     }
 }
@@ -33,7 +32,7 @@ impl From<&XSInfo> for Screen {
             height: screeninfo.height.into(),
             width: screeninfo.width.into(),
             x: screeninfo.x_org.into(),
-            y: screeninfo.y_org.into()
+            y: screeninfo.y_org.into(),
         }
     }
 }

@@ -1,11 +1,10 @@
 #![allow(dead_code)]
+use super::rect::*;
+use super::HandleState;
+use super::WindowState;
 use crate::xlibwrapper::util::*;
 use crate::xlibwrapper::xlibmodels::*;
-use super::rect::*;
-use super::WindowState;
 use std::cell::RefCell;
-use super::HandleState;
-
 
 #[derive(Clone, Debug)]
 pub struct WindowWrapper {
@@ -19,11 +18,10 @@ pub struct WindowWrapper {
     pub handle_state: RefCell<HandleState>,
     pub current_state: WindowState,
     pub previous_state: WindowState,
-    
 }
 
 impl WindowWrapper {
-    pub fn new(window: Window, window_rect: Rect,) -> Self {
+    pub fn new(window: Window, window_rect: Rect) -> Self {
         let restore_size = window_rect.get_size();
         Self {
             dec: None,
@@ -38,8 +36,7 @@ impl WindowWrapper {
             previous_state: WindowState::Free,
         }
     }
-    
-    
+
     pub fn get_window_state(&self) -> WindowState {
         self.current_state.clone()
     }
@@ -48,17 +45,17 @@ impl WindowWrapper {
         self.previous_state = self.current_state;
         self.current_state = state;
     }
-    
+
     pub fn restore_prev_state(&mut self) {
         let temp = self.current_state.clone();
         self.current_state = self.previous_state;
-        self.previous_state = temp; 
+        self.previous_state = temp;
     }
 
     pub fn is_decorated(&self) -> bool {
         match self.dec {
             Some(_) => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -70,7 +67,7 @@ impl WindowWrapper {
     pub fn get_dec(&self) -> Option<Window> {
         match self.dec {
             Some(_) => self.dec.clone(),
-            None => None
+            None => None,
         }
     }
     pub fn set_dec_size(&mut self, size: Size) {
@@ -93,11 +90,11 @@ impl WindowWrapper {
     pub fn get_dec_rect(&self) -> Option<Rect> {
         self.dec_rect.clone()
     }
-    
+
     pub fn set_position(&mut self, pos: Position) {
         match self.dec_rect {
             Some(dec_rect) => self.dec_rect = Some(Rect::new(pos, dec_rect.get_size())),
-            None => self.window_rect = Rect::new(pos, self.window_rect.get_size())
+            None => self.window_rect = Rect::new(pos, self.window_rect.get_size()),
         }
     }
 
@@ -108,7 +105,7 @@ impl WindowWrapper {
     pub fn dec_window(&self) -> Option<Window> {
         self.dec
     }
-    
+
     pub fn set_inner_size(&mut self, size: Size) {
         self.window_rect = Rect::new(self.window_rect.get_position(), size);
     }
@@ -127,38 +124,38 @@ impl WindowWrapper {
     pub fn set_size(&mut self, size: Size) {
         match self.dec_rect {
             Some(_rect) => self.set_dec_size(size),
-            None => self.set_inner_size(size)
+            None => self.set_inner_size(size),
         }
     }
-    
+
     pub fn get_size(&self) -> Size {
         match self.dec_rect {
             Some(dec) => dec.get_size(),
-            None => self.window_rect.get_size()
+            None => self.window_rect.get_size(),
         }
     }
 
     pub fn get_width(&self) -> i32 {
         match self.dec_rect {
             Some(rect) => rect.get_size().width,
-            None => self.window_rect.get_size().width
+            None => self.window_rect.get_size().width,
         }
     }
 
     pub fn get_height(&self) -> i32 {
         match self.dec_rect {
             Some(rect) => rect.get_size().height,
-            None => self.window_rect.get_size().height
+            None => self.window_rect.get_size().height,
         }
     }
 
     pub fn get_position(&self) -> Position {
         match self.dec_rect {
             Some(dec_rect) => dec_rect.get_position(),
-            None => self.window_rect.get_position()
+            None => self.window_rect.get_position(),
         }
     }
-    
+
     pub fn save_restore_position(&mut self) {
         self.restore_position = self.get_position();
     }

@@ -1,22 +1,15 @@
 use {
-    std::rc::Rc,
-    std::collections::HashMap,
-    crate::models::{
-        monitor::Monitor,
-        workspace::Workspace,
-        windowwrapper::WindowWrapper,
-    },
-    crate::xlibwrapper::{
-        xlibmodels::*,
-        core::*,
-    },
+    crate::models::{monitor::Monitor, windowwrapper::WindowWrapper, workspace::Workspace},
+    crate::xlibwrapper::{core::*, xlibmodels::*},
     derivative::*,
+    std::collections::HashMap,
+    std::rc::Rc,
 };
 
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct State {
-    #[derivative(Debug="ignore")]
+    #[derivative(Debug = "ignore")]
     pub lib: Rc<XlibWrapper>,
     pub windows: HashMap<Window, WindowWrapper>,
     pub focus_w: Window,
@@ -32,13 +25,13 @@ impl State {
         let focus_w = lib.get_root();
         let monitors = {
             let mut monitors = HashMap::default();
-            let _ = lib.get_screens()
-                .iter()
-                .enumerate()
-                .for_each(|(i, val)| {
-                    info!("Monitors in init: {}", i);
-                    monitors.insert(i as u32, Monitor::new(i as u32, val.clone(), Workspace::new(i as u32)));
-                });
+            let _ = lib.get_screens().iter().enumerate().for_each(|(i, val)| {
+                info!("Monitors in init: {}", i);
+                monitors.insert(
+                    i as u32,
+                    Monitor::new(i as u32, val.clone(), Workspace::new(i as u32)),
+                );
+            });
             let mon_count = monitors.iter().count();
             debug!("Monitor on start: {}", mon_count);
             monitors
@@ -49,10 +42,9 @@ impl State {
             focus_w,
             monitors,
             current_monitor: 0,
-            drag_start_pos: (0,0),
-            drag_start_frame_pos: (0,0),
-            drag_start_frame_size: (0,0),
+            drag_start_pos: (0, 0),
+            drag_start_frame_pos: (0, 0),
+            drag_start_frame_size: (0, 0),
         }
     }
-
 }
