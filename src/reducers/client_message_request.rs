@@ -33,12 +33,12 @@ impl Reducer<action::ClientMessageRequest> for State {
         let data_two = *action.data.get(2).expect("client_message_request: cleanupt");
     
         
-        debug!("ClientMessageRequest: {}, data 1: {}, data 2: {} ", name, self.lib.xatom.get_name(data_one as u64), self.lib.xatom.get_name(data_two as u64));
+        //debug!("ClientMessageRequest: {}, data 1: {}, data 2: {} ", name, self.lib.xatom.get_name(data_one as u64), self.lib.xatom.get_name(data_two as u64));
 
         if action.message_type == self.lib.xatom.NetWMState
             && (data_one == self.lib.xatom.NetWMStateFullscreen as i64
                 || data_two == self.lib.xatom.NetWMStateFullscreen as i64) {
-                debug!("Actually fullscreen");
+                //debug!("Actually fullscreen");
                 let set_fullscreen = data_zero == 1;
                 let toggle_fullscreen = data_zero == 2;
 

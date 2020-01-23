@@ -17,7 +17,7 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
     let state = State::new(xlib.clone());
     let mut store = Store::new(state, HdlReactor::new(xlib.clone(), tx));
 
-    //setup 
+    //setup
     xlib.grab_server();
     let _ = xlib.get_top_level_windows()
         .iter()
@@ -29,6 +29,7 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
 
     loop {
         let xevent = xlib.next_event();
+        //debug!("Event: {:?}", xevent);
         match xevent.get_type() {
             xlib::ConfigureRequest => {
                 let event = xlib::XConfigureRequestEvent::from(xevent);
@@ -45,6 +46,7 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
             },
             xlib::MapRequest => {
                 let event = xlib::XMapRequestEvent::from(xevent);
+                debug!("window type: {}", xlib.get_window_type(event.window).get_name());
                 store.dispatch(action::MapRequest { win: event.window, parent: event.parent })
             }
             xlib::UnmapNotify => {
