@@ -37,7 +37,7 @@ Create `/usr/share/xsessions/hadlock.desktop` containing:
 [Desktop Entry]
 Encoding=UTF-8
 Name=Hadlock
-Exec=hadlock 
+Exec=hadlock ~/.config/hadlock/hadlock.json
 Comment=Hadlock - a wm for x
 Type=Application
 
@@ -48,13 +48,13 @@ Type=Application
 The config file is written is json and should be placed in `~/.config/hadlock`  
 ```
 {
-	"decorationHeight": 20,
-	"borderWidth": 2,
-	"innerBorderWidth": 0,
+	"borderWidth": 1,
 	"borderColor": 	{
-		"Custom": 9437222
+		"Custom": "#480222"
 	},
-	"backgroundColor": "DefaultBackground",
+	"backgroundColor": {
+		"Custom": "#939393"
+	},
 	"focusedBackgroundColor": "DefaultFocusedBackground",
 	"workspaces": {
 		"1": "1",
@@ -81,11 +81,9 @@ The config file is written is json and should be placed in `~/.config/hadlock`
 			"execTime": "Post",
 			"program": "polybar",
 			"args": [
-				"--config=./polyconf",
-				"--log=ERROR",
 				"example"
 			]
-		}
+		},
 	]
 }
 
