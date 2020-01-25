@@ -33,11 +33,14 @@ impl Reducer<action::Focus> for State {
                 let curr_mon = self
                     .monitors
                     .get_mut(&self.current_monitor)
-                    .expect("ClientMessageRequest - get_monitor");
+                    .expect("Focus - get_monitor");
 
                 //unset focus
                 if self.focus_w != self.lib.get_root() {
-                    let mut old_focus = curr_mon.remove_window(self.focus_w);
+                    let mut old_focus = match curr_mon.remove_window(self.focus_w) {
+                        Some(win) => win,
+                        None => return,
+                    };
                     old_focus = WindowWrapper {
                         handle_state: HandleState::Unfocus.into(),
                         ..old_focus
@@ -47,7 +50,10 @@ impl Reducer<action::Focus> for State {
 
                 //set focus
                 self.focus_w = action.win;
-                let mut new_focus = curr_mon.remove_window(self.focus_w);
+                let mut new_focus = match curr_mon.remove_window(self.focus_w) {
+                    Some(win) => win,
+                    None => return,
+                };
                 new_focus = WindowWrapper {
                     handle_state: HandleState::Focus.into(),
                     ..new_focus

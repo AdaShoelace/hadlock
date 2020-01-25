@@ -70,7 +70,14 @@ impl Reducer<action::MapRequest> for State {
                 self.lib.map_window(action.win);
                 return;
             }
-            let ww = mon.remove_window(action.win);
+            let ww = match mon.remove_window(action.win) {
+                Some(ww) => ww,
+                None => {
+                    let class = self.lib.get_class_hint(action.win);
+                    debug!("{:?} not in ws: {}", class, mon.current_ws);
+                    return;
+                }
+            };
             mon.add_window(
                 action.win,
                 WindowWrapper {

@@ -30,7 +30,7 @@ impl Reducer<action::ConfigurationRequest> for State {
             {
                 return;
             }
-            let ww = mon.remove_window(action.win);
+            let ww = mon.remove_window(action.win).expect("ConfigurationRequest - monitor - remove_window");
             self.lib.configure_window(
                 action.win,
                 action.value_mask as i64,

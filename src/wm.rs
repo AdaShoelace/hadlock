@@ -155,7 +155,7 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
     let ww = state
         .monitors
         .get_mut(&state.current_monitor)?
-        .remove_window(w);
+        .remove_window(w)?;
 
     let mon = match get_mon_by_ws(state, ws) {
         Some(mon) => state.monitors.get_mut(&mon)?,
