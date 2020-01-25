@@ -451,6 +451,17 @@ impl XlibWrapper {
         }
     }
 
+    pub fn set_input_focus(&self, w: Window) {
+        unsafe {
+            (self.lib.XSetInputFocus)(
+                self.display,
+                w,
+                xlib::RevertToPointerRoot,
+                xlib::CurrentTime,
+            );
+        }
+    }
+
     pub fn take_focus(&self, w: Window) {
         unsafe {
             (self.lib.XSetInputFocus)(
