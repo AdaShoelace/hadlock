@@ -79,7 +79,7 @@ fn managed_client(
 
             let (_dec_size, size) =
                 mon.resize_window(state.focus_w, old_size.width + 10, old_size.height);
-            let ww = mon.remove_window(state.focus_w);
+            let ww = mon.remove_window(state.focus_w)?;
             let new_ww = WindowWrapper {
                 window_rect: Rect::new(ww.get_position(), size),
                 handle_state: HandleState::Resize.into(),
@@ -94,7 +94,7 @@ fn managed_client(
 
             let (_dec_size, size) =
                 mon.resize_window(state.focus_w, old_size.width - 10, old_size.height);
-            let ww = mon.remove_window(state.focus_w);
+            let ww = mon.remove_window(state.focus_w)?;
             let new_ww = WindowWrapper {
                 window_rect: Rect::new(ww.get_position(), size),
                 handle_state: HandleState::Resize.into(),
@@ -108,7 +108,7 @@ fn managed_client(
 
             let (_dec_size, size) =
                 mon.resize_window(state.focus_w, old_size.width, old_size.height + 10);
-            let ww = mon.remove_window(state.focus_w);
+            let ww = mon.remove_window(state.focus_w)?;
             let new_ww = WindowWrapper {
                 window_rect: Rect::new(ww.get_position(), size),
                 handle_state: HandleState::Resize.into(),
@@ -121,7 +121,7 @@ fn managed_client(
             let mon = state.monitors.get_mut(&state.current_monitor)?;
             let (_dec_size, size) =
                 mon.resize_window(state.focus_w, old_size.width, old_size.height - 10);
-            let ww = mon.remove_window(state.focus_w);
+            let ww = mon.remove_window(state.focus_w)?;
             let new_ww = WindowWrapper {
                 window_rect: Rect::new(ww.get_position(), size),
                 handle_state: HandleState::Resize.into(),
@@ -147,7 +147,7 @@ fn managed_client(
             let ww = state
                 .monitors
                 .get_mut(&state.current_monitor)?
-                .remove_window(state.focus_w);
+                .remove_window(state.focus_w)?;
             let new_ww = wm::toggle_monocle(state, ww);
             state
                 .monitors
@@ -172,7 +172,7 @@ fn managed_client(
             let ww = state
                 .monitors
                 .get_mut(&state.current_monitor)?
-                .remove_window(state.focus_w);
+                .remove_window(state.focus_w)?;
             let new_ww = wm::toggle_maximize(state, ww);
             state
                 .monitors
@@ -202,7 +202,7 @@ fn managed_client(
         }
         if state.lib.str_to_keycode("c")? == keycode {
             let mon = state.monitors.get_mut(&state.current_monitor)?;
-            let ww = mon.remove_window(state.focus_w);
+            let ww = mon.remove_window(state.focus_w)?;
             let (pos, size) = mon.place_window(ww.window());
             let new_ww = WindowWrapper {
                 window_rect: Rect::new(size, pos),
@@ -266,7 +266,7 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;
 
     let (pos, size) = mon.shift_window(state.focus_w, direction);
-    let ww = mon.remove_window(state.focus_w);
+    let ww = mon.remove_window(state.focus_w)?;
     let ww = WindowWrapper {
         window_rect: Rect::new(pos, size),
         previous_state: ww.current_state,
