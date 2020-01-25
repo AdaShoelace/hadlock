@@ -51,12 +51,12 @@ impl Monitor {
         }
     }
 
-    pub fn remove_window(&mut self, w: Window) -> WindowWrapper {
-        self.workspaces
+    pub fn remove_window(&mut self, w: Window) -> Option<WindowWrapper> {
+        let ret = self.workspaces
             .get_mut(&self.current_ws)
             .expect("monitor: remove_window")
-            .remove_window(w)
-            .expect(&format!("no such client: {} in ws:{}", w, self.current_ws))
+            .remove_window(w)?;
+        Some(ret)
     }
 
     pub fn contains_window(&self, w: Window) -> bool {

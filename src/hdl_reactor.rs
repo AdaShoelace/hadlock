@@ -27,6 +27,7 @@ impl Reactor<State> for HdlReactor {
             let handle_state = *mon.handle_state.borrow();
             match handle_state {
                 HandleState::Focus => {
+                    debug!("Setting current monitor to: {}", state.current_monitor);
                     self.lib.update_desktops(mon.current_ws, None);
                     mon.handle_state.replace(HandleState::Handled);
                 }
