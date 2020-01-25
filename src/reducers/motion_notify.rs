@@ -53,7 +53,7 @@ impl Reducer<action::MotionNotify> for State {
                     .monitors
                     .get_mut(&old_mon)
                     .expect("MotionNotify - old_mon - get_mut")
-                    .remove_window(action.win);
+                    .remove_window(action.win).expect("Trying to remove window in motion_notify");
 
                 let _ = self
                     .monitors
