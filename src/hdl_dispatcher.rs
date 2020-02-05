@@ -97,7 +97,7 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
             action::KeyRelease{win: event.window, state: event.state, keycode: event.keycode};
             },*/
             xlib::MotionNotify => {
-                debug!("motion");
+                //debug!("motion");
                 let event = xlib::XMotionEvent::from(xevent);
                 store.dispatch(action::MotionNotify {
                     win: event.window,
@@ -135,6 +135,7 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
             }
             xlib::ClientMessage => {
                 let event = xlib::XClientMessageEvent::from(xevent);
+                //debug!("ClientMessage: {:#?}", event);
                 store.dispatch(action::ClientMessageRequest {
                     win: event.window,
                     message_type: event.message_type,
