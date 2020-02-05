@@ -21,17 +21,65 @@ impl Reducer<action::MapRequest> for State {
     fn reduce(&mut self, action: action::MapRequest) {
         match self.lib.transient_for_hint(action.win) {
             Some(_win) => {
-                self.lib.map_window(action.win);
+                debug!(
+                    "Window type: {} is transient",
+                    self.lib.get_window_type(action.win).get_name()
+                );
+                let trans_size = { 
+                    let attr = self.lib.get_window_attributes(action.win);
+                    Size { width: attr.width, height: attr.height }
+                };
+                let mon = self
+                    .monitors
+                    .get_mut(&self.current_monitor)
+                    .expect("Shit went down in map_request");
+
+                let pos = match mon.get_client(action.parent) {
+                    Some(win) => {
+                        let (pos, size) = (win.get_position(), win.get_size());
+                        Position {
+                            x: pos.x + (size.width / 2) - (trans_size.width / 2) as i32,
+                            y: pos.y + (size.height / 2) - (trans_size.height / 2) as i32,
+                        }
+                    }
+                    None if action.parent == self.lib.get_root() => {
+                        let screen = mon.screen.clone();
+                        let (pos, size) = (
+                            Position { x: screen.x, y: screen.y },
+                            Size {
+                                width: screen.width as i32,
+                                height: screen.height as i32,
+                            },
+                        );
+                        Position {
+                            x: pos.x + (size.width / 2) - (trans_size.width / 2) as i32,
+                            y: pos.y + (size.height / 2) - (trans_size.height / 2) as i32,
+                        }
+                    }
+                    None => return,
+                };
+                let ww = WindowWrapper::new(
+                    action.win,
+                    Rect::new(
+                        pos,
+                        Size {
+                            width: trans_size.width as i32,
+                            height: trans_size.height as i32,
+                        },
+                    ),
+                    true,
+                );
+                mon.add_window(
+                    ww.window(),
+                    WindowWrapper {
+                        handle_state: HandleState::New.into(),
+                        ..ww
+                    },
+                );
                 return;
             }
             None => (),
         };
-
-        debug!(
-            "Window type: {}",
-            self.lib.get_window_type(action.win).get_name()
-        );
-
         debug!(
             "MapRequest - window: {} - Parent: {}",
             action.win, action.parent
@@ -56,7 +104,6 @@ impl Reducer<action::MapRequest> for State {
         }
 
         if !self.lib.should_be_managed(action.win) {
-            //self.lib.map_window(action.win);
             return;
         }
 
@@ -85,13 +132,12 @@ impl Reducer<action::MapRequest> for State {
                     ..ww
                 },
             );
-            //self.lib.map_window(action.win);
             return;
         } else {
             let (size, pos) = mon.place_window(action.win);
             mon.add_window(
                 action.win,
-                WindowWrapper::new(action.win, Rect::new(pos, size)),
+                WindowWrapper::new(action.win, Rect::new(pos, size), false),
             );
         }
     }

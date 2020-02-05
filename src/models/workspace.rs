@@ -28,7 +28,7 @@ impl Workspace {
     }
 
     pub fn add_window(&mut self, w: Window, ww: WindowWrapper) {
-        warn!("{} added to desktop: {}", w, self.tag);
+        //warn!("{} added to desktop: {}", w, self.tag);
         self.clients.insert(w, ww);
     }
 
