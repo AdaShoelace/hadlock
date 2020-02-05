@@ -12,6 +12,7 @@ pub struct WindowWrapper {
     pub window: Window,
     pub window_rect: Rect,
     pub is_visible: bool,
+    pub is_trans: bool,
     pub dec_rect: Option<Rect>,
     pub restore_position: Position,
     pub restore_size: Size,
@@ -21,13 +22,14 @@ pub struct WindowWrapper {
 }
 
 impl WindowWrapper {
-    pub fn new(window: Window, window_rect: Rect) -> Self {
+    pub fn new(window: Window, window_rect: Rect, is_trans: bool) -> Self {
         let restore_size = window_rect.get_size();
         Self {
             dec: None,
             window,
             window_rect,
             is_visible: true,
+            is_trans,
             dec_rect: None,
             restore_position: Position { x: 0, y: 0 },
             restore_size,

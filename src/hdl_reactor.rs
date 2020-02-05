@@ -33,7 +33,8 @@ impl Reactor<State> for HdlReactor {
                 }
                 _ => (),
             }
-            mon.workspaces.values().for_each(|ws| {
+            mon.workspaces.iter().for_each(|(key, ws)| {
+                //debug!("ws {} has len: {}", key, ws.clients.len());
                 ws.clients.iter().for_each(|(key, val)| {
                     let handle_state = *val.handle_state.borrow();
                     match handle_state {
@@ -43,13 +44,16 @@ impl Reactor<State> for HdlReactor {
                             debug!("BorderWidth on new: {}", CONFIG.border_width);
                             self.lib.set_border_width(*key, CONFIG.border_width as u32);
                             self.lib.move_window(*key, val.get_position());
-                            let old_size = val.get_size();
-                            let new_size = Size {
-                                width: old_size.width - 2 * CONFIG.border_width,
-                                height: old_size.height - 2 * CONFIG.border_width,
-                            };
-                            self.lib.resize_window(*key, new_size);
+                            if !(val.is_trans) {
+                                let old_size = val.get_size();
+                                let new_size = Size {
+                                    width: old_size.width - 2 * CONFIG.border_width,
+                                    height: old_size.height - 2 * CONFIG.border_width,
+                                };
+                                self.lib.resize_window(*key, new_size);
+                            }
                             self.subscribe_to_events(*key);
+                            debug!("Mapping: {}", *key);
                             self.lib.map_window(*key);
                             val.handle_state.replace(HandleState::Handled);
                         }
@@ -183,7 +187,7 @@ impl HdlReactor {
         self.grab_keys(focus);
         self.lib.sync(false);
         let (class, _name) = self.lib.get_class_hint(focus);
-        if class != "firefox" {
+        if class != "firefox" || ww.is_trans {
             debug!("name: {}", class);
             self.lib.take_focus(focus);
         }
