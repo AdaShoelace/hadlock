@@ -97,7 +97,9 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
             action::KeyRelease{win: event.window, state: event.state, keycode: event.keycode};
             },*/
             xlib::MotionNotify => {
+
                 //debug!("motion");
+
                 let event = xlib::XMotionEvent::from(xevent);
                 store.dispatch(action::MotionNotify {
                     win: event.window,
