@@ -791,6 +791,17 @@ impl XlibWrapper {
         }
     }
 
+    pub fn keycode_to_key_sym(&self, keycode: KeyCode) -> String {
+        use std::ffi::CStr;
+        unsafe {
+            let ret = (self.lib.XKeycodeToKeysym)(self.display, keycode, 0);
+            let ret = (self.lib.XKeysymToString)(ret);
+            let c_str: &CStr = CStr::from_ptr(ret);
+            let str_slice: &str = c_str.to_str().unwrap();
+            str_slice.to_owned()
+        }
+    }
+
     pub fn key_sym_to_keycode(&self, keysym: u64) -> KeyCode {
         unsafe { (self.lib.XKeysymToKeycode)(self.display, keysym) }
     }
