@@ -187,6 +187,7 @@ impl HdlReactor {
         self.grab_keys(focus);
         self.lib.sync(false);
         let (class, _name) = self.lib.get_class_hint(focus);
+
         if class != "firefox" || ww.is_trans {
             debug!("name: {}", class);
             self.lib.take_focus(focus);
