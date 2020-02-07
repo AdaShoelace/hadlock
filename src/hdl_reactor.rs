@@ -33,7 +33,7 @@ impl Reactor<State> for HdlReactor {
                 }
                 _ => (),
             }
-            mon.workspaces.iter().for_each(|(key, ws)| {
+            mon.workspaces.iter().for_each(|(_key, ws)| {
                 //debug!("ws {} has len: {}", key, ws.clients.len());
                 ws.clients.iter().for_each(|(key, val)| {
                     let handle_state = *val.handle_state.borrow();
@@ -91,7 +91,7 @@ impl Reactor<State> for HdlReactor {
                             debug!("Unfocus");
                             self.unset_focus(*key, &val);
                             val.handle_state.replace(HandleState::Handled);
-                            self.tx.send(());
+                            let _ = self.tx.send(());
                         }
                         HandleState::Shift => {
                             self.lib.move_window(*key, val.get_position());

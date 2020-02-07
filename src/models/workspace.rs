@@ -2,7 +2,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    layout::{floating, Layout},
+    layout::{floating, column_master, Layout, LayoutTag},
     models::windowwrapper::WindowWrapper,
     xlibwrapper::xlibmodels::Window,
 };
@@ -12,14 +12,33 @@ pub struct Workspace {
     pub tag: u32,
     pub clients: HashMap<Window, WindowWrapper>,
     pub layout: Box<dyn Layout>,
+    available_layouts: Vec<LayoutTag>,
+    current_tag: LayoutTag,
 }
 
 impl Workspace {
     pub fn new(tag: u32) -> Self {
         Self {
             tag,
-            clients: HashMap::default(),
-            layout: Box::new(floating::Floating),
+            clients: Default::default(),
+            layout: Box::new(floating::Floating::default()),
+            available_layouts: vec![LayoutTag::Floating, LayoutTag::ColumnMaster],
+            current_tag: LayoutTag::Floating,
+        }
+    }
+
+    pub fn circulate_layout(&mut self) {
+        let index = self
+            .available_layouts
+            .iter()
+            .position(|lt| self.current_tag == *lt)
+            .unwrap() + 1;
+        
+        let index = index % self.available_layouts.len();
+        self.current_tag = self.available_layouts[index];
+        self.layout = match self.current_tag {
+            LayoutTag::Floating => Box::new(floating::Floating::default()),
+            LayoutTag::ColumnMaster => Box::new(column_master::ColumnMaster::default())
         }
     }
 

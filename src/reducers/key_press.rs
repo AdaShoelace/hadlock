@@ -14,6 +14,7 @@ use {
         xlibwrapper::util::*,
         xlibwrapper::xlibmodels::*,
     },
+    notify_rust::{Notification, Timeout},
     reducer::*,
     std::cell::RefCell,
     std::process::Command,
@@ -157,6 +158,27 @@ fn managed_client(
                     .monitors
                     .get_mut(&state.current_monitor)?
                     .add_window(state.focus_w, new_ww);
+            }
+
+            HDLKeysym::XK_l => {
+                debug!("should print layout type");
+
+                let mon = state.monitors.get_mut(&state.current_monitor)?;
+                let ws = mon.get_current_ws_mut()?;
+                ws.circulate_layout();
+
+                let notify_res = Notification::new()
+                    .summary("Layout switched")
+                    .body(&format!("New layout: {}", ws.layout))
+                    .icon("firefox")
+                    .timeout(Timeout::Milliseconds(3000))
+                    .show();
+                match notify_res {
+                    Ok(_) => (),
+                    Err(e) => {
+                        warn!("Error showing notification: {}", e)
+                    }
+                }
             }
             _ => {
                 if ws_keys.contains(&keycode) {

@@ -52,7 +52,8 @@ impl Monitor {
     }
 
     pub fn remove_window(&mut self, w: Window) -> Option<WindowWrapper> {
-        let ret = self.workspaces
+        let ret = self
+            .workspaces
             .get_mut(&self.current_ws)
             .expect("monitor: remove_window")
             .remove_window(w)?;
@@ -121,10 +122,10 @@ impl Monitor {
     pub fn place_window(&self, w: Window) -> (Size, Position) {
         let screen = self.screen.clone();
         let dock_area = self.dock_area.clone();
-        self.get_current_ws()
-            .expect("monitor: place_window 2")
-            .layout
-            .place_window(&dock_area.clone(), &screen.clone(), w)
+        let ws = self.get_current_ws().expect("monitor: place_window 2");
+        let windows = ws.clients.values().collect::<Vec<&WindowWrapper>>();
+        ws.layout
+            .place_window(&dock_area.clone(), &screen.clone(), w, windows)
     }
 
     pub fn move_window(&mut self, w: Window, x: i32, y: i32) -> (Position, Position) {
