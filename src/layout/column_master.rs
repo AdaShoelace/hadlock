@@ -1,3 +1,4 @@
+
 #![allow(dead_code, unused_variables)]
 use super::*;
 use crate::{
@@ -10,11 +11,11 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct Floating {
+pub struct ColumnMaster {
     layout_type: LayoutTag
 }
 
-impl Floating {
+impl ColumnMaster {
     fn get_size(ww: &WindowWrapper, size: (Size, Size)) -> Size {
         if ww.is_decorated() {
             size.0
@@ -24,21 +25,21 @@ impl Floating {
     }
 }
 
-impl Default for Floating {
+impl Default for ColumnMaster {
     fn default() -> Self {
         Self {
-            layout_type: LayoutTag::Floating
+            layout_type: LayoutTag::ColumnMaster
         }
     }
 }
 
-impl std::fmt::Display for Floating {
+impl std::fmt::Display for ColumnMaster {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.layout_type)
     }
 }
 
-impl Layout for Floating {
+impl Layout for ColumnMaster {
 
     fn place_window(&self, dock_area: &DockArea, screen: &Screen, w: Window, windows: Vec<&WindowWrapper>) -> (Size, Position) {
         let new_size = Size {
@@ -136,7 +137,7 @@ impl Layout for Floating {
         let pos = self.move_window(screen, dock_area, w, true, screen.x, screen.y);
         match dock_area.as_rect(&screen) {
             Some(dock) => {
-                let size = Floating::get_size(
+                let size = ColumnMaster::get_size(
                     &ww,
                     self.resize_window(
                         &ww,
@@ -148,7 +149,7 @@ impl Layout for Floating {
                 (pos.0, size)
             }
             None => {
-                let size = Floating::get_size(
+                let size = ColumnMaster::get_size(
                     &ww,
                     self.resize_window(&ww, w, screen.width, screen.height),
                 );
@@ -166,7 +167,7 @@ impl Layout for Floating {
     ) -> (Position, Size) {
         // TODO: implement for decorated windows
         let pos = self.move_window(screen, dock_area, w, false, screen.x, screen.y);
-        let size = Floating::get_size(&ww, self.resize_window(&ww, w, screen.width, screen.height));
+        let size = ColumnMaster::get_size(&ww, self.resize_window(&ww, w, screen.width, screen.height));
         (pos.0, size)
     }
 
@@ -199,7 +200,7 @@ impl Layout for Floating {
                     }
                 };
                 let mut size =
-                    Floating::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
+                    ColumnMaster::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     size.height -= dock.get_size().height / 2
                 }
@@ -228,7 +229,7 @@ impl Layout for Floating {
                     }
                 };
                 let mut size =
-                    Floating::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
+                    ColumnMaster::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     size.height -= dock.get_size().height;
                 }
@@ -250,7 +251,7 @@ impl Layout for Floating {
                     }
                 };
                 let mut size =
-                    Floating::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
+                    ColumnMaster::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     size.height -= dock.get_size().height;
                 }
@@ -279,7 +280,7 @@ impl Layout for Floating {
                     }
                 };
                 let mut size =
-                    Floating::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
+                    ColumnMaster::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     let offset = dock.get_size().height / 2;
                     size.height -= offset;
