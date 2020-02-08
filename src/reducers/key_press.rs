@@ -163,21 +163,8 @@ fn managed_client(
 
             HDLKeysym::XK_l => {
                 debug!("should print layout type");
-
-                let mon = state.monitors.get_mut(&state.current_monitor)?;
-                let ws = mon.get_current_ws_mut()?;
-                ws.circulate_layout();
-
-                let notify_res = Notification::new()
-                    .summary("Layout switched")
-                    .body(&format!("New layout: {}", ws.layout))
-                    .icon("firefox")
-                    .timeout(Timeout::Milliseconds(3000))
-                    .show();
-                match notify_res {
-                    Ok(_) => (),
-                    Err(e) => warn!("Error showing notification: {}", e),
-                }
+                circulate_layout(state);
+                reorder(state);
             }
             _ => {
                 if ws_keys.contains(&keycode) {
@@ -237,30 +224,7 @@ fn managed_client(
             }
 
             HDLKeysym::XK_r => {
-                let mon = state.monitors.get_mut(&state.current_monitor)?;
-                if mon.get_current_ws()?.get_current_layout() != LayoutTag::Floating {
-                    return Some(());
-                }
-                let windows = mon
-                    .get_current_ws()?
-                    .clients
-                    .values()
-                    .map(|x| x.clone())
-                    .collect::<Vec<WindowWrapper>>()
-                    .clone();
-                let mut rects = mon.reorder(&windows);
-                windows
-                    .into_iter()
-                    .map(|win| WindowWrapper {
-                        window_rect: rects.remove(0),
-                        current_state: WindowState::Free,
-                        handle_state: vec![HandleState::Move, HandleState::Resize].into(),
-                        ..win
-                    })
-                    .for_each(|win| {
-                        mon.remove_window(win.window());
-                        mon.add_window(win.window(), win)
-                    });
+                reorder(state);
             }
             _ => {
                 if ws_keys.contains(&keycode) {
@@ -291,30 +255,7 @@ fn root(
                 spawn_process("dmenu_recency", vec![]);
             }
             HDLKeysym::XK_r => {
-                let mon = state.monitors.get_mut(&state.current_monitor)?;
-                if mon.get_current_ws()?.get_current_layout() != LayoutTag::Floating {
-                    return Some(());
-                }
-                let windows = mon
-                    .get_current_ws()?
-                    .clients
-                    .values()
-                    .map(|x| x.clone())
-                    .collect::<Vec<WindowWrapper>>()
-                    .clone();
-                let mut rects = mon.reorder(&windows);
-                windows
-                    .into_iter()
-                    .map(|win| WindowWrapper {
-                        window_rect: rects.remove(0),
-                        current_state: WindowState::Free,
-                        handle_state: vec![HandleState::Move, HandleState::Resize].into(),
-                        ..win
-                    })
-                    .for_each(|win| {
-                        mon.remove_window(win.window());
-                        mon.add_window(win.window(), win)
-                    });
+                reorder(state);
             }
             _ => (),
         }
@@ -331,6 +272,11 @@ fn root(
         match into_hdl_keysym(&state.lib.keycode_to_key_sym(keycode)) {
             HDLKeysym::XK_e => {
                 state.lib.exit();
+            }
+
+            HDLKeysym::XK_l => {
+                circulate_layout(state);
+                reorder(state);
             }
             _ => (),
         }
@@ -352,6 +298,54 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
     };
     mon.add_window(state.focus_w, ww);
     Some(())
+}
+
+fn reorder(state: &mut State) -> Option<()> {
+    let mon = state.monitors.get_mut(&state.current_monitor)?;
+    if mon.get_current_ws()?.get_current_layout() != LayoutTag::Floating {
+        return Some(());
+    }
+    let windows = mon
+        .get_current_ws()?
+        .clients
+        .values()
+        .map(|x| x.clone())
+        .collect::<Vec<WindowWrapper>>()
+        .clone();
+    let mut rects = mon.reorder(&windows);
+    windows
+        .into_iter()
+        .map(|win| WindowWrapper {
+            window_rect: rects.remove(0),
+            current_state: WindowState::Free,
+            handle_state: vec![HandleState::Move, HandleState::Resize].into(),
+            ..win
+        })
+        .for_each(|win| {
+            mon.remove_window(win.window());
+            mon.add_window(win.window(), win)
+        });
+    Some(())
+}
+
+fn circulate_layout(state: &mut State) -> Option<()> {
+    let mon = state.monitors.get_mut(&state.current_monitor)?;
+    let ws = mon.get_current_ws_mut()?;
+    ws.circulate_layout();
+
+    let notify_res = Notification::new()
+        .summary("Layout switched")
+        .body(&format!("New layout: {}", ws.layout))
+        .icon("firefox")
+        .timeout(Timeout::Milliseconds(3000))
+        .show();
+    match notify_res {
+        Ok(_) => Some(()),
+        Err(e) => {
+            warn!("Error showing notification: {}", e);
+            Some(())
+        }
+    }
 }
 
 fn keycode_to_ws(keycode: u8) -> u32 {
