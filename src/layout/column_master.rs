@@ -3,7 +3,7 @@
 use super::*;
 use crate::{
     config::*,
-    models::{dockarea::DockArea, screen::Screen, windowwrapper::WindowWrapper, Direction},
+    models::{dockarea::DockArea, screen::Screen, windowwrapper::WindowWrapper, Direction, rect::Rect},
     xlibwrapper::{
         util::{Position, Size},
         xlibmodels::*,
@@ -12,7 +12,9 @@ use crate::{
 
 #[derive(Debug)]
 pub struct ColumnMaster {
-    layout_type: LayoutTag
+    layout_type: LayoutTag,
+    master: Window,
+    column: Vec<Window>
 }
 
 impl ColumnMaster {
@@ -28,7 +30,9 @@ impl ColumnMaster {
 impl Default for ColumnMaster {
     fn default() -> Self {
         Self {
-            layout_type: LayoutTag::ColumnMaster
+            layout_type: LayoutTag::ColumnMaster,
+            master: 0,
+            column: vec![]
         }
     }
 }
@@ -41,23 +45,33 @@ impl std::fmt::Display for ColumnMaster {
 
 impl Layout for ColumnMaster {
 
-    fn place_window(&self, dock_area: &DockArea, screen: &Screen, w: Window, windows: Vec<&WindowWrapper>) -> (Size, Position) {
-        let new_size = Size {
-            width: (screen.width / 10) * 8,
-            height: (screen.height / 10) * 6,
+    fn place_window(&mut self, dock_area: &DockArea, screen: &Screen, w: Window, windows: Vec<&WindowWrapper>) -> (Size, Position) {
+        
+        if self.master == 0 {
+            self.master = w;
+        }
+
+        if !self.column.contains(&w) {
+            self.column.push(w);
+        }
+
+        let mut new_size = Size {
+            width: screen.width ,
+            height: screen.height,
         };
 
-        let dw = (screen.width - new_size.width as i32) / 2;
-        let mut dh = (screen.height - new_size.height as i32) / 2;
+        let mut dh = 0;
 
         if let Some(dock_rect) = dock_area.as_rect(&screen) {
-            dh =
-                ((screen.height + dock_rect.get_size().height as i32) - new_size.height as i32) / 2;
+            dh = dock_rect.get_size().height;
         }
+
         let ret = Position {
-            x: screen.x + dw,
+            x: screen.x,
             y: screen.y + dh,
         };
+        
+        new_size.height = new_size.height - dh;
 
         (new_size, ret)
     }
@@ -98,6 +112,10 @@ impl Layout for ColumnMaster {
                 y: y + CONFIG.decoration_height + CONFIG.border_width,
             },
         )
+    }
+    
+    fn reorder(&self, screen: &Screen, dock_area: &DockArea, windows: Vec<WindowWrapper>) -> Vec<Rect> {
+        vec![]
     }
 
     fn resize_window(

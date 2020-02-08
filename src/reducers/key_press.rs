@@ -141,7 +141,7 @@ fn managed_client(
                     .get_mut(&state.current_monitor)?
                     .get_client_mut(state.focus_w)?;
 
-                ww.handle_state.replace(HandleState::Destroy);
+                ww.handle_state.replace(HandleState::Destroy.into());
             }
 
             HDLKeysym::XK_e => {
@@ -235,6 +235,24 @@ fn managed_client(
             }
             HDLKeysym::XK_d => {
                 spawn_process("dmenu_recency", vec![]);
+            },
+
+            HDLKeysym::XK_r => {
+                let mon = state.monitors.get_mut(&state.current_monitor)?;
+                let windows = mon.get_current_ws()?.clients.values().map(|x| x.clone() ).collect::<Vec<WindowWrapper>>().clone();
+                let mut rects = mon.reorder(&windows);
+                windows
+                    .into_iter()
+                    .map(|win| {
+                        WindowWrapper {
+                            window_rect: rects.remove(0),
+                            handle_state: vec![HandleState::Move, HandleState::Resize].into(),
+                            ..win
+                        } 
+                    }).for_each(|win| {
+                        mon.remove_window(win.window());
+                        mon.add_window(win.window(), win)
+                    });
             }
             _ => {
                 if ws_keys.contains(&keycode) {

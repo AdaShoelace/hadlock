@@ -2,7 +2,9 @@
 use super::*;
 use crate::{
     config::*,
-    models::{dockarea::DockArea, screen::Screen, windowwrapper::WindowWrapper, Direction},
+    models::{
+        dockarea::DockArea, rect::Rect, screen::Screen, windowwrapper::WindowWrapper, Direction,
+    },
     xlibwrapper::{
         util::{Position, Size},
         xlibmodels::*,
@@ -11,7 +13,7 @@ use crate::{
 
 #[derive(Debug)]
 pub struct Floating {
-    layout_type: LayoutTag
+    layout_type: LayoutTag,
 }
 
 impl Floating {
@@ -27,7 +29,7 @@ impl Floating {
 impl Default for Floating {
     fn default() -> Self {
         Self {
-            layout_type: LayoutTag::Floating
+            layout_type: LayoutTag::Floating,
         }
     }
 }
@@ -39,8 +41,13 @@ impl std::fmt::Display for Floating {
 }
 
 impl Layout for Floating {
-
-    fn place_window(&self, dock_area: &DockArea, screen: &Screen, w: Window, windows: Vec<&WindowWrapper>) -> (Size, Position) {
+    fn place_window(
+        &mut self,
+        dock_area: &DockArea,
+        screen: &Screen,
+        w: Window,
+        windows: Vec<&WindowWrapper>,
+    ) -> (Size, Position) {
         let new_size = Size {
             width: (screen.width / 10) * 8,
             height: (screen.height / 10) * 6,
@@ -97,6 +104,55 @@ impl Layout for Floating {
                 y: y + CONFIG.decoration_height + CONFIG.border_width,
             },
         )
+    }
+
+    fn reorder(
+        &self,
+        screen: &Screen,
+        dock_area: &DockArea,
+        windows: Vec<WindowWrapper>,
+    ) -> Vec<Rect> {
+        let space_rect = match dock_area.as_rect(screen) {
+            Some(dock) => Rect::new(
+                Position {
+                    x: screen.x,
+                    y: screen.y + dock.get_size().height,
+                },
+                Size {
+                    width: screen.width,
+                    height: screen.height - dock.get_size().height,
+                },
+            ),
+            None => Rect::new(
+                Position {
+                    x: screen.x,
+                    y: screen.y,
+                },
+                Size {
+                    width: screen.width,
+                    height: screen.height,
+                },
+            ),
+        };
+
+        let win_size_x = (space_rect.get_size().width / windows.len() as i32) - 2 * CONFIG.border_width;
+        let win_size_y = space_rect.get_size().height - 2 * CONFIG.border_width;
+
+        windows
+            .iter()
+            .enumerate()
+            .map(|(index, win)| {
+                let pos = Position {
+                    x: (index as i32 * win_size_x) + index as i32 * (2 * CONFIG.border_width),
+                    y: space_rect.get_position().y,
+                };
+                let size = Size {
+                    width: win_size_x,
+                    height: win_size_y,
+                };
+                Rect::new(pos, size)
+            })
+            .collect::<Vec<Rect>>()
     }
 
     fn resize_window(
