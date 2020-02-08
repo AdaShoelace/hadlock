@@ -170,7 +170,7 @@ impl XlibWrapper {
             (self.lib.XUngrabKey)(self.display, xlib::AnyKey, xlib::AnyModifier, self.root);
             (self.lib.XDeleteProperty)(self.display, self.root, self.xatom.NetClientList);
             let keys = vec![
-                "Left", "Right", "Up", "Down", "Return", "q", "d", "e", "1", "2", "3", "4", "5",
+                "Left", "Right", "Up", "Down", "Return", "q", "d", "e", "r","1", "2", "3", "4", "5",
                 "6", "7", "8", "9",
             ];
 
