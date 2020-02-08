@@ -1,14 +1,15 @@
-use crate::xlibwrapper::{
-    util::{Position, Size},
-    xlibmodels::{MonitorId, Window},
+use crate::{
+    layout::LayoutTag,
+    xlibwrapper::{
+        util::{Position, Size},
+        xlibmodels::{MonitorId, Window},
+    },
 };
-
-use std::collections::HashMap;
-
 use super::{
-    dockarea::DockArea, screen::Screen, windowwrapper::WindowWrapper, workspace::Workspace,
-    Direction, HandleState, rect::Rect
+    dockarea::DockArea, rect::Rect, screen::Screen, windowwrapper::WindowWrapper,
+    workspace::Workspace, Direction, HandleState,
 };
+use std::collections::HashMap;
 use std::cell::RefCell;
 
 #[derive(Debug)]
@@ -82,6 +83,11 @@ impl Monitor {
         self.workspaces.get(&self.current_ws)
     }
 
+    pub fn get_current_layout(&self) -> Option<LayoutTag> {
+        let ret = self.get_current_ws()?.get_current_layout();
+        Some(ret)
+    }
+
     pub fn remove_ws(&mut self, ws: u32) -> Option<Workspace> {
         self.workspaces.remove(&ws)
     }
@@ -136,7 +142,7 @@ impl Monitor {
             .layout
             .move_window(&screen, &dock_area, w, true, x, y)
     }
-    
+
     pub fn reorder(&mut self, windows: &Vec<WindowWrapper>) -> Vec<Rect> {
         let screen = self.screen.clone();
         let dock_area = self.dock_area.clone();

@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-
 use crate::{
     models::{rect::*, screen::*, windowwrapper::*, workspace::*, HandleState, WindowState},
     state::State,
@@ -248,3 +247,4 @@ pub fn get_monitor_by_point(state: &State, x: i32, y: i32) -> MonitorId {
         None => state.current_monitor,
     }
 }
+
