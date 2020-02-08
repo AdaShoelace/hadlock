@@ -1,6 +1,7 @@
 #![allow(unused_imports)]
 use {
     crate::{
+        layout::LayoutTag,
         config::CONFIG,
         models::{rect::*, window_type::WindowType, windowwrapper::*, HandleState, WindowState},
         state::State,
@@ -29,19 +30,16 @@ impl Reducer<action::MotionNotify> for State {
                 .handle_state
                 .replace(HandleState::Focus);
         }
+    
+        let layout = self.monitors
+            .get(&self.current_monitor)
+            .expect("MotionNotify - monitor - get - check layout")
+            .get_current_layout()
+            .expect("MotionNotify - monitor - get_current_layout");
 
-        let drag_pos = Position {
-            x: action.x_root,
-            y: action.y_root,
-        };
-        let (delta_x, delta_y) = (
-            drag_pos.x - self.drag_start_pos.0,
-            drag_pos.y - self.drag_start_pos.1,
-        );
-        let dest_pos = Position {
-            x: self.drag_start_frame_pos.0 + delta_x,
-            y: self.drag_start_frame_pos.1 + delta_y,
-        };
+        if layout != LayoutTag::Floating { return }
+        
+        let new_pos = calculcate_destination(self, &action);
 
         if (action.state & (Button1Mask | Mod4Mask)) == Button1Mask | Mod4Mask {
             if action.win == self.lib.get_root() {
@@ -61,10 +59,7 @@ impl Reducer<action::MotionNotify> for State {
                     .expect("MotionNotify - old_mon - get_mut")
                     .add_window(action.win, ww);
             }
-            let new_pos = Position {
-                x: dest_pos.x,
-                y: dest_pos.y,
-            };
+
             let (pos, _) = self
                 .monitors
                 .get_mut(&self.current_monitor)
@@ -83,4 +78,21 @@ impl Reducer<action::MotionNotify> for State {
             return;
         }
     }
+}
+
+fn calculcate_destination(state: &State, action: &action::MotionNotify) -> Position {
+
+        let drag_pos = Position {
+            x: action.x_root,
+            y: action.y_root,
+        };
+        let (delta_x, delta_y) = (
+            drag_pos.x - state.drag_start_pos.0,
+            drag_pos.y - state.drag_start_pos.1,
+        );
+        let dest_pos = Position {
+            x: state.drag_start_frame_pos.0 + delta_x,
+            y: state.drag_start_frame_pos.1 + delta_y,
+        };
+        dest_pos
 }
