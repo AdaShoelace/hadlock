@@ -22,9 +22,15 @@ impl Workspace {
             tag,
             clients: Default::default(),
             layout: Box::new(floating::Floating::default()),
+            //layout: Box::new(column_master::ColumnMaster::default()),
             available_layouts: vec![LayoutTag::Floating, LayoutTag::ColumnMaster],
             current_tag: LayoutTag::Floating,
+            //current_tag: LayoutTag::ColumnMaster,
         }
+    }
+    
+    pub fn get_current_layout(&self) -> LayoutTag {
+        self.current_tag
     }
 
     pub fn circulate_layout(&mut self) {

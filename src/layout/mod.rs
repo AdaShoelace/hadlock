@@ -3,7 +3,7 @@
 pub mod floating;
 pub mod column_master;
 
-use crate::models::{dockarea::DockArea, screen::Screen, windowwrapper::WindowWrapper, Direction};
+use crate::models::{dockarea::DockArea, screen::Screen, windowwrapper::WindowWrapper, Direction, rect::Rect};
 use crate::xlibwrapper::util::{Position, Size};
 use crate::xlibwrapper::xlibmodels::Window;
 
@@ -25,7 +25,7 @@ impl std::fmt::Display for LayoutTag {
 
 pub trait Layout: std::fmt::Debug + std::fmt::Display {
 
-    fn place_window(&self, dock_area: &DockArea, screen: &Screen, w: Window, windows: Vec<&WindowWrapper>) -> (Size, Position) {
+    fn place_window(&mut self, dock_area: &DockArea, screen: &Screen, w: Window, windows: Vec<&WindowWrapper>) -> (Size, Position) {
         unimplemented!();
     }
 
@@ -49,6 +49,10 @@ pub trait Layout: std::fmt::Debug + std::fmt::Display {
         y: i32,
     ) -> (Position, Position) {
         unimplemented!();
+    }
+    
+    fn reorder(&self, screen: &Screen, dock_area: &DockArea, windows: Vec<WindowWrapper>) -> Vec<Rect> {
+        unimplemented!()
     }
 
     fn resize_window(

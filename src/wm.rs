@@ -117,20 +117,20 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
             x: mon.screen.x + (mon.screen.width / 2),
             y: mon.screen.y + (mon.screen.height / 2),
         });
-        mon.handle_state.replace(HandleState::Focus);
+        mon.handle_state.replace(HandleState::Focus.into());
         return Some(());
     }
 
     let mut old_ws = mon.remove_ws(mon.current_ws).expect("Should be here..");
     old_ws.clients.values_mut().for_each(|client| {
-        client.handle_state.replace(HandleState::Unmap);
+        client.handle_state.replace(HandleState::Unmap.into());
     });
     mon.add_ws(old_ws);
 
     if mon.contains_ws(ws) {
         let mut new_ws = mon.remove_ws(ws).expect("Should also be here");
         new_ws.clients.values_mut().for_each(|client| {
-            client.handle_state.replace(HandleState::Map);
+            client.handle_state.replace(HandleState::Map.into());
         });
         debug!("swithcing to ws: {:?}", new_ws);
         mon.add_ws(new_ws);

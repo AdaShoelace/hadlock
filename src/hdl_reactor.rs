@@ -36,96 +36,112 @@ impl Reactor<State> for HdlReactor {
             mon.workspaces.iter().for_each(|(_key, ws)| {
                 //debug!("ws {} has len: {}", key, ws.clients.len());
                 ws.clients.iter().for_each(|(key, val)| {
-                    let handle_state = *val.handle_state.borrow();
-                    match handle_state {
-                        HandleState::New => {
-                            self.lib.add_to_save_set(*key);
-                            self.lib.add_to_root_net_client_list(*key);
-                            debug!("BorderWidth on new: {}", CONFIG.border_width);
-                            self.lib.set_border_width(*key, CONFIG.border_width as u32);
-                            self.lib.move_window(*key, val.get_position());
-                            if !(val.is_trans) {
-                                let old_size = val.get_size();
-                                let new_size = Size {
-                                    width: old_size.width - 2 * CONFIG.border_width,
-                                    height: old_size.height - 2 * CONFIG.border_width,
-                                };
-                                self.lib.resize_window(*key, new_size);
+                    let mut set_handled = false;
+                    let handle_state = val.handle_state.clone();
+                    handle_state
+                        .into_inner()
+                        .iter()
+                        .for_each(|handle_state| match handle_state {
+                            HandleState::New => {
+                                self.lib.add_to_save_set(*key);
+                                self.lib.add_to_root_net_client_list(*key);
+                                debug!("BorderWidth on new: {}", CONFIG.border_width);
+                                self.lib.set_border_width(*key, CONFIG.border_width as u32);
+                                self.lib.move_window(*key, val.get_position());
+                                if !(val.is_trans) {
+                                    let old_size = val.get_size();
+                                    let new_size = Size {
+                                        width: old_size.width - 2 * CONFIG.border_width,
+                                        height: old_size.height - 2 * CONFIG.border_width,
+                                    };
+                                    self.lib.resize_window(*key, new_size);
+                                }
+                                self.subscribe_to_events(*key);
+                                debug!("Mapping: {}", *key);
+                                self.lib.map_window(*key);
+                                set_handled = true;
+                                //val.handle_state.replace(HandleState::Handled.into());
                             }
-                            self.subscribe_to_events(*key);
-                            debug!("Mapping: {}", *key);
-                            self.lib.map_window(*key);
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Map => {
-                            self.lib.move_window(*key, val.get_position());
-                            self.lib.map_window(*key);
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Unmap => {
-                            self.lib.unmap_window(*key);
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Move => {
-                            self.lib.move_window(*key, val.get_position());
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Center => {
-                            self.lib.move_window(*key, val.get_position());
-                            self.lib.resize_window(*key, val.get_size());
-                            self.lib.raise_window(*key);
-                            self.set_focus(*key, val);
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Resize => {
-                            debug!("Resize in reactor");
-                            self.lib.resize_window(*key, val.get_size());
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Focus => {
-                            debug!("Focus");
-                            self.set_focus(*key, &val);
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Unfocus => {
-                            debug!("Unfocus");
-                            self.unset_focus(*key, &val);
-                            val.handle_state.replace(HandleState::Handled);
-                            let _ = self.tx.send(());
-                        }
-                        HandleState::Shift => {
-                            self.lib.move_window(*key, val.get_position());
-                            self.lib.resize_window(*key, val.get_size());
-                            self.lib.center_cursor(*key);
-                            self.set_focus(*key, val);
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Maximize | HandleState::Monocle => {
-                            self.lib.move_window(*key, val.get_position());
-                            self.lib.resize_window(*key, val.get_size());
-                            self.set_focus(*key, &val);
-                            self.lib.set_border_width(*key, 0);
-                            self.lib.raise_window(*key);
-                            self.lib.center_cursor(*key);
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::MaximizeRestore | HandleState::MonocleRestore => {
-                            self.lib.move_window(*key, val.get_position());
-                            self.lib.resize_window(*key, val.get_size());
-                            self.set_focus(*key, &val);
-                            self.lib.center_cursor(*key);
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Destroy => {
-                            let windows = state
-                                .monitors
-                                .get(&state.current_monitor)
-                                .expect("HdlReactor - Destroy")
-                                .get_current_windows();
-                            self.kill_window(*key, windows);
-                        }
-                        _ => (),
-                    }
+                            HandleState::Map => {
+                                self.lib.move_window(*key, val.get_position());
+                                self.lib.map_window(*key);
+                                set_handled = true;
+                                //val.handle_state.replace(HandleState::Handled.into());
+                            }
+                            HandleState::Unmap => {
+                                self.lib.unmap_window(*key);
+                                set_handled = true;
+                                //val.handle_state.replace(HandleState::Handled.into());
+                            }
+                            HandleState::Move => {
+                                self.lib.move_window(*key, val.get_position());
+                                set_handled = true;
+                                //val.handle_state.replace(HandleState::Handled.into());
+                            }
+                            HandleState::Center => {
+                                self.lib.move_window(*key, val.get_position());
+                                self.lib.resize_window(*key, val.get_size());
+                                self.lib.raise_window(*key);
+                                self.set_focus(*key, val);
+                                set_handled = true;
+                                //val.handle_state.replace(HandleState::Handled.into());
+                            }
+                            HandleState::Resize => {
+                                debug!("Resize in reactor");
+                                self.lib.resize_window(*key, val.get_size());
+                                set_handled = true;
+                                //val.handle_state.replace(HandleState::Handled.into());
+                            }
+                            HandleState::Focus => {
+                                debug!("Focus");
+                                self.set_focus(*key, &val);
+                                set_handled = true;
+                                //val.handle_state.replace(HandleState::Handled.into());
+                            }
+                            HandleState::Unfocus => {
+                                debug!("Unfocus");
+                                self.unset_focus(*key, &val);
+                                set_handled = true;
+                                //val.handle_state.replace(HandleState::Handled.into());
+                                let _ = self.tx.send(());
+                            }
+                            HandleState::Shift => {
+                                self.lib.move_window(*key, val.get_position());
+                                self.lib.resize_window(*key, val.get_size());
+                                self.lib.center_cursor(*key);
+                                self.set_focus(*key, val);
+                                set_handled = true;
+                                //val.handle_state.replace(HandleState::Handled.into());
+                            }
+                            HandleState::Maximize | HandleState::Monocle => {
+                                self.lib.move_window(*key, val.get_position());
+                                self.lib.resize_window(*key, val.get_size());
+                                self.set_focus(*key, &val);
+                                self.lib.set_border_width(*key, 0);
+                                self.lib.raise_window(*key);
+                                self.lib.center_cursor(*key);
+                                set_handled = true;
+                                //val.handle_state.replace(HandleState::Handled.into());
+                            }
+                            HandleState::MaximizeRestore | HandleState::MonocleRestore => {
+                                self.lib.move_window(*key, val.get_position());
+                                self.lib.resize_window(*key, val.get_size());
+                                self.set_focus(*key, &val);
+                                self.lib.center_cursor(*key);
+                                set_handled = true;
+                                //val.handle_state.replace(HandleState::Handled.into());
+                            }
+                            HandleState::Destroy => {
+                                let windows = state
+                                    .monitors
+                                    .get(&state.current_monitor)
+                                    .expect("HdlReactor - Destroy")
+                                    .get_current_windows();
+                                self.kill_window(*key, windows);
+                            }
+                            _ => (),
+                        });
+                    val.handle_state.replace(HandleState::Handled.into());
                 });
                 self.lib.flush();
             });
@@ -171,7 +187,7 @@ impl HdlReactor {
     fn grab_keys(&self, w: Window) {
         let _keys = vec![
             "q", "Left", "Up", "Right", "Down", "Return", "f", "e", "c", "h", "j", "k", "l", "d",
-            "1", "2", "3", "4", "5", "6", "7", "8", "9",
+            "r", "1", "2", "3", "4", "5", "6", "7", "8", "9",
         ]
         .iter()
         .map(|key| keysym_lookup::into_keysym(key).expect("Core: no such key"))
