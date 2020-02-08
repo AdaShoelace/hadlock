@@ -2,6 +2,7 @@
 use {
     crate::{
         config::CONFIG,
+        layout::LayoutTag,
         models::{
             rect::*, window_type::WindowType, windowwrapper::*, Direction, HandleState, WindowState,
         },
@@ -175,9 +176,7 @@ fn managed_client(
                     .show();
                 match notify_res {
                     Ok(_) => (),
-                    Err(e) => {
-                        warn!("Error showing notification: {}", e)
-                    }
+                    Err(e) => warn!("Error showing notification: {}", e),
                 }
             }
             _ => {
@@ -235,21 +234,30 @@ fn managed_client(
             }
             HDLKeysym::XK_d => {
                 spawn_process("dmenu_recency", vec![]);
-            },
+            }
 
             HDLKeysym::XK_r => {
                 let mon = state.monitors.get_mut(&state.current_monitor)?;
-                let windows = mon.get_current_ws()?.clients.values().map(|x| x.clone() ).collect::<Vec<WindowWrapper>>().clone();
+                if mon.get_current_ws()?.get_current_layout() != LayoutTag::Floating {
+                    return Some(());
+                }
+                let windows = mon
+                    .get_current_ws()?
+                    .clients
+                    .values()
+                    .map(|x| x.clone())
+                    .collect::<Vec<WindowWrapper>>()
+                    .clone();
                 let mut rects = mon.reorder(&windows);
                 windows
                     .into_iter()
-                    .map(|win| {
-                        WindowWrapper {
-                            window_rect: rects.remove(0),
-                            handle_state: vec![HandleState::Move, HandleState::Resize].into(),
-                            ..win
-                        } 
-                    }).for_each(|win| {
+                    .map(|win| WindowWrapper {
+                        window_rect: rects.remove(0),
+                        current_state: WindowState::Free,
+                        handle_state: vec![HandleState::Move, HandleState::Resize].into(),
+                        ..win
+                    })
+                    .for_each(|win| {
                         mon.remove_window(win.window());
                         mon.add_window(win.window(), win)
                     });
@@ -275,13 +283,40 @@ fn root(
 ) -> Option<()> {
     let keycode = action.keycode as u8;
     if mod_not_shift {
-        if state.lib.str_to_keycode("Return")? == keycode {
-            spawn_process(CONFIG.term.as_str(), vec![]);
-        }
-        if state.lib.str_to_keycode("d")? == keycode {
-            //debug!("dmenu_run");
-            spawn_process("dmenu_recency", vec![]);
-            return Some(());
+        match into_hdl_keysym(&state.lib.keycode_to_key_sym(keycode)) {
+            HDLKeysym::XK_Return => {
+                spawn_process(CONFIG.term.as_str(), vec![]);
+            }
+            HDLKeysym::XK_d => {
+                spawn_process("dmenu_recency", vec![]);
+            }
+            HDLKeysym::XK_r => {
+                let mon = state.monitors.get_mut(&state.current_monitor)?;
+                if mon.get_current_ws()?.get_current_layout() != LayoutTag::Floating {
+                    return Some(());
+                }
+                let windows = mon
+                    .get_current_ws()?
+                    .clients
+                    .values()
+                    .map(|x| x.clone())
+                    .collect::<Vec<WindowWrapper>>()
+                    .clone();
+                let mut rects = mon.reorder(&windows);
+                windows
+                    .into_iter()
+                    .map(|win| WindowWrapper {
+                        window_rect: rects.remove(0),
+                        current_state: WindowState::Free,
+                        handle_state: vec![HandleState::Move, HandleState::Resize].into(),
+                        ..win
+                    })
+                    .for_each(|win| {
+                        mon.remove_window(win.window());
+                        mon.add_window(win.window(), win)
+                    });
+            }
+            _ => (),
         }
 
         match ws_keys.contains(&keycode) {
@@ -293,8 +328,11 @@ fn root(
         }
     }
     if mod_and_shift {
-        if state.lib.str_to_keycode("e")? == keycode {
-            state.lib.exit();
+        match into_hdl_keysym(&state.lib.keycode_to_key_sym(keycode)) {
+            HDLKeysym::XK_e => {
+                state.lib.exit();
+            }
+            _ => (),
         }
     }
     Some(())
