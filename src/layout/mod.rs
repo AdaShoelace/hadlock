@@ -25,7 +25,7 @@ impl std::fmt::Display for LayoutTag {
 
 pub trait Layout: std::fmt::Debug + std::fmt::Display {
 
-    fn place_window(&mut self, dock_area: &DockArea, screen: &Screen, w: Window, windows: Vec<&WindowWrapper>) -> (Size, Position) {
+    fn place_window(&mut self, dock_area: &DockArea, screen: &Screen, w: Window, windows: Vec<&WindowWrapper>) -> Vec<(Window, Rect)> {
         unimplemented!();
     }
 
@@ -92,7 +92,7 @@ pub trait Layout: std::fmt::Debug + std::fmt::Display {
         dock_area: &DockArea,
         w: Window,
         direction: Direction,
-    ) -> (Position, Size) {
+    ) -> Vec<WindowWrapper> {
         unimplemented!();
     }
 }

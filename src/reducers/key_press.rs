@@ -209,15 +209,19 @@ fn managed_client(
             HDLKeysym::XK_c => {
                 let mon = state.monitors.get_mut(&state.current_monitor)?;
                 let ww = mon.remove_window(state.focus_w)?;
-                let (pos, size) = mon.place_window(ww.window());
-                let new_ww = WindowWrapper {
-                    window_rect: Rect::new(size, pos),
-                    previous_state: ww.current_state,
-                    current_state: WindowState::Free,
-                    handle_state: HandleState::Center.into(),
-                    ..ww
-                };
-                mon.add_window(state.focus_w, new_ww);
+                let windows = mon.place_window(ww.window());
+
+                for win in windows.into_iter() {
+                    let ww = mon.remove_window(win.0)?;
+                    let new_ww = WindowWrapper {
+                        window_rect: win.1,
+                        previous_state: ww.current_state,
+                        current_state: WindowState::Free,
+                        handle_state: HandleState::Center.into(),
+                        ..ww
+                    };
+                    mon.add_window(state.focus_w, new_ww);
+                }
             }
             HDLKeysym::XK_d => {
                 spawn_process("dmenu_recency", vec![]);
@@ -287,16 +291,18 @@ fn root(
 fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;
 
-    let (pos, size) = mon.shift_window(state.focus_w, direction);
-    let ww = mon.remove_window(state.focus_w)?;
-    let ww = WindowWrapper {
-        window_rect: Rect::new(pos, size),
-        previous_state: ww.current_state,
-        current_state: WindowState::Snapped,
-        handle_state: HandleState::Shift.into(),
-        ..ww
-    };
-    mon.add_window(state.focus_w, ww);
+    let windows = mon.shift_window(state.focus_w, direction);
+
+    for win in windows.into_iter() {
+        let ww = mon.remove_window(win.window())?;
+        let ww = WindowWrapper {
+            previous_state: ww.current_state,
+            current_state: WindowState::Snapped,
+            handle_state: HandleState::Shift.into(),
+            ..win
+        };
+        mon.add_window(win.window(), ww);
+    }
     Some(())
 }
 

@@ -47,7 +47,7 @@ impl Layout for Floating {
         screen: &Screen,
         w: Window,
         windows: Vec<&WindowWrapper>,
-    ) -> (Size, Position) {
+    ) -> Vec<(Window, Rect)> {
         let new_size = Size {
             width: (screen.width / 10) * 8,
             height: (screen.height / 10) * 6,
@@ -60,12 +60,12 @@ impl Layout for Floating {
             dh =
                 ((screen.height + dock_rect.get_size().height as i32) - new_size.height as i32) / 2;
         }
-        let ret = Position {
+        let new_pos = Position {
             x: screen.x + dw,
             y: screen.y + dh,
         };
 
-        (new_size, ret)
+        vec![(w, Rect::new(new_pos, new_size))]
     }
 
     fn place_window_relative(
@@ -135,7 +135,13 @@ impl Layout for Floating {
             ),
         };
 
-        let win_size_x = (space_rect.get_size().width / windows.len() as i32) - 2 * CONFIG.border_width;
+        let win_size_x = (space_rect.get_size().width
+            / if windows.len() > 0 {
+                windows.len() as i32
+            } else {
+                1
+            })
+            - 2 * CONFIG.border_width;
         let win_size_y = space_rect.get_size().height - 2 * CONFIG.border_width;
 
         windows
@@ -233,7 +239,7 @@ impl Layout for Floating {
         dock_area: &DockArea,
         w: Window,
         direction: Direction,
-    ) -> (Position, Size) {
+    ) -> Vec<WindowWrapper> {
         let origin = Position {
             x: screen.x,
             y: screen.y,
@@ -259,7 +265,10 @@ impl Layout for Floating {
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     size.height -= dock.get_size().height / 2
                 }
-                (pos, size)
+                vec![WindowWrapper {
+                    window_rect: Rect::new(pos, size),
+                    ..ww.clone()
+                }]
             }
             Direction::East => {
                 let pos = self
@@ -288,7 +297,10 @@ impl Layout for Floating {
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     size.height -= dock.get_size().height;
                 }
-                (pos, size)
+                vec![WindowWrapper {
+                    window_rect: Rect::new(pos, size),
+                    ..ww.clone()
+                }]
             }
             Direction::West => {
                 let pos = self
@@ -310,7 +322,10 @@ impl Layout for Floating {
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     size.height -= dock.get_size().height;
                 }
-                (pos, size)
+                vec![WindowWrapper {
+                    window_rect: Rect::new(pos, size),
+                    ..ww.clone()
+                }]
             }
             Direction::South => {
                 let mut pos = self
@@ -341,7 +356,10 @@ impl Layout for Floating {
                     size.height -= offset;
                     pos.y += offset as i32;
                 }
-                (pos, size)
+                vec![WindowWrapper {
+                    window_rect: Rect::new(pos, size),
+                    ..ww.clone()
+                }]
             }
         }
     }

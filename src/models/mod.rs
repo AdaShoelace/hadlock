@@ -14,7 +14,7 @@ pub enum WindowState {
     Maximized,
     Monocle,
     Free,
-    _Tiled,
+    Tiled,
 }
 
 #[derive(Clone, Copy, Debug)]
