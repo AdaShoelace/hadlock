@@ -162,40 +162,51 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
     };
 
     if ws == mon.current_ws {
-        let (size, pos) = mon.place_window(w);
-        let new_ww = WindowWrapper {
-            restore_position: pos,
-            window_rect: Rect::new(pos, size),
-            handle_state: HandleState::Map.into(),
-            ..ww
-        };
-        mon.add_window(w, new_ww);
+        let windows = mon.place_window(w);
+
+        windows.into_iter().for_each(|(_, rect)| {
+            let new_ww = WindowWrapper {
+                restore_position: rect.get_position(),
+                window_rect: rect,
+                handle_state: HandleState::Map.into(),
+                ..ww
+            };
+            mon.add_window(w, new_ww);
+        });
+
         state.lib.unmap_window(w);
         return Some(());
     }
 
     if mon.contains_ws(ws) {
         let mut old_ws = mon.remove_ws(ws)?;
-        let (size, pos) = mon.place_window(w);
-        let new_ww = WindowWrapper {
-            restore_position: pos,
-            window_rect: Rect::new(pos, size),
-            handle_state: HandleState::Map.into(),
-            ..ww
-        };
-        old_ws.add_window(w, new_ww);
+        let windows = mon.place_window(w);
+        windows.into_iter().for_each(|(_, rect)| {
+            let new_ww = WindowWrapper {
+                restore_position: rect.get_position(),
+                window_rect: rect,
+                handle_state: HandleState::Map.into(),
+                ..ww
+            };
+            old_ws.add_window(w, new_ww);
+        });
+
         mon.add_ws(old_ws);
         state.lib.unmap_window(w);
     } else {
         let mut new_ws = Workspace::new(ws);
-        let (size, pos) = mon.place_window(w);
-        let new_ww = WindowWrapper {
-            restore_position: pos,
-            window_rect: Rect::new(pos, size),
-            handle_state: HandleState::Map.into(),
-            ..ww
-        };
-        new_ws.add_window(w, new_ww);
+        let windows = mon.place_window(w);
+
+        windows.into_iter().for_each(|(_, rect)| {
+            let new_ww = WindowWrapper {
+                restore_position: rect.get_position(),
+                window_rect: rect,
+                handle_state: HandleState::Map.into(),
+                ..ww
+            };
+            new_ws.add_window(w, new_ww);
+        });
+
         mon.add_ws(new_ws);
         state.lib.unmap_window(w);
     }
@@ -247,4 +258,3 @@ pub fn get_monitor_by_point(state: &State, x: i32, y: i32) -> MonitorId {
         None => state.current_monitor,
     }
 }
-

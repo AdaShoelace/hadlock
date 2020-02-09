@@ -125,7 +125,7 @@ impl Monitor {
         self.workspaces.get(&self.current_ws)?.clients.get(&w)
     }
 
-    pub fn place_window(&mut self, w: Window) -> (Size, Position) {
+    pub fn place_window(&mut self, w: Window) -> Vec<(Window, Rect)> {
         let screen = self.screen.clone();
         let dock_area = self.dock_area.clone();
         let ws = self.get_current_ws_mut().expect("monitor: place_window 2");
@@ -181,7 +181,7 @@ impl Monitor {
             .monocle(&screen, &dock_area, &ww, w)
     }
 
-    pub fn shift_window(&mut self, w: Window, direction: Direction) -> (Position, Size) {
+    pub fn shift_window(&mut self, w: Window, direction: Direction) -> Vec<WindowWrapper> {
         let ww = self.get_client(w).expect("monitor: shift_window 1").clone();
         let screen = self.screen.clone();
         let dock_area = self.dock_area.clone();
