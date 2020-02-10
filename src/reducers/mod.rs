@@ -5,6 +5,7 @@ mod configure_request;
 mod destroy_notify;
 mod enter_notify;
 mod focus;
+mod update_layout;
 mod key_press;
 mod leave_notify;
 mod map_request;

@@ -51,7 +51,7 @@ pub trait Layout: std::fmt::Debug + std::fmt::Display {
         unimplemented!();
     }
     
-    fn reorder(&self, screen: &Screen, dock_area: &DockArea, windows: Vec<WindowWrapper>) -> Vec<Rect> {
+    fn reorder(&mut self, focus: Window, screen: &Screen, dock_area: &DockArea, windows: Vec<WindowWrapper>) -> Vec<Rect> {
         unimplemented!()
     }
 

@@ -107,7 +107,8 @@ impl Layout for Floating {
     }
 
     fn reorder(
-        &self,
+        &mut self,
+        focus: Window,
         screen: &Screen,
         dock_area: &DockArea,
         windows: Vec<WindowWrapper>,

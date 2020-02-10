@@ -98,15 +98,15 @@ impl Layout for ColumnMaster {
     ) -> Vec<(Window, Rect)> {
         self.update_column(&windows);
         match self.master {
-            Some(m) => self.column.push(m),
+            Some(m) => {
+                if m != w {
+                    self.column.push(m);
+                    self.master = Some(w);
+                }
+            }
             None => (),
         }
         let (mut max_size, max_pos) = self.column_maximize(w, screen, dock_area);
-        let ww_map = windows
-            .iter()
-            .map(|ww| (ww.window(), *ww))
-            .collect::<std::collections::HashMap<Window, &WindowWrapper>>();
-
         let dock_height = match dock_area.as_rect(screen) {
             Some(dock) => dock.get_size().height,
             None => 0,
@@ -117,7 +117,6 @@ impl Layout for ColumnMaster {
 
         match self.master {
             Some(master) => {
-                self.master = Some(w);
                 max_size.width = max_size.width / 2;
                 let mut ret_vec: Vec<(Window, Rect)> = vec![];
                 ret_vec.push((self.master.unwrap(), Rect::new(max_pos, max_size)));
@@ -135,7 +134,8 @@ impl Layout for ColumnMaster {
                     };
                     let pos = Position {
                         x: column_x,
-                        y: ((index as i32 * column_height) + index as i32 * 2 * CONFIG.border_width)
+                        y: ((index as i32 * column_height)
+                            + index as i32 * 2 * CONFIG.border_width)
                             + dock_height,
                     };
                     ret_vec.push((*win, Rect::new(pos, size)));
@@ -143,6 +143,7 @@ impl Layout for ColumnMaster {
                 ret_vec
             }
             None => {
+                debug!("No master!");
                 self.master = Some(w);
                 vec![(w, Rect::new(max_pos, max_size))]
             }
@@ -188,12 +189,32 @@ impl Layout for ColumnMaster {
     }
 
     fn reorder(
-        &self,
+        &mut self,
+        mut focus: Window,
         screen: &Screen,
         dock_area: &DockArea,
         windows: Vec<WindowWrapper>,
     ) -> Vec<Rect> {
-        vec![]
+        let wins = windows.clone();
+        let win_borrow = wins
+            .iter()
+            .filter(|x| x.window() != focus)
+            .collect::<Vec<&WindowWrapper>>();
+        self.update_column(&win_borrow);
+        if let Some(master) = self.master {
+            if master == focus {
+                focus = master;
+            }
+        }
+        debug!("Column - reorder - column content: {:?}", self.column);
+        windows.into_iter().for_each(|win| {
+            self.place_window(dock_area, screen, win.window(), win_borrow.clone());
+        });
+
+        self.place_window(dock_area, screen, focus, win_borrow)
+            .into_iter()
+            .map(|(_, rect)| rect)
+            .collect::<Vec<Rect>>()
     }
 
     fn resize_window(

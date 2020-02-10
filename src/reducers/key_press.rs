@@ -228,7 +228,16 @@ fn managed_client(
             }
 
             HDLKeysym::XK_r => {
-                reorder(state);
+                let current_layout = state
+                    .monitors
+                    .get(&state.current_monitor)
+                    .expect("Key_press - reorder - get_mon")
+                    .get_current_ws()
+                    .expect("Key_press - reorder - get_current_ws")
+                    .get_current_layout();
+                if current_layout == LayoutTag::Floating {
+                    reorder(state);
+                }
             }
             _ => {
                 if ws_keys.contains(&keycode) {
@@ -259,7 +268,16 @@ fn root(
                 spawn_process("dmenu_recency", vec![]);
             }
             HDLKeysym::XK_r => {
-                reorder(state);
+                let current_layout = state
+                    .monitors
+                    .get(&state.current_monitor)
+                    .expect("Key_press - reorder - get_mon")
+                    .get_current_ws()
+                    .expect("Key_press - reorder - get_current_ws")
+                    .get_current_layout();
+                if current_layout == LayoutTag::Floating {
+                    reorder(state);
+                }
             }
             _ => (),
         }
@@ -291,6 +309,10 @@ fn root(
 fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;
 
+    if mon.get_current_ws()?.get_current_layout() != LayoutTag::Floating {
+        return Some(());
+    }
+
     let windows = mon.shift_window(state.focus_w, direction);
 
     for win in windows.into_iter() {
@@ -308,9 +330,12 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
 
 fn reorder(state: &mut State) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;
-    if mon.get_current_ws()?.get_current_layout() != LayoutTag::Floating {
-        return Some(());
-    }
+    let current_state = if mon.get_current_ws()?.get_current_layout() == LayoutTag::Floating {
+        WindowState::Free
+    } else {
+        WindowState::Tiled
+    };
+
     let windows = mon
         .get_current_ws()?
         .clients
@@ -318,14 +343,21 @@ fn reorder(state: &mut State) -> Option<()> {
         .map(|x| x.clone())
         .collect::<Vec<WindowWrapper>>()
         .clone();
-    let mut rects = mon.reorder(&windows);
+    if state.focus_w == state.lib.get_root() {
+        return None;
+    }
+    let mut rects = mon.reorder(state.focus_w, &windows);
     windows
         .into_iter()
-        .map(|win| WindowWrapper {
-            window_rect: rects.remove(0),
-            current_state: WindowState::Free,
-            handle_state: vec![HandleState::Move, HandleState::Resize].into(),
-            ..win
+        .enumerate()
+        .map(|(index, win)| {
+            debug!("iteration: {}, rect.len: {}", index, rects.len());
+            WindowWrapper {
+                window_rect: rects.remove(0),
+                current_state,
+                handle_state: vec![HandleState::Move, HandleState::Resize].into(),
+                ..win
+            }
         })
         .for_each(|win| {
             mon.remove_window(win.window());

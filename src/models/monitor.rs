@@ -143,13 +143,13 @@ impl Monitor {
             .move_window(&screen, &dock_area, w, true, x, y)
     }
 
-    pub fn reorder(&mut self, windows: &Vec<WindowWrapper>) -> Vec<Rect> {
+    pub fn reorder(&mut self, focus: Window, windows: &Vec<WindowWrapper>) -> Vec<Rect> {
         let screen = self.screen.clone();
         let dock_area = self.dock_area.clone();
         self.get_current_ws_mut()
             .expect("Monitor: reorder")
             .layout
-            .reorder(&screen, &dock_area, windows.clone())
+            .reorder(focus, &screen, &dock_area, windows.clone())
     }
 
     pub fn resize_window(&mut self, w: Window, width: i32, height: i32) -> (Size, Size) {
