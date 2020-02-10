@@ -5,6 +5,7 @@ pub mod screen;
 pub mod window_type;
 pub mod windowwrapper;
 pub mod workspace;
+pub mod internal_action;
 
 use std::cell::RefCell;
 

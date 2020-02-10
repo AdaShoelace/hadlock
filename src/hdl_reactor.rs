@@ -1,6 +1,6 @@
 use {
     crate::config::CONFIG,
-    crate::models::{windowwrapper::*, HandleState, WindowState},
+    crate::models::{windowwrapper::*, HandleState, WindowState, internal_action},
     crate::state::*,
     crate::{
         xlibwrapper::core::XlibWrapper,
@@ -14,7 +14,7 @@ use {
 
 pub struct HdlReactor {
     lib: Rc<XlibWrapper>,
-    tx: Sender<()>,
+    tx: Sender<internal_action::InternalAction>,
 }
 
 impl Reactor<State> for HdlReactor {
@@ -74,6 +74,7 @@ impl Reactor<State> for HdlReactor {
                                 //val.handle_state.replace(HandleState::Handled.into());
                             }
                             HandleState::Move => {
+                                debug!("Move pos: {:?}", val.get_position());
                                 self.lib.move_window(*key, val.get_position());
                                 set_handled = true;
                                 //val.handle_state.replace(HandleState::Handled.into());
@@ -103,7 +104,7 @@ impl Reactor<State> for HdlReactor {
                                 self.unset_focus(*key, &val);
                                 set_handled = true;
                                 //val.handle_state.replace(HandleState::Handled.into());
-                                let _ = self.tx.send(());
+                                let _ = self.tx.send(internal_action::InternalAction::Focus);
                             }
                             HandleState::Shift => {
                                 self.lib.move_window(*key, val.get_position());
@@ -121,7 +122,6 @@ impl Reactor<State> for HdlReactor {
                                 self.lib.raise_window(*key);
                                 self.lib.center_cursor(*key);
                                 set_handled = true;
-                                //val.handle_state.replace(HandleState::Handled.into());
                             }
                             HandleState::MaximizeRestore | HandleState::MonocleRestore => {
                                 self.lib.move_window(*key, val.get_position());
@@ -129,7 +129,6 @@ impl Reactor<State> for HdlReactor {
                                 self.set_focus(*key, &val);
                                 self.lib.center_cursor(*key);
                                 set_handled = true;
-                                //val.handle_state.replace(HandleState::Handled.into());
                             }
                             HandleState::Destroy => {
                                 let windows = state
@@ -138,6 +137,7 @@ impl Reactor<State> for HdlReactor {
                                     .expect("HdlReactor - Destroy")
                                     .get_current_windows();
                                 self.kill_window(*key, windows);
+                                let _ = self.tx.send(internal_action::InternalAction::UpdateLayout);
                             }
                             _ => (),
                         });
@@ -149,7 +149,7 @@ impl Reactor<State> for HdlReactor {
     }
 }
 impl HdlReactor {
-    pub fn new(lib: Rc<XlibWrapper>, tx: Sender<()>) -> Self {
+    pub fn new(lib: Rc<XlibWrapper>, tx: Sender<internal_action::InternalAction>) -> Self {
         Self { lib, tx }
     }
 

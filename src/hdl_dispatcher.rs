@@ -1,5 +1,6 @@
 use {
     crate::hdl_reactor::HdlReactor,
+    crate::models::internal_action,
     crate::state::State,
     crate::xlibwrapper::core::XlibWrapper,
     crate::xlibwrapper::{action, xlibmodels::*},
@@ -10,7 +11,7 @@ use {
 };
 
 pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
-    let (tx, rx) = channel::<()>();
+    let (tx, rx) = channel::<internal_action::InternalAction>();
     let state = State::new(xlib.clone());
     let mut store = Store::new(state, HdlReactor::new(xlib.clone(), tx));
 
@@ -97,7 +98,6 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
             action::KeyRelease{win: event.window, state: event.state, keycode: event.keycode};
             },*/
             xlib::MotionNotify => {
-
                 //debug!("motion");
 
                 let event = xlib::XMotionEvent::from(xevent);
@@ -152,12 +152,18 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
         }
 
         match rx.try_recv() {
-            Ok(_) => {
-                debug!("Motion dispatch focus");
-                if let Some(w) = xlib.window_under_pointer() {
-                    store.dispatch(action::Focus { win: w })
+            Ok(action) => match action {
+                internal_action::InternalAction::Focus => {
+                    debug!("Motion dispatch focus");
+                    if let Some(w) = xlib.window_under_pointer() {
+                        store.dispatch(action::Focus { win: w })
+                    }
+                },
+                internal_action::InternalAction::UpdateLayout => {
+                    debug!("UpdateLayout");
+                    store.dispatch(action::UpdateLayout)
                 }
-            }
+            },
             Err(_) => (),
         }
     }
