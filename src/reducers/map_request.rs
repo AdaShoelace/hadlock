@@ -118,11 +118,6 @@ impl Reducer<action::MapRequest> for State {
             .get_mut(&self.current_monitor)
             .expect("MapRequest: get_client_mut");
         if mon.contains_window(action.win) {
-            if mon.contains_window(action.parent) {
-                debug!("Child to existing window");
-                self.lib.map_window(action.win);
-                return;
-            }
             let ww = match mon.remove_window(action.win) {
                 Some(ww) => ww,
                 None => {
@@ -140,6 +135,11 @@ impl Reducer<action::MapRequest> for State {
             );
             return;
         } else {
+            if mon.contains_window(action.parent) {
+                debug!("Child to existing window");
+                self.lib.map_window(action.win);
+                return;
+            }
             let windows = mon.place_window(action.win);
             let _ = windows.into_iter().for_each(|(win, rect)| {
                 match mon.remove_window(win) {
