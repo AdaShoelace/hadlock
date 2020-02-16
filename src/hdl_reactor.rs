@@ -60,24 +60,20 @@ impl Reactor<State> for HdlReactor {
                                 debug!("Mapping: {}", *key);
                                 self.lib.map_window(*key);
                                 set_handled = true;
-                                //val.handle_state.replace(HandleState::Handled.into());
                             }
                             HandleState::Map => {
                                 self.lib.move_window(*key, val.get_position());
                                 self.lib.map_window(*key);
                                 set_handled = true;
-                                //val.handle_state.replace(HandleState::Handled.into());
                             }
                             HandleState::Unmap => {
                                 self.lib.unmap_window(*key);
                                 set_handled = true;
-                                //val.handle_state.replace(HandleState::Handled.into());
                             }
                             HandleState::Move => {
-                                debug!("Move pos: {:?}", val.get_position());
+                                //debug!("Move pos: {:?}", val.get_position());
                                 self.lib.move_window(*key, val.get_position());
                                 set_handled = true;
-                                //val.handle_state.replace(HandleState::Handled.into());
                             }
                             HandleState::Center => {
                                 self.lib.move_window(*key, val.get_position());
@@ -85,25 +81,21 @@ impl Reactor<State> for HdlReactor {
                                 self.lib.raise_window(*key);
                                 self.set_focus(*key, val);
                                 set_handled = true;
-                                //val.handle_state.replace(HandleState::Handled.into());
                             }
                             HandleState::Resize => {
                                 debug!("Resize in reactor");
                                 self.lib.resize_window(*key, val.get_size());
                                 set_handled = true;
-                                //val.handle_state.replace(HandleState::Handled.into());
                             }
                             HandleState::Focus => {
                                 debug!("Focus");
                                 self.set_focus(*key, &val);
                                 set_handled = true;
-                                //val.handle_state.replace(HandleState::Handled.into());
                             }
                             HandleState::Unfocus => {
                                 debug!("Unfocus");
                                 self.unset_focus(*key, &val);
                                 set_handled = true;
-                                //val.handle_state.replace(HandleState::Handled.into());
                                 let _ = self.tx.send(internal_action::InternalAction::Focus);
                             }
                             HandleState::Shift => {
@@ -112,7 +104,6 @@ impl Reactor<State> for HdlReactor {
                                 self.lib.center_cursor(*key);
                                 self.set_focus(*key, val);
                                 set_handled = true;
-                                //val.handle_state.replace(HandleState::Handled.into());
                             }
                             HandleState::Maximize | HandleState::Monocle => {
                                 self.lib.move_window(*key, val.get_position());
