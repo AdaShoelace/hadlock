@@ -208,9 +208,8 @@ fn managed_client(
             }
             HDLKeysym::XK_c => {
                 let mon = state.monitors.get_mut(&state.current_monitor)?;
-                let ww = mon.remove_window(state.focus_w)?;
-                let windows = mon.place_window(ww.window());
-
+                let windows = mon.place_window(state.focus_w);
+            
                 for win in windows.into_iter() {
                     let ww = mon.remove_window(win.0)?;
                     let new_ww = WindowWrapper {
@@ -220,7 +219,7 @@ fn managed_client(
                         handle_state: HandleState::Center.into(),
                         ..ww
                     };
-                    mon.add_window(state.focus_w, new_ww);
+                    mon.add_window(new_ww.window(), new_ww);
                 }
             }
             HDLKeysym::XK_d => {

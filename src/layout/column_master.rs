@@ -57,7 +57,8 @@ impl ColumnMaster {
         }
     }
 
-    fn update_column(&mut self, windows: &Vec<&WindowWrapper>) {
+    fn update_column(&mut self, w: Window, windows: &mut Vec<&WindowWrapper>) {
+
         let windows_keys = windows
             .iter()
             .map(|win| win.window())
@@ -96,14 +97,14 @@ impl Layout for ColumnMaster {
         w: Window,
         windows: Vec<&WindowWrapper>,
     ) -> Vec<(Window, Rect)> {
-        self.update_column(&windows);
+        self.update_column(w, &mut windows);
+        debug!("Column - place_window: {:?}", self.column);
         match self.master {
-            Some(m) => {
-                if m != w {
-                    self.column.push(m);
-                    self.master = Some(w);
-                }
+            Some(m) if m != w => {
+                self.column.push(m);
+                self.master = Some(w);
             }
+            Some(_) => return vec![],
             None => (),
         }
         let (mut max_size, max_pos) = self.column_maximize(w, screen, dock_area);
