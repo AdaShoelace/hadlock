@@ -141,6 +141,7 @@ impl Reducer<action::MapRequest> for State {
                 return;
             }
             let windows = mon.place_window(action.win);
+            debug!("Place in map_request: {:?}", windows);
             let _ = windows.into_iter().for_each(|(win, rect)| {
                 match mon.remove_window(win) {
                     Some(ww) => {
