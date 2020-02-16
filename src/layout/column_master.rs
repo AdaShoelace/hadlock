@@ -97,58 +97,7 @@ impl Layout for ColumnMaster {
         w: Window,
         windows: Vec<&WindowWrapper>,
     ) -> Vec<(Window, Rect)> {
-        self.update_column(w, &mut windows);
-        debug!("Column - place_window: {:?}", self.column);
-        match self.master {
-            Some(m) if m != w => {
-                self.column.push(m);
-                self.master = Some(w);
-            }
-            Some(_) => return vec![],
-            None => (),
-        }
-        let (mut max_size, max_pos) = self.column_maximize(w, screen, dock_area);
-        let dock_height = match dock_area.as_rect(screen) {
-            Some(dock) => dock.get_size().height,
-            None => 0,
-        };
-
-        let column_width = (screen.width / 2) - 2 * CONFIG.border_width;
-        let column_x = (screen.width / 2) + CONFIG.border_width;
-
-        match self.master {
-            Some(master) => {
-                max_size.width = max_size.width / 2;
-                let mut ret_vec: Vec<(Window, Rect)> = vec![];
-                ret_vec.push((self.master.unwrap(), Rect::new(max_pos, max_size)));
-                self.column.iter().enumerate().for_each(|(index, win)| {
-                    let column_height = ((screen.height - dock_height)
-                        / if self.column.len() > 0 {
-                            self.column.len() as i32
-                        } else {
-                            1
-                        })
-                        - 2 * CONFIG.border_width;
-                    let size = Size {
-                        width: column_width,
-                        height: column_height,
-                    };
-                    let pos = Position {
-                        x: column_x,
-                        y: ((index as i32 * column_height)
-                            + index as i32 * 2 * CONFIG.border_width)
-                            + dock_height,
-                    };
-                    ret_vec.push((*win, Rect::new(pos, size)));
-                });
-                ret_vec
-            }
-            None => {
-                debug!("No master!");
-                self.master = Some(w);
-                vec![(w, Rect::new(max_pos, max_size))]
-            }
-        }
+        vec![]
     }
 
     fn place_window_relative(
@@ -196,26 +145,7 @@ impl Layout for ColumnMaster {
         dock_area: &DockArea,
         windows: Vec<WindowWrapper>,
     ) -> Vec<Rect> {
-        let wins = windows.clone();
-        let win_borrow = wins
-            .iter()
-            .filter(|x| x.window() != focus)
-            .collect::<Vec<&WindowWrapper>>();
-        self.update_column(&win_borrow);
-        if let Some(master) = self.master {
-            if master == focus {
-                focus = master;
-            }
-        }
-        debug!("Column - reorder - column content: {:?}", self.column);
-        windows.into_iter().for_each(|win| {
-            self.place_window(dock_area, screen, win.window(), win_borrow.clone());
-        });
-
-        self.place_window(dock_area, screen, focus, win_borrow)
-            .into_iter()
-            .map(|(_, rect)| rect)
-            .collect::<Vec<Rect>>()
+        vec![]
     }
 
     fn resize_window(

@@ -209,7 +209,7 @@ fn managed_client(
             HDLKeysym::XK_c => {
                 let mon = state.monitors.get_mut(&state.current_monitor)?;
                 let windows = mon.place_window(state.focus_w);
-            
+
                 for win in windows.into_iter() {
                     let ww = mon.remove_window(win.0)?;
                     let new_ww = WindowWrapper {
@@ -342,20 +342,26 @@ fn reorder(state: &mut State) -> Option<()> {
         .map(|x| x.clone())
         .collect::<Vec<WindowWrapper>>()
         .clone();
+
     if state.focus_w == state.lib.get_root() {
         return None;
     }
-    let mut rects = mon.reorder(state.focus_w, &windows);
+
+    let rects = mon.reorder(state.focus_w, &windows);
+
+    let windows = windows
+        .into_iter()
+        .zip(rects.into_iter())
+        .collect::<Vec<(WindowWrapper, Rect)>>();
+
     windows
         .into_iter()
-        .enumerate()
-        .map(|(index, win)| {
-            debug!("iteration: {}, rect.len: {}", index, rects.len());
+        .map(|(ww, rect)| {
             WindowWrapper {
-                window_rect: rects.remove(0),
+                window_rect: rect,
                 current_state,
                 handle_state: vec![HandleState::Move, HandleState::Resize].into(),
-                ..win
+                ..ww
             }
         })
         .for_each(|win| {
