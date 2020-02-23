@@ -2,7 +2,7 @@ mod button_press;
 mod button_release;
 mod client_message_request;
 mod configure_request;
-mod destroy_notify;
+mod destroy;
 mod enter_notify;
 mod focus;
 mod update_layout;

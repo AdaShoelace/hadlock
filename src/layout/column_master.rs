@@ -10,12 +10,11 @@ use crate::{
         xlibmodels::*,
     },
 };
-use std::collections::LinkedList;
+use std::collections::VecDeque;
 
 #[derive(Debug)]
 pub struct ColumnMaster {
     layout_type: LayoutTag,
-    column: LinkedList<Window>,
 }
 
 impl ColumnMaster {
@@ -57,30 +56,20 @@ impl ColumnMaster {
         }
     }
 
-    fn update_column(&mut self, w: Window, windows: &mut Vec<&WindowWrapper>) {
-        let windows_keys = windows
-            .iter()
-            .map(|win| win.window())
-            .collect::<Vec<Window>>();
-        let new_column = self
-            .column
-            .iter()
-            .map(|win| *win)
-            .filter(|win| windows_keys.contains(win))
-            .collect::<LinkedList<Window>>();
-        self.column = new_column;
-        self.column.push_front(w);
-    }
-
-    fn column_height(&self, screen: &Screen, dock: &DockArea) -> i32 {
+    fn column_height(
+        &self,
+        screen: &Screen,
+        dock: &DockArea,
+        column: &VecDeque<&WindowWrapper>,
+    ) -> i32 {
         let dock_height = match dock.as_rect(screen) {
             Some(dock_rect) => dock_rect.get_size().height,
             None => 0,
         };
 
         ((screen.height - dock_height)
-            / if self.column.len() > 0 {
-                self.column.len() as i32
+            / if column.len() > 1 {
+                column.len() as i32
             } else {
                 1
             })
@@ -92,7 +81,6 @@ impl Default for ColumnMaster {
     fn default() -> Self {
         Self {
             layout_type: LayoutTag::ColumnMaster,
-            column: LinkedList::new(),
         }
     }
 }
@@ -109,9 +97,11 @@ impl Layout for ColumnMaster {
         dock_area: &DockArea,
         screen: &Screen,
         w: Window,
-        mut windows: Vec<&WindowWrapper>,
+        windows: Vec<&WindowWrapper>,
     ) -> Vec<(Window, Rect)> {
-        self.update_column(w, &mut windows);
+        debug!("Incoming window vector in column_master: {:#?}", windows);
+        let windows = windows.into_iter().collect::<VecDeque<&WindowWrapper>>();
+
         let dock_height = match dock_area.as_rect(screen) {
             Some(dock_rect) => dock_rect.get_size().height,
             None => 0,
@@ -120,44 +110,41 @@ impl Layout for ColumnMaster {
         let mut ret_vec = Vec::<(Window, Rect)>::new();
 
         let column_width = (screen.width / 2) - 2 * CONFIG.border_width;
-        let column_x = (screen.width / 2) + CONFIG.border_width;
-        
+        let column_x = screen.width / 2;
 
-        if self.column.len() == 1 {
+        if windows.is_empty() {
             let (size, pos) = self.column_maximize(w, &screen, &dock_area);
             ret_vec.push((w, Rect::new(pos, size)));
+            return ret_vec;
         } else {
             let size = Size {
                 width: column_width,
-                height: screen.height - dock_height,
+                height: screen.height - dock_height - 2 * CONFIG.border_width,
             };
             let pos = Position {
                 x: screen.x,
                 y: screen.y + dock_height,
             };
-            let first = self.column.front().unwrap();
-            ret_vec.push((*first, Rect::new(pos, size)));
-            let _ = self
-                .column
-                .iter()
-                .skip(1)
-                .map(|win| {
-                    (
-                        *win,
-                        Rect::new(
-                            Position {
-                                x: column_x,
-                                y: screen.y + dock_height,
-                            },
-                            Size {
-                                width: column_width,
-                                height: self.column_height(&screen, &dock_area),
-                            },
-                        ),
-                    )
-                })
-                .for_each(|tup| ret_vec.push(tup));
-        debug!("column_master column: {:?}", self.column);
+            for (index, win) in windows.iter().enumerate() {
+                let pos = Position {
+                    x: column_x,
+                    y: ((screen.y + dock_height)
+                        + self.column_height(&screen, &dock_area, &windows) * index as i32)
+                        + (2 * CONFIG.border_width) * index as i32,
+                };
+                let size = Size {
+                    width: column_width,
+                    height: self.column_height(&screen, &dock_area, &windows),
+                };
+                debug!(
+                    "Pushing w: {}, at pos: {:#?} with size: {:#?}",
+                    win.window(),
+                    pos,
+                    size
+                );
+                ret_vec.push((win.window(), Rect::new(pos, size)))
+            }
+            ret_vec.push((w, Rect::new(pos, size)));
         }
         ret_vec
     }
@@ -206,8 +193,15 @@ impl Layout for ColumnMaster {
         screen: &Screen,
         dock_area: &DockArea,
         windows: Vec<WindowWrapper>,
-    ) -> Vec<Rect> {
-        vec![]
+    ) -> Vec<(Window, Rect)> {
+        let mut windows = windows.iter().collect::<Vec<&WindowWrapper>>();
+
+        if windows.is_empty() {
+            return vec![];
+        } else {
+            let focus = windows.remove(0).window();
+            self.place_window(&dock_area, &screen, focus, windows)
+        }
     }
 
     fn resize_window(

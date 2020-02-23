@@ -57,6 +57,7 @@ impl Reducer<action::KeyPress> for State {
                 return;
             }
         }
+        //debug!("return from ")
     }
 }
 
@@ -164,7 +165,7 @@ fn managed_client(
             HDLKeysym::XK_l => {
                 debug!("should print layout type");
                 circulate_layout(state);
-                reorder(state);
+                wm::reorder(state);
             }
             _ => {
                 if ws_keys.contains(&keycode) {
@@ -235,7 +236,7 @@ fn managed_client(
                     .expect("Key_press - reorder - get_current_ws")
                     .get_current_layout();
                 if current_layout == LayoutTag::Floating {
-                    reorder(state);
+                    wm::reorder(state);
                 }
             }
             _ => {
@@ -275,7 +276,7 @@ fn root(
                     .expect("Key_press - reorder - get_current_ws")
                     .get_current_layout();
                 if current_layout == LayoutTag::Floating {
-                    reorder(state);
+                    wm::reorder(state);
                 }
             }
             _ => (),
@@ -297,7 +298,7 @@ fn root(
 
             HDLKeysym::XK_l => {
                 circulate_layout(state);
-                reorder(state);
+                wm::reorder(state);
             }
             _ => (),
         }
@@ -327,49 +328,6 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
     Some(())
 }
 
-fn reorder(state: &mut State) -> Option<()> {
-    let mon = state.monitors.get_mut(&state.current_monitor)?;
-    let current_state = if mon.get_current_ws()?.get_current_layout() == LayoutTag::Floating {
-        WindowState::Free
-    } else {
-        WindowState::Tiled
-    };
-
-    let windows = mon
-        .get_current_ws()?
-        .clients
-        .values()
-        .map(|x| x.clone())
-        .collect::<Vec<WindowWrapper>>()
-        .clone();
-
-    if state.focus_w == state.lib.get_root() {
-        return None;
-    }
-
-    let rects = mon.reorder(state.focus_w, &windows);
-
-    let windows = windows
-        .into_iter()
-        .zip(rects.into_iter())
-        .collect::<Vec<(WindowWrapper, Rect)>>();
-
-    windows
-        .into_iter()
-        .map(|(ww, rect)| {
-            WindowWrapper {
-                window_rect: rect,
-                current_state,
-                handle_state: vec![HandleState::Move, HandleState::Resize].into(),
-                ..ww
-            }
-        })
-        .for_each(|win| {
-            mon.remove_window(win.window());
-            mon.add_window(win.window(), win)
-        });
-    Some(())
-}
 
 fn circulate_layout(state: &mut State) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;

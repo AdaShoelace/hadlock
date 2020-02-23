@@ -84,7 +84,7 @@ pub struct Expose {
     pub win: Window,
 }
 
-pub struct DestroyNotify {
+pub struct Destroy {
     pub win: Window,
 }
 

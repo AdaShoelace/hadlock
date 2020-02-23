@@ -50,10 +50,10 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
             }
             xlib::MapRequest => {
                 let event = xlib::XMapRequestEvent::from(xevent);
-                debug!(
+                /*debug!(
                     "window type: {}",
                     xlib.get_window_type(event.window).get_name()
-                );
+                );*/
                 store.dispatch(action::MapRequest {
                     win: event.window,
                     parent: event.parent,
@@ -124,10 +124,10 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
             let event = xlib::XExposeEvent::from(xevent);
             action::Expose{win: event.window};
             },*/
-            xlib::DestroyNotify => {
+            /*xlib::DestroyNotify => {
                 let event = xlib::XDestroyWindowEvent::from(xevent);
                 store.dispatch(action::DestroyNotify { win: event.window })
-            }
+            }*/
             xlib::PropertyNotify => {
                 let event = xlib::XPropertyEvent::from(xevent);
                 action::PropertyNotify {
@@ -159,9 +159,15 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
                         store.dispatch(action::Focus { win: w })
                     }
                 },
+                internal_action::InternalAction::FocusSpecific(win) => {
+
+                },
                 internal_action::InternalAction::UpdateLayout => {
                     debug!("UpdateLayout");
                     store.dispatch(action::UpdateLayout)
+                },
+                internal_action::InternalAction::Destroy(win) => {
+                    store.dispatch(action::Destroy { win })
                 }
             },
             Err(_) => (),
