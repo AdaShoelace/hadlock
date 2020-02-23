@@ -112,7 +112,7 @@ impl Layout for Floating {
         screen: &Screen,
         dock_area: &DockArea,
         windows: Vec<WindowWrapper>,
-    ) -> Vec<Rect> {
+    ) -> Vec<(Window, Rect)> {
         let space_rect = match dock_area.as_rect(screen) {
             Some(dock) => Rect::new(
                 Position {
@@ -157,9 +157,9 @@ impl Layout for Floating {
                     width: win_size_x,
                     height: win_size_y,
                 };
-                Rect::new(pos, size)
+                (win.window(), Rect::new(pos, size))
             })
-            .collect::<Vec<Rect>>()
+            .collect::<Vec<(Window, Rect)>>()
     }
 
     fn resize_window(

@@ -143,7 +143,7 @@ impl Monitor {
             .move_window(&screen, &dock_area, w, true, x, y)
     }
 
-    pub fn reorder(&mut self, focus: Window, windows: &Vec<WindowWrapper>) -> Vec<Rect> {
+    pub fn reorder(&mut self, focus: Window, windows: &Vec<WindowWrapper>) -> Vec<(Window, Rect)> {
         let screen = self.screen.clone();
         let dock_area = self.dock_area.clone();
         self.get_current_ws_mut()

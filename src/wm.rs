@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use crate::{
+    layout::LayoutTag,
     models::{rect::*, screen::*, windowwrapper::*, workspace::*, HandleState, WindowState},
     state::State,
     xlibwrapper::{util::*, xlibmodels::*},
@@ -162,6 +163,7 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
     };
 
     if ws == mon.current_ws {
+        mon.add_window(w, ww.clone());
         let windows = mon.place_window(w);
 
         windows.into_iter().for_each(|(_, rect)| {
@@ -213,6 +215,67 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
 
     Some(())
 }
+
+
+pub fn reorder(state: &mut State) -> Option<()> {
+    let mon = state.monitors.get_mut(&state.current_monitor)?;
+    debug!("reorder focus: {}", state.focus_w);
+    let current_state = if mon.get_current_ws()?.get_current_layout() == LayoutTag::Floating {
+        WindowState::Free
+    } else {
+        WindowState::Tiled
+    };
+    
+
+    let windows = mon
+        .get_current_ws()?
+        .clients
+        .values()
+        .map(|x| x.clone())
+        .collect::<Vec<WindowWrapper>>()
+        .clone();
+
+    if state.focus_w == state.lib.get_root() {
+        debug!("reorder focus is root");
+        return None;
+    }
+
+    let rects = mon.reorder(state.focus_w, &windows);
+    
+    // TODO: straighten out this mess...
+
+    /*let windows = windows
+        .into_iter()
+        .zip(rects.into_iter().map(|(_, rect)| rect).collect::<Vec<Rect>>())
+        .collect::<Vec<(WindowWrapper, Rect)>>();*/
+
+    for (win, rect) in rects {
+        let ww = mon.remove_window(win)?;
+        let new_ww = WindowWrapper {
+            window_rect: rect,
+            current_state,
+            handle_state: vec![HandleState::Move, HandleState::Resize].into(),
+            ..ww
+        };
+        mon.add_window(win, new_ww);
+    }
+
+    /*let _ = windows
+        .into_iter()
+        .map(|(ww, rect)| WindowWrapper {
+            window_rect: rect,
+            current_state,
+            handle_state: vec![HandleState::Move, HandleState::Resize].into(),
+            ..ww
+        })
+        .for_each(|win| {
+            mon.remove_window(win.window());
+            mon.add_window(win.window(), win)
+        });*/
+        debug!("return from reorder");
+    Some(())
+}
+
 
 pub fn pointer_is_inside(state: &State, screen: &Screen) -> bool {
     let pointer_pos = state.lib.pointer_pos(state.focus_w);

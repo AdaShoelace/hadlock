@@ -45,7 +45,6 @@ impl Reactor<State> for HdlReactor {
                             HandleState::New => {
                                 self.lib.add_to_save_set(*key);
                                 self.lib.add_to_root_net_client_list(*key);
-                                debug!("BorderWidth on new: {}", CONFIG.border_width);
                                 self.lib.set_border_width(*key, CONFIG.border_width as u32);
                                 self.lib.move_window(*key, val.get_position());
                                 if !(val.is_trans) {
@@ -57,7 +56,7 @@ impl Reactor<State> for HdlReactor {
                                     self.lib.resize_window(*key, new_size);
                                 }
                                 self.subscribe_to_events(*key);
-                                debug!("Mapping: {}", *key);
+                                //debug!("Mapping: {}", *key);
                                 self.lib.map_window(*key);
                                 set_handled = true;
                             }
@@ -83,17 +82,17 @@ impl Reactor<State> for HdlReactor {
                                 set_handled = true;
                             }
                             HandleState::Resize => {
-                                debug!("Resize in reactor");
+                                //debug!("Resize in reactor");
                                 self.lib.resize_window(*key, val.get_size());
                                 set_handled = true;
                             }
                             HandleState::Focus => {
-                                debug!("Focus");
+                                //debug!("Focus");
                                 self.set_focus(*key, &val);
                                 set_handled = true;
                             }
                             HandleState::Unfocus => {
-                                debug!("Unfocus");
+                                //debug!("Unfocus");
                                 self.unset_focus(*key, &val);
                                 set_handled = true;
                                 let _ = self.tx.send(internal_action::InternalAction::Focus);
@@ -127,7 +126,11 @@ impl Reactor<State> for HdlReactor {
                                     .get(&state.current_monitor)
                                     .expect("HdlReactor - Destroy")
                                     .get_current_windows();
+                                debug!("Destroying: {}", key);
                                 self.kill_window(*key, windows);
+                                debug!("Vec after destroy: {:?}", state.monitors.get(&state.current_monitor).unwrap().get_current_windows());
+                                let _ = self.tx.send(internal_action::InternalAction::Focus);
+                                let _ = self.tx.send(internal_action::InternalAction::Destroy(*key));
                                 let _ = self.tx.send(internal_action::InternalAction::UpdateLayout);
                             }
                             _ => (),
@@ -196,7 +199,7 @@ impl HdlReactor {
         let (class, _name) = self.lib.get_class_hint(focus);
 
         if class != "firefox" || ww.is_trans {
-            debug!("name: {}", class);
+            //debug!("name: {}", class);
             self.lib.take_focus(focus);
         }
         if !(ww.current_state == WindowState::Monocle || ww.current_state == WindowState::Maximized)

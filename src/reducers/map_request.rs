@@ -136,12 +136,13 @@ impl Reducer<action::MapRequest> for State {
             return;
         } else {
             if mon.contains_window(action.parent) {
-                debug!("Child to existing window");
+                //debug!("Child to existing window");
                 self.lib.map_window(action.win);
                 return;
             }
             let windows = mon.place_window(action.win);
-            debug!("Place in map_request: {:?}", windows);
+            //debug!("Place in map_request: {:?}", windows);
+            debug!("Windows in mon before place_window: {:?}", mon.get_current_ws().unwrap().clients.keys().collect::<Vec<&Window>>());
             let _ = windows.into_iter().for_each(|(win, rect)| {
                 match mon.remove_window(win) {
                     Some(ww) => {
@@ -158,6 +159,7 @@ impl Reducer<action::MapRequest> for State {
                     }
                 };
             });
+            debug!("Windows in mon after place_window: {:?}", mon.get_current_ws().unwrap().clients.keys().collect::<Vec<&Window>>());
         }
     }
 }
