@@ -14,8 +14,8 @@ use {
     std::rc::Rc,
 };
 
-impl Reducer<action::DestroyNotify> for State {
-    fn reduce(&mut self, action: action::DestroyNotify) {
+impl Reducer<action::Destroy> for State {
+    fn reduce(&mut self, action: action::Destroy) {
         //debug!("DestroyNotify");
         if action.win == self.lib.get_root() {
             return;

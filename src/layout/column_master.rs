@@ -12,11 +12,11 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct Floating {
+pub struct ColumnMaster {
     layout_type: LayoutTag,
 }
 
-impl Floating {
+impl ColumnMaster {
     fn get_size(ww: &WindowWrapper, size: (Size, Size)) -> Size {
         if ww.is_decorated() {
             size.0
@@ -24,23 +24,73 @@ impl Floating {
             size.1
         }
     }
+
+    fn column_maximize(
+        &self,
+        w: Window,
+        screen: &Screen,
+        dock_area: &DockArea,
+    ) -> (Size, Position) {
+        match dock_area.as_rect(screen) {
+            Some(dock) => (
+                Size {
+                    width: screen.width - 2 * CONFIG.border_width,
+                    height: screen.height - dock.get_size().height - 2 * CONFIG.border_width,
+                },
+                Position {
+                    x: screen.x,
+                    y: screen.y + dock.get_size().height,
+                },
+            ),
+            None => (
+                Size {
+                    width: screen.width - 2 * CONFIG.border_width,
+                    height: screen.height + 2 * CONFIG.border_width,
+                },
+                Position {
+                    x: screen.x,
+                    y: screen.y,
+                },
+            ),
+        }
+    }
+
+    fn column_height(
+        &self,
+        screen: &Screen,
+        dock: &DockArea,
+        column: &Vec<&WindowWrapper>,
+    ) -> i32 {
+        let dock_height = match dock.as_rect(screen) {
+            Some(dock_rect) => dock_rect.get_size().height,
+            None => 0,
+        };
+
+        ((screen.height - dock_height)
+            / if column.len() > 1 {
+                column.len() as i32
+            } else {
+                1
+            })
+            - 2 * CONFIG.border_width
+    }
 }
 
-impl Default for Floating {
+impl Default for ColumnMaster {
     fn default() -> Self {
         Self {
-            layout_type: LayoutTag::Floating,
+            layout_type: LayoutTag::ColumnMaster,
         }
     }
 }
 
-impl std::fmt::Display for Floating {
+impl std::fmt::Display for ColumnMaster {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.layout_type)
     }
 }
 
-impl Layout for Floating {
+impl Layout for ColumnMaster {
     fn place_window(
         &mut self,
         dock_area: &DockArea,
@@ -48,24 +98,55 @@ impl Layout for Floating {
         w: Window,
         windows: Vec<&WindowWrapper>,
     ) -> Vec<(Window, Rect)> {
-        let new_size = Size {
-            width: (screen.width / 10) * 8,
-            height: (screen.height / 10) * 6,
+        debug!("Incoming window vector in column_master: {:#?}", windows);
+        let windows = windows.into_iter().collect::<Vec<&WindowWrapper>>();
+
+        let dock_height = match dock_area.as_rect(screen) {
+            Some(dock_rect) => dock_rect.get_size().height,
+            None => 0,
         };
 
-        let dw = (screen.width - new_size.width as i32) / 2;
-        let mut dh = (screen.height - new_size.height as i32) / 2;
+        let mut ret_vec = Vec::<(Window, Rect)>::new();
 
-        if let Some(dock_rect) = dock_area.as_rect(&screen) {
-            dh =
-                ((screen.height + dock_rect.get_size().height as i32) - new_size.height as i32) / 2;
+        let column_width = (screen.width / 2) - 2 * CONFIG.border_width;
+        let column_x = screen.width / 2;
+
+        if windows.is_empty() {
+            let (size, pos) = self.column_maximize(w, &screen, &dock_area);
+            ret_vec.push((w, Rect::new(pos, size)));
+            return ret_vec;
+        } else {
+            let size = Size {
+                width: column_width,
+                height: screen.height - dock_height - 2 * CONFIG.border_width,
+            };
+            let pos = Position {
+                x: screen.x,
+                y: screen.y + dock_height,
+            };
+            let windows = windows.into_iter().filter(|win| w != win.window()).collect::<Vec<&WindowWrapper>>();
+            for (index, win) in windows.iter().enumerate() {
+                let pos = Position {
+                    x: column_x,
+                    y: ((screen.y + dock_height)
+                        + self.column_height(&screen, &dock_area, &windows) * index as i32)
+                        + (2 * CONFIG.border_width) * index as i32,
+                };
+                let size = Size {
+                    width: column_width,
+                    height: self.column_height(&screen, &dock_area, &windows),
+                };
+                /*debug!(
+                    "Pushing w: {}, at pos: {:#?} with size: {:#?}",
+                    win.window(),
+                    pos,
+                    size
+                );*/
+                ret_vec.push((win.window(), Rect::new(pos, size)))
+            }
+            ret_vec.push((w, Rect::new(pos, size)));
         }
-        let new_pos = Position {
-            x: screen.x + dw,
-            y: screen.y + dh,
-        };
-
-        vec![(w, Rect::new(new_pos, new_size))]
+        ret_vec
     }
 
     fn place_window_relative(
@@ -113,53 +194,14 @@ impl Layout for Floating {
         dock_area: &DockArea,
         windows: Vec<WindowWrapper>,
     ) -> Vec<(Window, Rect)> {
-        let space_rect = match dock_area.as_rect(screen) {
-            Some(dock) => Rect::new(
-                Position {
-                    x: screen.x,
-                    y: screen.y + dock.get_size().height,
-                },
-                Size {
-                    width: screen.width,
-                    height: screen.height - dock.get_size().height,
-                },
-            ),
-            None => Rect::new(
-                Position {
-                    x: screen.x,
-                    y: screen.y,
-                },
-                Size {
-                    width: screen.width,
-                    height: screen.height,
-                },
-            ),
-        };
+        let mut windows = windows.iter().collect::<Vec<&WindowWrapper>>();
 
-        let win_size_x = (space_rect.get_size().width
-            / if windows.len() > 0 {
-                windows.len() as i32
-            } else {
-                1
-            })
-            - 2 * CONFIG.border_width;
-        let win_size_y = space_rect.get_size().height - 2 * CONFIG.border_width;
-
-        windows
-            .iter()
-            .enumerate()
-            .map(|(index, win)| {
-                let pos = Position {
-                    x: (index as i32 * win_size_x) + index as i32 * (2 * CONFIG.border_width),
-                    y: space_rect.get_position().y,
-                };
-                let size = Size {
-                    width: win_size_x,
-                    height: win_size_y,
-                };
-                (win.window(), Rect::new(pos, size))
-            })
-            .collect::<Vec<(Window, Rect)>>()
+        if windows.is_empty() {
+            return vec![];
+        } else {
+            let focus = windows.remove(0).window();
+            self.place_window(&dock_area, &screen, focus, windows)
+        }
     }
 
     fn resize_window(
@@ -199,7 +241,7 @@ impl Layout for Floating {
         let pos = self.move_window(screen, dock_area, w, true, screen.x, screen.y);
         match dock_area.as_rect(&screen) {
             Some(dock) => {
-                let size = Floating::get_size(
+                let size = ColumnMaster::get_size(
                     &ww,
                     self.resize_window(
                         &ww,
@@ -211,7 +253,7 @@ impl Layout for Floating {
                 (pos.0, size)
             }
             None => {
-                let size = Floating::get_size(
+                let size = ColumnMaster::get_size(
                     &ww,
                     self.resize_window(&ww, w, screen.width, screen.height),
                 );
@@ -229,7 +271,8 @@ impl Layout for Floating {
     ) -> (Position, Size) {
         // TODO: implement for decorated windows
         let pos = self.move_window(screen, dock_area, w, false, screen.x, screen.y);
-        let size = Floating::get_size(&ww, self.resize_window(&ww, w, screen.width, screen.height));
+        let size =
+            ColumnMaster::get_size(&ww, self.resize_window(&ww, w, screen.width, screen.height));
         (pos.0, size)
     }
 
@@ -261,8 +304,10 @@ impl Layout for Floating {
                         height: (screen.height) / 2 - 2 * CONFIG.border_width,
                     }
                 };
-                let mut size =
-                    Floating::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
+                let mut size = ColumnMaster::get_size(
+                    &ww,
+                    self.resize_window(&ww, w, size.width, size.height),
+                );
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     size.height -= dock.get_size().height / 2
                 }
@@ -293,8 +338,10 @@ impl Layout for Floating {
                         height: screen.height - CONFIG.border_width,
                     }
                 };
-                let mut size =
-                    Floating::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
+                let mut size = ColumnMaster::get_size(
+                    &ww,
+                    self.resize_window(&ww, w, size.width, size.height),
+                );
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     size.height -= dock.get_size().height;
                 }
@@ -318,8 +365,10 @@ impl Layout for Floating {
                         height: (screen.height) - CONFIG.border_width,
                     }
                 };
-                let mut size =
-                    Floating::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
+                let mut size = ColumnMaster::get_size(
+                    &ww,
+                    self.resize_window(&ww, w, size.width, size.height),
+                );
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     size.height -= dock.get_size().height;
                 }
@@ -350,8 +399,10 @@ impl Layout for Floating {
                         height: (screen.height) / 2 - CONFIG.border_width,
                     }
                 };
-                let mut size =
-                    Floating::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
+                let mut size = ColumnMaster::get_size(
+                    &ww,
+                    self.resize_window(&ww, w, size.width, size.height),
+                );
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     let offset = dock.get_size().height / 2;
                     size.height -= offset;

@@ -37,7 +37,7 @@ impl Reducer<action::ClientMessageRequest> for State {
             .expect("client_message_request: cleanupt");
 
         if action.message_type == self.lib.xatom.NetWMState {
-            debug!("{}", &format!("msg_type: {}", self.lib.xatom.get_name(data_one as u64)))
+            //debug!("{}", &format!("msg_type: {}", self.lib.xatom.get_name(data_one as u64)))
         };
 
         //debug!("ClientMessageRequest: {}, data 1: {}, data 2: {} ", name, self.lib.xatom.get_name(data_one as u64), self.lib.xatom.get_name(data_two as u64));

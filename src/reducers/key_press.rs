@@ -2,8 +2,9 @@
 use {
     crate::{
         config::CONFIG,
+        layout::LayoutTag,
         models::{
-            rect::*, window_type::WindowType, windowwrapper::*, Direction, HandleState, WindowState,
+            rect::*, window_type::WindowType, windowwrapper::*, Direction, HandleState, WindowState, internal_action
         },
         state::State,
         wm,
@@ -14,6 +15,7 @@ use {
         xlibwrapper::util::*,
         xlibwrapper::xlibmodels::*,
     },
+    notify_rust::{Notification, Timeout},
     reducer::*,
     std::cell::RefCell,
     std::process::Command,
@@ -55,6 +57,7 @@ impl Reducer<action::KeyPress> for State {
                 return;
             }
         }
+        //debug!("return from ")
     }
 }
 
@@ -71,7 +74,7 @@ fn managed_client(
     if mod_not_shift && state.lib.str_to_keycode("Return")? == keycode {
         spawn_process(CONFIG.term.as_str(), vec![]);
     }
-
+    let resize = state.monitors.get(&state.current_monitor)?.get_current_layout()? == LayoutTag::Floating;
     if mod_and_shift {
         let old_size = state
             .monitors
@@ -79,7 +82,8 @@ fn managed_client(
             .get_client(state.focus_w)?
             .get_size();
         match into_hdl_keysym(&state.lib.keycode_to_key_sym(keycode)) {
-            HDLKeysym::XK_Right => {
+
+            HDLKeysym::XK_Right => if resize {
                 let mon = state.monitors.get_mut(&state.current_monitor)?;
 
                 let (_dec_size, size) =
@@ -93,7 +97,7 @@ fn managed_client(
                 mon.add_window(state.focus_w, new_ww);
             }
 
-            HDLKeysym::XK_Left => {
+            HDLKeysym::XK_Left => if resize {
                 let mon = state.monitors.get_mut(&state.current_monitor)?;
 
                 let (_dec_size, size) =
@@ -107,7 +111,7 @@ fn managed_client(
                 mon.add_window(state.focus_w, new_ww);
             }
 
-            HDLKeysym::XK_Down => {
+            HDLKeysym::XK_Down => if resize {
                 let mon = state.monitors.get_mut(&state.current_monitor)?;
 
                 let (_dec_size, size) =
@@ -121,7 +125,8 @@ fn managed_client(
                 mon.add_window(state.focus_w, new_ww);
             }
 
-            HDLKeysym::XK_Up => {
+            HDLKeysym::XK_Up => if resize {
+
                 let mon = state.monitors.get_mut(&state.current_monitor)?;
                 let (_dec_size, size) =
                     mon.resize_window(state.focus_w, old_size.width, old_size.height - 10);
@@ -140,7 +145,9 @@ fn managed_client(
                     .get_mut(&state.current_monitor)?
                     .get_client_mut(state.focus_w)?;
 
-                ww.handle_state.replace(HandleState::Destroy);
+
+                ww.handle_state.replace(HandleState::Destroy.into());
+
             }
 
             HDLKeysym::XK_e => {
@@ -158,10 +165,19 @@ fn managed_client(
                     .get_mut(&state.current_monitor)?
                     .add_window(state.focus_w, new_ww);
             }
+
+
+            HDLKeysym::XK_l => {
+                debug!("should print layout type");
+                circulate_layout(state);
+                wm::reorder(state);
+            }
+
             _ => {
                 if ws_keys.contains(&keycode) {
                     let ws_num = keycode_to_ws(keycode);
                     wm::move_to_ws(state, state.focus_w, ws_num);
+                    wm::reorder(state);
                     wm::set_current_ws(state, ws_num)?;
                 }
             }
@@ -200,20 +216,38 @@ fn managed_client(
             }
             HDLKeysym::XK_c => {
                 let mon = state.monitors.get_mut(&state.current_monitor)?;
-                let ww = mon.remove_window(state.focus_w)?;
-                let (pos, size) = mon.place_window(ww.window());
-                let new_ww = WindowWrapper {
-                    window_rect: Rect::new(size, pos),
-                    previous_state: ww.current_state,
-                    current_state: WindowState::Free,
-                    handle_state: HandleState::Center.into(),
-                    ..ww
-                };
-                mon.add_window(state.focus_w, new_ww);
+                let windows = mon.place_window(state.focus_w);
+
+                for win in windows.into_iter() {
+                    let ww = mon.remove_window(win.0)?;
+                    let new_ww = WindowWrapper {
+                        window_rect: win.1,
+                        previous_state: ww.current_state,
+                        current_state: WindowState::Free,
+                        handle_state: HandleState::Center.into(),
+                        ..ww
+                    };
+                    mon.add_window(new_ww.window(), new_ww);
+                }
+
             }
             HDLKeysym::XK_d => {
                 spawn_process("dmenu_recency", vec![]);
             }
+
+            HDLKeysym::XK_r => {
+                let current_layout = state
+                    .monitors
+                    .get(&state.current_monitor)
+                    .expect("Key_press - reorder - get_mon")
+                    .get_current_ws()
+                    .expect("Key_press - reorder - get_current_ws")
+                    .get_current_layout();
+                if current_layout == LayoutTag::Floating {
+                    wm::reorder(state);
+                }
+            }
+
             _ => {
                 if ws_keys.contains(&keycode) {
                     //debug!("mod_not_shift switch ws");
@@ -235,13 +269,26 @@ fn root(
 ) -> Option<()> {
     let keycode = action.keycode as u8;
     if mod_not_shift {
-        if state.lib.str_to_keycode("Return")? == keycode {
-            spawn_process(CONFIG.term.as_str(), vec![]);
-        }
-        if state.lib.str_to_keycode("d")? == keycode {
-            //debug!("dmenu_run");
-            spawn_process("dmenu_recency", vec![]);
-            return Some(());
+        match into_hdl_keysym(&state.lib.keycode_to_key_sym(keycode)) {
+            HDLKeysym::XK_Return => {
+                spawn_process(CONFIG.term.as_str(), vec![]);
+            }
+            HDLKeysym::XK_d => {
+                spawn_process("dmenu_recency", vec![]);
+            }
+            HDLKeysym::XK_r => {
+                let current_layout = state
+                    .monitors
+                    .get(&state.current_monitor)
+                    .expect("Key_press - reorder - get_mon")
+                    .get_current_ws()
+                    .expect("Key_press - reorder - get_current_ws")
+                    .get_current_layout();
+                if current_layout == LayoutTag::Floating {
+                    wm::reorder(state);
+                }
+            }
+            _ => (),
         }
 
         match ws_keys.contains(&keycode) {
@@ -253,8 +300,16 @@ fn root(
         }
     }
     if mod_and_shift {
-        if state.lib.str_to_keycode("e")? == keycode {
-            state.lib.exit();
+        match into_hdl_keysym(&state.lib.keycode_to_key_sym(keycode)) {
+            HDLKeysym::XK_e => {
+                state.lib.exit();
+            }
+
+            HDLKeysym::XK_l => {
+                circulate_layout(state);
+                wm::reorder(state);
+            }
+            _ => (),
         }
     }
     Some(())
@@ -263,17 +318,44 @@ fn root(
 fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;
 
-    let (pos, size) = mon.shift_window(state.focus_w, direction);
-    let ww = mon.remove_window(state.focus_w)?;
-    let ww = WindowWrapper {
-        window_rect: Rect::new(pos, size),
-        previous_state: ww.current_state,
-        current_state: WindowState::Snapped,
-        handle_state: HandleState::Shift.into(),
-        ..ww
-    };
-    mon.add_window(state.focus_w, ww);
+    if mon.get_current_ws()?.get_current_layout() != LayoutTag::Floating {
+        return Some(());
+    }
+
+    let windows = mon.shift_window(state.focus_w, direction);
+
+    for win in windows.into_iter() {
+        let ww = mon.remove_window(win.window())?;
+        let ww = WindowWrapper {
+            previous_state: ww.current_state,
+            current_state: WindowState::Snapped,
+            handle_state: HandleState::Shift.into(),
+            ..win
+        };
+        mon.add_window(win.window(), ww);
+    }
     Some(())
+}
+
+
+fn circulate_layout(state: &mut State) -> Option<()> {
+    let mon = state.monitors.get_mut(&state.current_monitor)?;
+    let ws = mon.get_current_ws_mut()?;
+    ws.circulate_layout();
+
+    let notify_res = Notification::new()
+        .summary("Layout switched")
+        .body(&format!("New layout: {}", ws.layout))
+        .icon("firefox")
+        .timeout(Timeout::Milliseconds(3000))
+        .show();
+    match notify_res {
+        Ok(_) => Some(()),
+        Err(e) => {
+            warn!("Error showing notification: {}", e);
+            Some(())
+        }
+    }
 }
 
 fn keycode_to_ws(keycode: u8) -> u32 {

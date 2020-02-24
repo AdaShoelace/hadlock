@@ -25,9 +25,12 @@ impl Reducer<action::MapRequest> for State {
                     "Window type: {} is transient",
                     self.lib.get_window_type(action.win).get_name()
                 );
-                let trans_size = { 
+                let trans_size = {
                     let attr = self.lib.get_window_attributes(action.win);
-                    Size { width: attr.width, height: attr.height }
+                    Size {
+                        width: attr.width,
+                        height: attr.height,
+                    }
                 };
                 let mon = self
                     .monitors
@@ -45,7 +48,10 @@ impl Reducer<action::MapRequest> for State {
                     None if action.parent == self.lib.get_root() => {
                         let screen = mon.screen.clone();
                         let (pos, size) = (
-                            Position { x: screen.x, y: screen.y },
+                            Position {
+                                x: screen.x,
+                                y: screen.y,
+                            },
                             Size {
                                 width: screen.width as i32,
                                 height: screen.height as i32,
@@ -112,11 +118,6 @@ impl Reducer<action::MapRequest> for State {
             .get_mut(&self.current_monitor)
             .expect("MapRequest: get_client_mut");
         if mon.contains_window(action.win) {
-            if mon.contains_window(action.parent) {
-                debug!("Child to existing window");
-                self.lib.map_window(action.win);
-                return;
-            }
             let ww = match mon.remove_window(action.win) {
                 Some(ww) => ww,
                 None => {
@@ -134,11 +135,31 @@ impl Reducer<action::MapRequest> for State {
             );
             return;
         } else {
-            let (size, pos) = mon.place_window(action.win);
-            mon.add_window(
-                action.win,
-                WindowWrapper::new(action.win, Rect::new(pos, size), false),
-            );
+            if mon.contains_window(action.parent) {
+                //debug!("Child to existing window");
+                self.lib.map_window(action.win);
+                return;
+            }
+            let windows = mon.place_window(action.win);
+            //debug!("Place in map_request: {:?}", windows);
+            debug!("Windows in mon before place_window: {:?}", mon.get_current_ws().unwrap().clients.keys().collect::<Vec<&Window>>());
+            let _ = windows.into_iter().for_each(|(win, rect)| {
+                match mon.remove_window(win) {
+                    Some(ww) => {
+                        let ww = WindowWrapper {
+                            window_rect: rect,
+                            handle_state: vec![HandleState::Move, HandleState::Resize].into(),
+                            ..ww
+                        };
+                        mon.add_window(win, ww);
+                    }
+                    None => {
+                        let ww = WindowWrapper::new(action.win, rect, false);
+                        mon.add_window(action.win, ww);
+                    }
+                };
+            });
+            debug!("Windows in mon after place_window: {:?}", mon.get_current_ws().unwrap().clients.keys().collect::<Vec<&Window>>());
         }
     }
 }

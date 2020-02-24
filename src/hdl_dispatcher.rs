@@ -1,5 +1,6 @@
 use {
     crate::hdl_reactor::HdlReactor,
+    crate::models::internal_action,
     crate::state::State,
     crate::xlibwrapper::core::XlibWrapper,
     crate::xlibwrapper::{action, xlibmodels::*},
@@ -10,8 +11,8 @@ use {
 };
 
 pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
-    let (tx, rx) = channel::<()>();
-    let state = State::new(xlib.clone());
+    let (tx, rx) = channel::<internal_action::InternalAction>();
+    let state = State::new(xlib.clone(), tx.clone());
     let mut store = Store::new(state, HdlReactor::new(xlib.clone(), tx));
 
     //setup
@@ -49,10 +50,10 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
             }
             xlib::MapRequest => {
                 let event = xlib::XMapRequestEvent::from(xevent);
-                debug!(
+                /*debug!(
                     "window type: {}",
                     xlib.get_window_type(event.window).get_name()
-                );
+                );*/
                 store.dispatch(action::MapRequest {
                     win: event.window,
                     parent: event.parent,
@@ -97,7 +98,6 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
             action::KeyRelease{win: event.window, state: event.state, keycode: event.keycode};
             },*/
             xlib::MotionNotify => {
-
                 //debug!("motion");
 
                 let event = xlib::XMotionEvent::from(xevent);
@@ -124,10 +124,10 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
             let event = xlib::XExposeEvent::from(xevent);
             action::Expose{win: event.window};
             },*/
-            xlib::DestroyNotify => {
+            /*xlib::DestroyNotify => {
                 let event = xlib::XDestroyWindowEvent::from(xevent);
                 store.dispatch(action::DestroyNotify { win: event.window })
-            }
+            }*/
             xlib::PropertyNotify => {
                 let event = xlib::XPropertyEvent::from(xevent);
                 action::PropertyNotify {
@@ -152,12 +152,22 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
         }
 
         match rx.try_recv() {
-            Ok(_) => {
-                debug!("Motion dispatch focus");
-                if let Some(w) = xlib.window_under_pointer() {
-                    store.dispatch(action::Focus { win: w })
-                }
-            }
+            Ok(action) => match action {
+                internal_action::InternalAction::Focus => {
+                    //debug!("Motion dispatch focus");
+                    if let Some(w) = xlib.window_under_pointer() {
+                        store.dispatch(action::Focus { win: w })
+                    }
+                },
+                internal_action::InternalAction::UpdateLayout => {
+                    debug!("UpdateLayout");
+                    store.dispatch(action::UpdateLayout)
+                },
+                internal_action::InternalAction::Destroy(win) => {
+                    store.dispatch(action::Destroy { win })
+                },
+                _ => ()
+            },
             Err(_) => (),
         }
     }

@@ -1,9 +1,11 @@
 use {
     crate::models::{monitor::Monitor, windowwrapper::WindowWrapper, workspace::Workspace},
     crate::xlibwrapper::{core::*, xlibmodels::*},
+    crate::models::internal_action,
     derivative::*,
     std::collections::HashMap,
     std::rc::Rc,
+    std::sync::mpsc::Sender,
 };
 
 #[derive(Derivative)]
@@ -11,6 +13,7 @@ use {
 pub struct State {
     #[derivative(Debug = "ignore")]
     pub lib: Rc<XlibWrapper>,
+    pub tx: Sender<internal_action::InternalAction>,
     pub windows: HashMap<Window, WindowWrapper>,
     pub focus_w: Window,
     pub monitors: HashMap<MonitorId, Monitor>,
@@ -21,7 +24,7 @@ pub struct State {
 }
 
 impl State {
-    pub fn new(lib: Rc<XlibWrapper>) -> Self {
+    pub fn new(lib: Rc<XlibWrapper>, tx: Sender<internal_action::InternalAction>) -> Self {
         let focus_w = lib.get_root();
         let monitors = {
             let mut monitors = HashMap::default();
@@ -38,6 +41,7 @@ impl State {
         };
         Self {
             lib,
+            tx,
             windows: HashMap::default(),
             focus_w,
             monitors,

@@ -84,13 +84,15 @@ pub struct Expose {
     pub win: Window,
 }
 
-pub struct DestroyNotify {
+pub struct Destroy {
     pub win: Window,
 }
 
 pub struct Focus {
     pub win: Window,
 }
+
+pub struct UpdateLayout;
 
 pub struct ButtonReleased;
 

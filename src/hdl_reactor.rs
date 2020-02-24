@@ -1,6 +1,6 @@
 use {
     crate::config::CONFIG,
-    crate::models::{windowwrapper::*, HandleState, WindowState},
+    crate::models::{windowwrapper::*, HandleState, WindowState, internal_action},
     crate::state::*,
     crate::{
         xlibwrapper::core::XlibWrapper,
@@ -14,7 +14,7 @@ use {
 
 pub struct HdlReactor {
     lib: Rc<XlibWrapper>,
-    tx: Sender<()>,
+    tx: Sender<internal_action::InternalAction>,
 }
 
 impl Reactor<State> for HdlReactor {
@@ -30,102 +30,116 @@ impl Reactor<State> for HdlReactor {
                     debug!("Setting current monitor to: {}", state.current_monitor);
                     self.lib.update_desktops(mon.current_ws, None);
                     mon.handle_state.replace(HandleState::Handled);
+                },
+                HandleState::UpdateLayout => {
+                    debug!("layout shall be updated");
+                    let _ = self.tx.send(internal_action::InternalAction::UpdateLayout);
                 }
                 _ => (),
             }
-            mon.workspaces.iter().for_each(|(key, ws)| {
+            mon.workspaces.iter().for_each(|(_key, ws)| {
                 //debug!("ws {} has len: {}", key, ws.clients.len());
                 ws.clients.iter().for_each(|(key, val)| {
-                    let handle_state = *val.handle_state.borrow();
-                    match handle_state {
-                        HandleState::New => {
-                            self.lib.add_to_save_set(*key);
-                            self.lib.add_to_root_net_client_list(*key);
-                            debug!("BorderWidth on new: {}", CONFIG.border_width);
-                            self.lib.set_border_width(*key, CONFIG.border_width as u32);
-                            self.lib.move_window(*key, val.get_position());
-                            if !(val.is_trans) {
-                                let old_size = val.get_size();
-                                let new_size = Size {
-                                    width: old_size.width - 2 * CONFIG.border_width,
-                                    height: old_size.height - 2 * CONFIG.border_width,
-                                };
-                                self.lib.resize_window(*key, new_size);
+                    let mut set_handled = false;
+                    let handle_state = val.handle_state.clone();
+                    handle_state
+                        .into_inner()
+                        .iter()
+                        .for_each(|handle_state| match handle_state {
+                            HandleState::New => {
+                                self.lib.add_to_save_set(*key);
+                                self.lib.add_to_root_net_client_list(*key);
+                                self.lib.set_border_width(*key, CONFIG.border_width as u32);
+                                self.lib.move_window(*key, val.get_position());
+                                if !(val.is_trans) {
+                                    let old_size = val.get_size();
+                                    let new_size = Size {
+                                        width: old_size.width - 2 * CONFIG.border_width,
+                                        height: old_size.height - 2 * CONFIG.border_width,
+                                    };
+                                    self.lib.resize_window(*key, new_size);
+                                }
+                                self.subscribe_to_events(*key);
+                                //debug!("Mapping: {}", *key);
+                                self.lib.map_window(*key);
+                                set_handled = true;
                             }
-                            self.subscribe_to_events(*key);
-                            debug!("Mapping: {}", *key);
-                            self.lib.map_window(*key);
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Map => {
-                            self.lib.move_window(*key, val.get_position());
-                            self.lib.map_window(*key);
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Unmap => {
-                            self.lib.unmap_window(*key);
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Move => {
-                            self.lib.move_window(*key, val.get_position());
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Center => {
-                            self.lib.move_window(*key, val.get_position());
-                            self.lib.resize_window(*key, val.get_size());
-                            self.lib.raise_window(*key);
-                            self.set_focus(*key, val);
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Resize => {
-                            debug!("Resize in reactor");
-                            self.lib.resize_window(*key, val.get_size());
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Focus => {
-                            debug!("Focus");
-                            self.set_focus(*key, &val);
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Unfocus => {
-                            debug!("Unfocus");
-                            self.unset_focus(*key, &val);
-                            val.handle_state.replace(HandleState::Handled);
-                            self.tx.send(());
-                        }
-                        HandleState::Shift => {
-                            self.lib.move_window(*key, val.get_position());
-                            self.lib.resize_window(*key, val.get_size());
-                            self.lib.center_cursor(*key);
-                            self.set_focus(*key, val);
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Maximize | HandleState::Monocle => {
-                            self.lib.move_window(*key, val.get_position());
-                            self.lib.resize_window(*key, val.get_size());
-                            self.set_focus(*key, &val);
-                            self.lib.set_border_width(*key, 0);
-                            self.lib.raise_window(*key);
-                            self.lib.center_cursor(*key);
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::MaximizeRestore | HandleState::MonocleRestore => {
-                            self.lib.move_window(*key, val.get_position());
-                            self.lib.resize_window(*key, val.get_size());
-                            self.set_focus(*key, &val);
-                            self.lib.center_cursor(*key);
-                            val.handle_state.replace(HandleState::Handled);
-                        }
-                        HandleState::Destroy => {
-                            let windows = state
-                                .monitors
-                                .get(&state.current_monitor)
-                                .expect("HdlReactor - Destroy")
-                                .get_current_windows();
-                            self.kill_window(*key, windows);
-                        }
-                        _ => (),
-                    }
+                            HandleState::Map => {
+                                self.lib.move_window(*key, val.get_position());
+                                self.lib.map_window(*key);
+                                set_handled = true;
+                            }
+                            HandleState::Unmap => {
+                                self.lib.unmap_window(*key);
+                                set_handled = true;
+                            }
+                            HandleState::Move => {
+                                //debug!("Move pos: {:?}", val.get_position());
+                                self.lib.move_window(*key, val.get_position());
+                                set_handled = true;
+                            }
+                            HandleState::Center => {
+                                self.lib.move_window(*key, val.get_position());
+                                self.lib.resize_window(*key, val.get_size());
+                                self.lib.raise_window(*key);
+                                self.set_focus(*key, val);
+                                set_handled = true;
+                            }
+                            HandleState::Resize => {
+                                //debug!("Resize in reactor");
+                                self.lib.resize_window(*key, val.get_size());
+                                set_handled = true;
+                            }
+                            HandleState::Focus => {
+                                //debug!("Focus");
+                                self.set_focus(*key, &val);
+                                set_handled = true;
+                            }
+                            HandleState::Unfocus => {
+                                //debug!("Unfocus");
+                                self.unset_focus(*key, &val);
+                                set_handled = true;
+                                let _ = self.tx.send(internal_action::InternalAction::Focus);
+                            }
+                            HandleState::Shift => {
+                                self.lib.move_window(*key, val.get_position());
+                                self.lib.resize_window(*key, val.get_size());
+                                self.lib.center_cursor(*key);
+                                self.set_focus(*key, val);
+                                set_handled = true;
+                            }
+                            HandleState::Maximize | HandleState::Monocle => {
+                                self.lib.move_window(*key, val.get_position());
+                                self.lib.resize_window(*key, val.get_size());
+                                self.set_focus(*key, &val);
+                                self.lib.set_border_width(*key, 0);
+                                self.lib.raise_window(*key);
+                                self.lib.center_cursor(*key);
+                                set_handled = true;
+                            }
+                            HandleState::MaximizeRestore | HandleState::MonocleRestore => {
+                                self.lib.move_window(*key, val.get_position());
+                                self.lib.resize_window(*key, val.get_size());
+                                self.set_focus(*key, &val);
+                                self.lib.center_cursor(*key);
+                                set_handled = true;
+                            }
+                            HandleState::Destroy => {
+                                let windows = state
+                                    .monitors
+                                    .get(&state.current_monitor)
+                                    .expect("HdlReactor - Destroy")
+                                    .get_current_windows();
+                                debug!("Destroying: {}", key);
+                                self.kill_window(*key, windows);
+                                debug!("Vec after destroy: {:?}", state.monitors.get(&state.current_monitor).unwrap().get_current_windows());
+                                let _ = self.tx.send(internal_action::InternalAction::Focus);
+                                let _ = self.tx.send(internal_action::InternalAction::Destroy(*key));
+                                let _ = self.tx.send(internal_action::InternalAction::UpdateLayout);
+                            }
+                            _ => (),
+                        });
+                    val.handle_state.replace(HandleState::Handled.into());
                 });
                 self.lib.flush();
             });
@@ -133,7 +147,7 @@ impl Reactor<State> for HdlReactor {
     }
 }
 impl HdlReactor {
-    pub fn new(lib: Rc<XlibWrapper>, tx: Sender<()>) -> Self {
+    pub fn new(lib: Rc<XlibWrapper>, tx: Sender<internal_action::InternalAction>) -> Self {
         Self { lib, tx }
     }
 
@@ -171,7 +185,7 @@ impl HdlReactor {
     fn grab_keys(&self, w: Window) {
         let _keys = vec![
             "q", "Left", "Up", "Right", "Down", "Return", "f", "e", "c", "h", "j", "k", "l", "d",
-            "1", "2", "3", "4", "5", "6", "7", "8", "9",
+            "r", "1", "2", "3", "4", "5", "6", "7", "8", "9",
         ]
         .iter()
         .map(|key| keysym_lookup::into_keysym(key).expect("Core: no such key"))
@@ -189,7 +203,7 @@ impl HdlReactor {
         let (class, _name) = self.lib.get_class_hint(focus);
 
         if class != "firefox" || ww.is_trans {
-            debug!("name: {}", class);
+            //debug!("name: {}", class);
             self.lib.take_focus(focus);
         }
         if !(ww.current_state == WindowState::Monocle || ww.current_state == WindowState::Maximized)

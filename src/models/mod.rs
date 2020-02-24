@@ -5,6 +5,9 @@ pub mod screen;
 pub mod window_type;
 pub mod windowwrapper;
 pub mod workspace;
+pub mod internal_action;
+
+use std::cell::RefCell;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum WindowState {
@@ -12,7 +15,7 @@ pub enum WindowState {
     Maximized,
     Monocle,
     Free,
-    _Tiled,
+    Tiled,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -40,4 +43,17 @@ pub enum HandleState {
     MaximizeRestore,
     Monocle,
     MonocleRestore,
+    UpdateLayout,
+}
+
+impl From<HandleState> for Vec<HandleState> {
+    fn from(w: HandleState) -> Vec<HandleState> {
+        vec![w]
+    }
+}
+
+impl From<HandleState> for RefCell<Vec<HandleState>> {
+    fn from(w: HandleState) -> RefCell<Vec<HandleState>> {
+        RefCell::new(vec![w])
+    }
 }
