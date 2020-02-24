@@ -12,7 +12,7 @@ use {
 
 pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
     let (tx, rx) = channel::<internal_action::InternalAction>();
-    let state = State::new(xlib.clone());
+    let state = State::new(xlib.clone(), tx.clone());
     let mut store = Store::new(state, HdlReactor::new(xlib.clone(), tx));
 
     //setup
@@ -154,13 +154,10 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
         match rx.try_recv() {
             Ok(action) => match action {
                 internal_action::InternalAction::Focus => {
-                    debug!("Motion dispatch focus");
+                    //debug!("Motion dispatch focus");
                     if let Some(w) = xlib.window_under_pointer() {
                         store.dispatch(action::Focus { win: w })
                     }
-                },
-                internal_action::InternalAction::FocusSpecific(win) => {
-
                 },
                 internal_action::InternalAction::UpdateLayout => {
                     debug!("UpdateLayout");
@@ -168,7 +165,8 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
                 },
                 internal_action::InternalAction::Destroy(win) => {
                     store.dispatch(action::Destroy { win })
-                }
+                },
+                _ => ()
             },
             Err(_) => (),
         }

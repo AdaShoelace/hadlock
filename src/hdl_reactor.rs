@@ -30,6 +30,10 @@ impl Reactor<State> for HdlReactor {
                     debug!("Setting current monitor to: {}", state.current_monitor);
                     self.lib.update_desktops(mon.current_ws, None);
                     mon.handle_state.replace(HandleState::Handled);
+                },
+                HandleState::UpdateLayout => {
+                    debug!("layout shall be updated");
+                    let _ = self.tx.send(internal_action::InternalAction::UpdateLayout);
                 }
                 _ => (),
             }
