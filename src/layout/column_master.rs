@@ -10,7 +10,6 @@ use crate::{
         xlibmodels::*,
     },
 };
-use std::collections::VecDeque;
 
 #[derive(Debug)]
 pub struct ColumnMaster {
@@ -60,7 +59,7 @@ impl ColumnMaster {
         &self,
         screen: &Screen,
         dock: &DockArea,
-        column: &VecDeque<&WindowWrapper>,
+        column: &Vec<&WindowWrapper>,
     ) -> i32 {
         let dock_height = match dock.as_rect(screen) {
             Some(dock_rect) => dock_rect.get_size().height,
@@ -100,7 +99,7 @@ impl Layout for ColumnMaster {
         windows: Vec<&WindowWrapper>,
     ) -> Vec<(Window, Rect)> {
         debug!("Incoming window vector in column_master: {:#?}", windows);
-        let windows = windows.into_iter().collect::<VecDeque<&WindowWrapper>>();
+        let windows = windows.into_iter().collect::<Vec<&WindowWrapper>>();
 
         let dock_height = match dock_area.as_rect(screen) {
             Some(dock_rect) => dock_rect.get_size().height,
@@ -125,6 +124,7 @@ impl Layout for ColumnMaster {
                 x: screen.x,
                 y: screen.y + dock_height,
             };
+            let windows = windows.into_iter().filter(|win| w != win.window()).collect::<Vec<&WindowWrapper>>();
             for (index, win) in windows.iter().enumerate() {
                 let pos = Position {
                     x: column_x,
@@ -136,12 +136,12 @@ impl Layout for ColumnMaster {
                     width: column_width,
                     height: self.column_height(&screen, &dock_area, &windows),
                 };
-                debug!(
+                /*debug!(
                     "Pushing w: {}, at pos: {:#?} with size: {:#?}",
                     win.window(),
                     pos,
                     size
-                );
+                );*/
                 ret_vec.push((win.window(), Rect::new(pos, size)))
             }
             ret_vec.push((w, Rect::new(pos, size)));

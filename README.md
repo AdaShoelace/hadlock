@@ -1,34 +1,37 @@
 # Hadlock  
 
 ### Work in progress
-Hadlock is a (soon to be) tiling window manager for X.  
+Hadlock is a tiling window manager for X.  
 The architecture behind hadlock is inspired by redux but is not as strict as can be.  
 
 ---
 ![](./resources/multimonitor.gif)
 ---
 
+## Master pane layout
+---
+![](./resources/master_pane.jpg)
+---
+
 ## Progress
 
 ### Mode independent  
 - [x] Floating mode
-- [ ] Tiled mode
+- [x] Tiled mode (Master pane)
 - [x] Close window
 - [x] Start terminal
 - [x] Workspaces
 - [x] Multimonitor support 
 - [x] Window decorations
-- [ ] Decorated windows
-- [ ] Text in decoration  
 ### Floating  
 - [x] Move windows  
 - [x] Move windows between workspaces  
 - [x] Resize windows 
 - [x] Snapping widows
 - [ ] Cycle through windows
-### Tiled  
+### Tiled (Master pane) 
 - [ ] Move windows 
-- [ ] Move windows between workspaces 
+- [x] Move windows between workspaces 
 - [ ] Resize windows 
 
 ## Installation

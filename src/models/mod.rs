@@ -43,6 +43,7 @@ pub enum HandleState {
     MaximizeRestore,
     Monocle,
     MonocleRestore,
+    UpdateLayout,
 }
 
 impl From<HandleState> for Vec<HandleState> {
