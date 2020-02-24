@@ -82,6 +82,7 @@ fn managed_client(
             .get_client(state.focus_w)?
             .get_size();
         match into_hdl_keysym(&state.lib.keycode_to_key_sym(keycode)) {
+
             HDLKeysym::XK_Right => if resize {
                 let mon = state.monitors.get_mut(&state.current_monitor)?;
 
@@ -125,6 +126,7 @@ fn managed_client(
             }
 
             HDLKeysym::XK_Up => if resize {
+
                 let mon = state.monitors.get_mut(&state.current_monitor)?;
                 let (_dec_size, size) =
                     mon.resize_window(state.focus_w, old_size.width, old_size.height - 10);
@@ -143,7 +145,9 @@ fn managed_client(
                     .get_mut(&state.current_monitor)?
                     .get_client_mut(state.focus_w)?;
 
+
                 ww.handle_state.replace(HandleState::Destroy.into());
+
             }
 
             HDLKeysym::XK_e => {
@@ -162,11 +166,13 @@ fn managed_client(
                     .add_window(state.focus_w, new_ww);
             }
 
+
             HDLKeysym::XK_l => {
                 debug!("should print layout type");
                 circulate_layout(state);
                 wm::reorder(state);
             }
+
             _ => {
                 if ws_keys.contains(&keycode) {
                     let ws_num = keycode_to_ws(keycode);
@@ -223,6 +229,7 @@ fn managed_client(
                     };
                     mon.add_window(new_ww.window(), new_ww);
                 }
+
             }
             HDLKeysym::XK_d => {
                 spawn_process("dmenu_recency", vec![]);
@@ -240,6 +247,7 @@ fn managed_client(
                     wm::reorder(state);
                 }
             }
+
             _ => {
                 if ws_keys.contains(&keycode) {
                     //debug!("mod_not_shift switch ws");
