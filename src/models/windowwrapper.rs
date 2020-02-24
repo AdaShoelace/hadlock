@@ -16,7 +16,7 @@ pub struct WindowWrapper {
     pub dec_rect: Option<Rect>,
     pub restore_position: Position,
     pub restore_size: Size,
-    pub handle_state: RefCell<HandleState>,
+    pub handle_state: RefCell<Vec<HandleState>>,
     pub current_state: WindowState,
     pub previous_state: WindowState,
 }
@@ -33,7 +33,7 @@ impl WindowWrapper {
             dec_rect: None,
             restore_position: Position { x: 0, y: 0 },
             restore_size,
-            handle_state: RefCell::new(HandleState::New),
+            handle_state: RefCell::new(vec![HandleState::New]),
             current_state: WindowState::Free,
             previous_state: WindowState::Free,
         }

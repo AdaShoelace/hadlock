@@ -1,13 +1,31 @@
 #![allow(unused_variables)]
 
 pub mod floating;
+pub mod column_master;
 
-use crate::models::{dockarea::DockArea, screen::Screen, windowwrapper::WindowWrapper, Direction};
+use crate::models::{dockarea::DockArea, screen::Screen, windowwrapper::WindowWrapper, Direction, rect::Rect};
 use crate::xlibwrapper::util::{Position, Size};
 use crate::xlibwrapper::xlibmodels::Window;
 
-pub trait Layout: std::fmt::Debug {
-    fn place_window(&self, dock_area: &DockArea, screen: &Screen, w: Window) -> (Size, Position) {
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum LayoutTag {
+    Floating,
+    ColumnMaster
+}
+
+impl std::fmt::Display for LayoutTag {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let tag = match *self {
+            Self::Floating => "Floating",
+            Self::ColumnMaster => "ColumnMaster"
+        };
+        write!(f, "{}", tag)
+    }
+}
+
+pub trait Layout: std::fmt::Debug + std::fmt::Display {
+
+    fn place_window(&mut self, dock_area: &DockArea, screen: &Screen, w: Window, windows: Vec<&WindowWrapper>) -> Vec<(Window, Rect)> {
         unimplemented!();
     }
 
@@ -31,6 +49,10 @@ pub trait Layout: std::fmt::Debug {
         y: i32,
     ) -> (Position, Position) {
         unimplemented!();
+    }
+    
+    fn reorder(&mut self, focus: Window, screen: &Screen, dock_area: &DockArea, windows: Vec<WindowWrapper>) -> Vec<(Window, Rect)> {
+        unimplemented!()
     }
 
     fn resize_window(
@@ -70,7 +92,7 @@ pub trait Layout: std::fmt::Debug {
         dock_area: &DockArea,
         w: Window,
         direction: Direction,
-    ) -> (Position, Size) {
+    ) -> Vec<WindowWrapper> {
         unimplemented!();
     }
 }

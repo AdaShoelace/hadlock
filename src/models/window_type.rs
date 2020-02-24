@@ -1,3 +1,5 @@
+#![allow(unreachable_patterns)]
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum WindowType {
     Desktop,
