@@ -109,7 +109,7 @@ impl Layout for ColumnMaster {
         let mut ret_vec = Vec::<(Window, Rect)>::new();
 
         let column_width = (screen.width / 2) - 2 * CONFIG.border_width;
-        let column_x = screen.width / 2;
+        let column_x = screen.x + screen.width / 2;
 
         if windows.is_empty() {
             let (size, pos) = self.column_maximize(w, &screen, &dock_area);
