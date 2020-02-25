@@ -172,7 +172,9 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
             let new_ww = WindowWrapper {
                 restore_position: rect.get_position(),
                 window_rect: rect,
-                handle_state: vec![HandleState::Move, HandleState::Resize, HandleState::Map].into(),
+                previous_state: WindowState::Free,
+                current_state: WindowState::Free,
+                handle_state: vec![HandleState::Resize, HandleState::Move, HandleState::Map].into(),
                 ..ww
             };
             mon.add_window(win, new_ww);
@@ -190,6 +192,8 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
             let ww = mon.remove_window(win).unwrap();
             let new_ww = WindowWrapper {
                 restore_position: rect.get_position(),
+                previous_state: WindowState::Free,
+                current_state: WindowState::Free,
                 window_rect: rect,
                 handle_state: HandleState::Map.into(),
                 ..ww
@@ -206,6 +210,8 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         windows.into_iter().for_each(|(_, rect)| {
             let new_ww = WindowWrapper {
                 restore_position: rect.get_position(),
+                previous_state: WindowState::Free,
+                current_state: WindowState::Free,
                 window_rect: rect,
                 handle_state: HandleState::Map.into(),
                 ..ww
