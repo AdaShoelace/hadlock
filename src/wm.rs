@@ -123,14 +123,22 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
 
     let mut old_ws = mon.remove_ws(mon.current_ws).expect("Should be here..");
     old_ws.clients.values_mut().for_each(|client| {
-        client.handle_state.replace(HandleState::Unmap.into());
+            client.handle_state.replace_with(|old| {
+                let mut new = vec![HandleState::Unmap];
+                old.append(&mut new);
+                old.to_vec()
+            });
     });
     mon.add_ws(old_ws);
 
     if mon.contains_ws(ws) {
         let mut new_ws = mon.remove_ws(ws).expect("Should also be here");
         new_ws.clients.values_mut().for_each(|client| {
-            client.handle_state.replace(HandleState::Map.into());
+            client.handle_state.replace_with(|old| {
+                let mut new = vec![HandleState::Map];
+                old.append(&mut new);
+                old.to_vec()
+            });
         });
         //debug!("swithcing to ws: {:?}", new_ws);
         mon.add_ws(new_ws);

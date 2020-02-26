@@ -1,6 +1,6 @@
 use {
     crate::config::CONFIG,
-    crate::models::{windowwrapper::*, HandleState, WindowState, internal_action},
+    crate::models::{internal_action, windowwrapper::*, HandleState, WindowState},
     crate::state::*,
     crate::{
         xlibwrapper::core::XlibWrapper,
@@ -30,7 +30,7 @@ impl Reactor<State> for HdlReactor {
                     debug!("Setting current monitor to: {}", state.current_monitor);
                     self.lib.update_desktops(mon.current_ws, None);
                     mon.handle_state.replace(HandleState::Handled);
-                },
+                }
                 HandleState::UpdateLayout => {
                     debug!("layout shall be updated");
                     let _ = self.tx.send(internal_action::InternalAction::UpdateLayout);
@@ -42,6 +42,7 @@ impl Reactor<State> for HdlReactor {
                 ws.clients.iter().for_each(|(key, val)| {
                     let mut set_handled = false;
                     let handle_state = val.handle_state.clone();
+                    //debug!("window: {}, handle_state: {:?}", *key, handle_state);
                     handle_state
                         .into_inner()
                         .iter()
@@ -132,14 +133,24 @@ impl Reactor<State> for HdlReactor {
                                     .get_current_windows();
                                 debug!("Destroying: {}", key);
                                 self.kill_window(*key, windows);
-                                debug!("Vec after destroy: {:?}", state.monitors.get(&state.current_monitor).unwrap().get_current_windows());
+                                debug!(
+                                    "Vec after destroy: {:?}",
+                                    state
+                                        .monitors
+                                        .get(&state.current_monitor)
+                                        .unwrap()
+                                        .get_current_windows()
+                                );
                                 let _ = self.tx.send(internal_action::InternalAction::Focus);
-                                let _ = self.tx.send(internal_action::InternalAction::Destroy(*key));
+                                let _ =
+                                    self.tx.send(internal_action::InternalAction::Destroy(*key));
                                 let _ = self.tx.send(internal_action::InternalAction::UpdateLayout);
                             }
                             _ => (),
                         });
-                    val.handle_state.replace(HandleState::Handled.into());
+                    if set_handled {
+                        val.handle_state.replace(HandleState::Handled.into());
+                    }
                 });
                 self.lib.flush();
             });
