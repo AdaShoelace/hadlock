@@ -103,6 +103,7 @@ At the moment custom key bindings is not available (it will come in the future)
 * `mod + number` change workspace  
 * `shift + mod + number` move window to workspace  
 * `mod + enter` start terminal   
+* `shift + mod + l` circulate layout  
  
 
 **Floating**  
