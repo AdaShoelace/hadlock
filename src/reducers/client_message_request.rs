@@ -21,26 +21,30 @@ impl Reducer<action::ClientMessageRequest> for State {
     // Full credit for this solution goes to lex148
     fn reduce(&mut self, action: action::ClientMessageRequest) {
 
-        let _name = self.lib.xatom.get_name(action.message_type);
+        let name = self.lib.xatom.get_name(action.message_type);
+
+        debug!("client message: {}", name);
 
         let data_zero = *action
             .data
             .get(0)
             .expect("client_message_request: cleanupt");
+        debug!("data_zero: {:?}", data_zero);
         let data_one = *action
             .data
             .get(1)
             .expect("client_message_request: cleanupt");
+        debug!("data_one: {:?}", data_one);
         let data_two = *action
             .data
             .get(2)
             .expect("client_message_request: cleanupt");
+        debug!("data_two: {:?}", data_two);
+        
+        if action.message_type == self.lib.xatom.NetCurrentDesktop {
+            wm::set_current_ws(self, data_zero as u32);
+        }
 
-        if action.message_type == self.lib.xatom.NetWMState {
-            //debug!("{}", &format!("msg_type: {}", self.lib.xatom.get_name(data_one as u64)))
-        };
-
-        //debug!("ClientMessageRequest: {}, data 1: {}, data 2: {} ", name, self.lib.xatom.get_name(data_one as u64), self.lib.xatom.get_name(data_two as u64));
 
         if action.message_type == self.lib.xatom.NetWMState
             && (data_one == self.lib.xatom.NetWMStateFullscreen as i64
