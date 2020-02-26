@@ -36,6 +36,7 @@ The architecture behind hadlock is inspired by redux but is not as strict as can
 
 ## Installation
 Create `/usr/share/xsessions/hadlock.desktop` containing:  
+
 ```
 [Desktop Entry]
 Encoding=UTF-8
@@ -49,7 +50,8 @@ Type=Application
 
 ## Configuration
 The config file is written is json and should be placed in `~/.config/hadlock`  
-```
+
+```json
 {
 	"borderWidth": 1,
 	"borderColor": 	{
@@ -90,8 +92,25 @@ The config file is written is json and should be placed in `~/.config/hadlock`
 	]
 }
 
-```  
-At the moment decorations is not available and custom color codes is written in dec, this will change!  
+```
+
+## Keybindings  
+At the moment custom key bindings is not available (it will come in the future)
+
+(`mod` = windows key/super)
+
+**Layout independent**  
+* `mod + number` change workspace  
+* `shift + mod + number` move window to workspace  
+* `mod + enter` start terminal   
+ 
+
+**Floating**  
+* `mod + right/left/up/down` or `mod + h/j/k/l` snap window to edge  
+* `shift + mod + right/left/up/down` resize window  
+* `mod + mouse1 + mousemovement` move window  
+* `mod + mouse1` raise window
+
 
 ## Testing
 In order to test/run hadlock some dependencies are needed:
