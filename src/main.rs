@@ -82,6 +82,7 @@ fn init_logger() -> HadlockResult<()> {
         })
         .level(log::LogLevelFilter::Debug)
         .chain(std::io::stderr())
+        //.chain(fern::log_file("~/hadlog")?)
         .apply()?;
     Ok(())
 }

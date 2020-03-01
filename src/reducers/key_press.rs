@@ -4,7 +4,8 @@ use {
         config::CONFIG,
         layout::LayoutTag,
         models::{
-            rect::*, window_type::WindowType, windowwrapper::*, Direction, HandleState, WindowState, internal_action
+            internal_action, rect::*, window_type::WindowType, windowwrapper::*, Direction,
+            HandleState, WindowState,
         },
         state::State,
         wm,
@@ -74,7 +75,11 @@ fn managed_client(
     if mod_not_shift && state.lib.str_to_keycode("Return")? == keycode {
         spawn_process(CONFIG.term.as_str(), vec![]);
     }
-    let resize = state.monitors.get(&state.current_monitor)?.get_current_layout()? == LayoutTag::Floating;
+    let resize = state
+        .monitors
+        .get(&state.current_monitor)?
+        .get_current_layout()?
+        == LayoutTag::Floating;
     if mod_and_shift {
         let old_size = state
             .monitors
@@ -82,61 +87,67 @@ fn managed_client(
             .get_client(state.focus_w)?
             .get_size();
         match into_hdl_keysym(&state.lib.keycode_to_key_sym(keycode)) {
+            HDLKeysym::XK_Right => {
+                if resize {
+                    let mon = state.monitors.get_mut(&state.current_monitor)?;
 
-            HDLKeysym::XK_Right => if resize {
-                let mon = state.monitors.get_mut(&state.current_monitor)?;
-
-                let (_dec_size, size) =
-                    mon.resize_window(state.focus_w, old_size.width + 10, old_size.height);
-                let ww = mon.remove_window(state.focus_w)?;
-                let new_ww = WindowWrapper {
-                    window_rect: Rect::new(ww.get_position(), size),
-                    handle_state: HandleState::Resize.into(),
-                    ..ww
-                };
-                mon.add_window(state.focus_w, new_ww);
+                    let (_dec_size, size) =
+                        mon.resize_window(state.focus_w, old_size.width + 10, old_size.height);
+                    let ww = mon.remove_window(state.focus_w)?;
+                    let new_ww = WindowWrapper {
+                        window_rect: Rect::new(ww.get_position(), size),
+                        handle_state: HandleState::Resize.into(),
+                        ..ww
+                    };
+                    mon.add_window(state.focus_w, new_ww);
+                }
             }
 
-            HDLKeysym::XK_Left => if resize {
-                let mon = state.monitors.get_mut(&state.current_monitor)?;
+            HDLKeysym::XK_Left => {
+                if resize {
+                    let mon = state.monitors.get_mut(&state.current_monitor)?;
 
-                let (_dec_size, size) =
-                    mon.resize_window(state.focus_w, old_size.width - 10, old_size.height);
-                let ww = mon.remove_window(state.focus_w)?;
-                let new_ww = WindowWrapper {
-                    window_rect: Rect::new(ww.get_position(), size),
-                    handle_state: HandleState::Resize.into(),
-                    ..ww
-                };
-                mon.add_window(state.focus_w, new_ww);
+                    let (_dec_size, size) =
+                        mon.resize_window(state.focus_w, old_size.width - 10, old_size.height);
+                    let ww = mon.remove_window(state.focus_w)?;
+                    let new_ww = WindowWrapper {
+                        window_rect: Rect::new(ww.get_position(), size),
+                        handle_state: HandleState::Resize.into(),
+                        ..ww
+                    };
+                    mon.add_window(state.focus_w, new_ww);
+                }
             }
 
-            HDLKeysym::XK_Down => if resize {
-                let mon = state.monitors.get_mut(&state.current_monitor)?;
+            HDLKeysym::XK_Down => {
+                if resize {
+                    let mon = state.monitors.get_mut(&state.current_monitor)?;
 
-                let (_dec_size, size) =
-                    mon.resize_window(state.focus_w, old_size.width, old_size.height + 10);
-                let ww = mon.remove_window(state.focus_w)?;
-                let new_ww = WindowWrapper {
-                    window_rect: Rect::new(ww.get_position(), size),
-                    handle_state: HandleState::Resize.into(),
-                    ..ww
-                };
-                mon.add_window(state.focus_w, new_ww);
+                    let (_dec_size, size) =
+                        mon.resize_window(state.focus_w, old_size.width, old_size.height + 10);
+                    let ww = mon.remove_window(state.focus_w)?;
+                    let new_ww = WindowWrapper {
+                        window_rect: Rect::new(ww.get_position(), size),
+                        handle_state: HandleState::Resize.into(),
+                        ..ww
+                    };
+                    mon.add_window(state.focus_w, new_ww);
+                }
             }
 
-            HDLKeysym::XK_Up => if resize {
-
-                let mon = state.monitors.get_mut(&state.current_monitor)?;
-                let (_dec_size, size) =
-                    mon.resize_window(state.focus_w, old_size.width, old_size.height - 10);
-                let ww = mon.remove_window(state.focus_w)?;
-                let new_ww = WindowWrapper {
-                    window_rect: Rect::new(ww.get_position(), size),
-                    handle_state: HandleState::Resize.into(),
-                    ..ww
-                };
-                mon.add_window(state.focus_w, new_ww);
+            HDLKeysym::XK_Up => {
+                if resize {
+                    let mon = state.monitors.get_mut(&state.current_monitor)?;
+                    let (_dec_size, size) =
+                        mon.resize_window(state.focus_w, old_size.width, old_size.height - 10);
+                    let ww = mon.remove_window(state.focus_w)?;
+                    let new_ww = WindowWrapper {
+                        window_rect: Rect::new(ww.get_position(), size),
+                        handle_state: HandleState::Resize.into(),
+                        ..ww
+                    };
+                    mon.add_window(state.focus_w, new_ww);
+                }
             }
 
             HDLKeysym::XK_q => {
@@ -145,9 +156,7 @@ fn managed_client(
                     .get_mut(&state.current_monitor)?
                     .get_client_mut(state.focus_w)?;
 
-
                 ww.handle_state.replace(HandleState::Destroy.into());
-
             }
 
             HDLKeysym::XK_e => {
@@ -166,7 +175,6 @@ fn managed_client(
                     .add_window(state.focus_w, new_ww);
             }
 
-
             HDLKeysym::XK_l => {
                 debug!("should print layout type");
                 circulate_layout(state);
@@ -177,7 +185,14 @@ fn managed_client(
                 if ws_keys.contains(&keycode) {
                     let ws_num = keycode_to_ws(keycode);
                     wm::move_to_ws(state, state.focus_w, ws_num);
-                    wm::reorder(state);
+                    if state
+                        .monitors
+                        .get(&state.current_monitor)?
+                        .get_current_layout()?
+                        != LayoutTag::Floating
+                    {
+                        wm::reorder(state);
+                    }
                     wm::set_current_ws(state, ws_num)?;
                 }
             }
@@ -229,7 +244,6 @@ fn managed_client(
                     };
                     mon.add_window(new_ww.window(), new_ww);
                 }
-
             }
             HDLKeysym::XK_d => {
                 spawn_process("dmenu_recency", vec![]);
@@ -336,7 +350,6 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
     }
     Some(())
 }
-
 
 fn circulate_layout(state: &mut State) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;

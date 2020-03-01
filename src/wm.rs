@@ -123,11 +123,11 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
 
     let mut old_ws = mon.remove_ws(mon.current_ws).expect("Should be here..");
     old_ws.clients.values_mut().for_each(|client| {
-            client.handle_state.replace_with(|old| {
-                let mut new = vec![HandleState::Unmap];
-                old.append(&mut new);
-                old.to_vec()
-            });
+        client.handle_state.replace_with(|old| {
+            let mut new = vec![HandleState::Unmap];
+            old.append(&mut new);
+            old.to_vec()
+        });
     });
     mon.add_ws(old_ws);
 
@@ -171,6 +171,8 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
     };
 
     if ws == mon.current_ws {
+        let prev_ws = mon.current_ws;
+        mon.current_ws = ws;
         state.lib.unmap_window(w);
         mon.add_window(w, ww.clone());
         let windows = mon.place_window(w);
@@ -182,12 +184,13 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
                 window_rect: rect,
                 previous_state: WindowState::Free,
                 current_state: WindowState::Free,
-                handle_state: vec![HandleState::Resize, HandleState::Move, HandleState::Map].into(),
+                handle_state: vec![/*HandleState::Resize, HandleState::Move, */HandleState::Map].into(),
                 ..ww
             };
             mon.add_window(win, new_ww);
         });
 
+        mon.current_ws = prev_ws;
         return Some(());
     }
 
