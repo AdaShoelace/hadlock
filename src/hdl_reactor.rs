@@ -52,14 +52,7 @@ impl Reactor<State> for HdlReactor {
                                 self.lib.add_to_root_net_client_list(*key);
                                 self.lib.set_border_width(*key, CONFIG.border_width as u32);
                                 self.lib.move_window(*key, val.get_position());
-                                if !(val.is_trans) {
-                                    let old_size = val.get_size();
-                                    let new_size = Size {
-                                        width: old_size.width - 2 * CONFIG.border_width,
-                                        height: old_size.height - 2 * CONFIG.border_width,
-                                    };
-                                    self.lib.resize_window(*key, new_size);
-                                }
+                                self.lib.resize_window(*key, val.get_size());
                                 self.subscribe_to_events(*key);
                                 //debug!("Mapping: {}", *key);
                                 self.lib.map_window(*key);
