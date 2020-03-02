@@ -172,7 +172,7 @@ impl Layout for ColumnMaster {
         match dock_area.as_rect(&screen) {
             Some(dock) if respect_dock => {
                 if y < dock.get_size().height as i32 {
-                    y = dock.get_size().height as i32 - CONFIG.border_width;
+                    y = dock.get_size().height as i32;
                 }
             }
             Some(_) | None => {}
