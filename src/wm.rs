@@ -174,8 +174,8 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         let prev_ws = mon.current_ws;
         mon.current_ws = ws;
         state.lib.unmap_window(w);
-        mon.add_window(w, ww.clone());
         let windows = mon.place_window(w);
+        mon.add_window(w, ww.clone());
 
         windows.into_iter().for_each(|(win, rect)| {
             let ww = mon.remove_window(win).unwrap();
