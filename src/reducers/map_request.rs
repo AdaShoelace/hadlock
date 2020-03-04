@@ -8,6 +8,7 @@ use {
         state::State,
         wm,
         xlibwrapper::action,
+        xlibwrapper::masks::*,
         xlibwrapper::core::*,
         xlibwrapper::util::*,
         xlibwrapper::xlibmodels::*,
@@ -102,6 +103,7 @@ impl Reducer<action::MapRequest> for State {
                         .collect::<Vec<&mut Monitor>>()
                         .remove(0);
                     mon.set_dock_area(dock);
+                    self.lib.select_input(action.win, PointerMotionMask | SubstructureRedirectMask);
                     self.lib.map_window(action.win);
                     return;
                 }
