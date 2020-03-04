@@ -4,6 +4,7 @@ use {
         config::CONFIG,
         models::{rect::*, window_type::WindowType, windowwrapper::*, HandleState},
         state::State,
+        wm,
         xlibwrapper::action,
         xlibwrapper::core::*,
         xlibwrapper::util::*,
@@ -17,6 +18,18 @@ use {
 impl Reducer<action::EnterNotify> for State {
     fn reduce(&mut self, action: action::EnterNotify) {
         //debug!("EnterNotify");
+        let window_mon = wm::get_mon_by_window(&self, action.win);
+        if let Some(mon_id) = window_mon {
+            if mon_id != self.current_monitor {
+                self.current_monitor = mon_id;
+                self.monitors
+                    .get_mut(&self.current_monitor)
+                    .unwrap()
+                    .handle_state
+                    .replace(HandleState::Focus);
+            }
+        }
+
         self.focus_w = action.win;
         if let Some(w) = self
             .monitors
