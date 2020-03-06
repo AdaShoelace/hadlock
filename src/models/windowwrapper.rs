@@ -6,7 +6,7 @@ use crate::xlibwrapper::util::*;
 use crate::xlibwrapper::xlibmodels::*;
 use std::cell::RefCell;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WindowWrapper {
     pub dec: Option<Window>,
     pub window: Window,

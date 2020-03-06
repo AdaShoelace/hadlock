@@ -26,7 +26,7 @@ pub enum Direction {
     South,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum HandleState {
     New,
     Handled,
