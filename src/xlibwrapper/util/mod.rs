@@ -2,13 +2,13 @@ pub mod keysym_lookup;
 
 use serde::{self, de, Deserialize, Deserializer, Serialize};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Position {
     pub x: i32,
     pub y: i32,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Size {
     pub width: i32,
     pub height: i32,
