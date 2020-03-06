@@ -60,6 +60,21 @@ impl Monitor {
             .remove_window(w)?;
         Some(ret)
     }
+  
+    /* In current workspace */
+    pub fn swap_window<F>(&mut self, win: Window, f: F) -> Option<()> 
+        where F: Fn(&Monitor, WindowWrapper) -> WindowWrapper + Sized
+    {
+        let old_ww = self
+            .workspaces 
+            .get_mut(&self.current_ws)?
+            .remove_window(win)?;
+        
+        let new_ww = f(&self, old_ww);
+       
+        self.add_window(win, new_ww);
+        Some(())
+    }
 
     pub fn contains_window(&self, w: Window) -> bool {
         self.get_client_keys().contains(&&w)
@@ -125,6 +140,8 @@ impl Monitor {
         self.workspaces.get(&self.current_ws)?.clients.get(&w)
     }
 
+
+    // Layout functions
     pub fn place_window(&mut self, w: Window) -> Vec<(Window, Rect)> {
         let screen = self.screen.clone();
         let dock_area = self.dock_area.clone();
@@ -163,19 +180,19 @@ impl Monitor {
             .resize_window(&ww, w, width, height)
     }
 
-    pub fn maximize(&mut self, w: Window, ww: &WindowWrapper) -> (Position, Size) {
+    pub fn maximize(&self, w: Window, ww: &WindowWrapper) -> (Position, Size) {
         let screen = self.screen.clone();
         let dock_area = self.dock_area.clone();
-        self.get_current_ws_mut()
+        self.get_current_ws()
             .expect("monitor: maximize 2")
             .layout
             .maximize(&screen, &dock_area, &ww, w)
     }
 
-    pub fn monocle(&mut self, w: Window, ww: &WindowWrapper) -> (Position, Size) {
+    pub fn monocle(&self, w: Window, ww: &WindowWrapper) -> (Position, Size) {
         let screen = self.screen.clone();
         let dock_area = self.dock_area.clone();
-        self.get_current_ws_mut()
+        self.get_current_ws()
             .expect("monitor: maximize 2")
             .layout
             .monocle(&screen, &dock_area, &ww, w)
@@ -196,4 +213,16 @@ impl std::fmt::Display for Monitor {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.current_ws)
     }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;    
+
+    // TODO: add 'faux' and mock models...
+    #[test]
+    fn swap_window_pass() {
+
+    }
+
 }

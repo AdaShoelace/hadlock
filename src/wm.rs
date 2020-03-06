@@ -2,7 +2,7 @@
 
 use crate::{
     layout::LayoutTag,
-    models::{rect::*, screen::*, windowwrapper::*, workspace::*, HandleState, WindowState},
+    models::{rect::*, screen::*, windowwrapper::*, workspace::*, HandleState, WindowState, monitor::Monitor},
     state::State,
     xlibwrapper::{util::*, xlibmodels::*},
 };
@@ -13,12 +13,8 @@ pub fn window_inside_screen(w_geom: &Geometry, screen: &Screen) -> bool {
     inside_width && inside_height
 }
 
-pub fn toggle_maximize(state: &mut State, ww: WindowWrapper) -> WindowWrapper {
+pub fn toggle_maximize(mon: &Monitor, ww: WindowWrapper) -> WindowWrapper {
     let ww_state = ww.current_state;
-    let mon = state
-        .monitors
-        .get_mut(&state.current_monitor)
-        .expect("toggle_maximize - monitor - get_mut");
     match ww_state {
         WindowState::Maximized => {
             //debug!("Toggle back to: {:?} - Maximize", ww.previous_state);
@@ -45,12 +41,8 @@ pub fn toggle_maximize(state: &mut State, ww: WindowWrapper) -> WindowWrapper {
     }
 }
 
-pub fn toggle_monocle(state: &mut State, ww: WindowWrapper) -> WindowWrapper {
+pub fn toggle_monocle(mon: &Monitor, ww: WindowWrapper) -> WindowWrapper {
     let ww_state = ww.current_state;
-    let mon = state
-        .monitors
-        .get_mut(&state.current_monitor)
-        .expect("toggle_maximize - monitor - get_mut");
     match ww_state {
         WindowState::Monocle => {
             //debug!("Toggle back to: {:?} - Monocle", ww.previous_state);
