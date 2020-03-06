@@ -138,7 +138,6 @@ impl Reducer<action::MapRequest> for State {
             return;
         } else {
             if mon.contains_window(action.parent) {
-                //debug!("Child to existing window");
                 self.lib.map_window(action.win);
                 return;
             }
