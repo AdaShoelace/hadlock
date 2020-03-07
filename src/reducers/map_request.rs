@@ -123,8 +123,8 @@ impl Reducer<action::MapRequest> for State {
             let ww = match mon.remove_window(action.win) {
                 Some(ww) => ww,
                 None => {
-                    let class = self.lib.get_class_hint(action.win);
-                    debug!("{:?} not in ws: {}", class, mon.current_ws);
+                    //let class = self.lib.get_class_hint(action.win);
+                    //debug!("{:?} not in ws: {}", class, mon.current_ws);
                     return;
                 }
             };
