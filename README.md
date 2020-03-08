@@ -7,8 +7,12 @@ The architecture behind hadlock is inspired by redux but is not as strict as can
 ---
 ![](./resources/multimonitor.gif)
 ---
-
-## Master pane layout
+## Layouts  
+### Floating  
+---
+![](.resources/hadlock-floating.jpg)
+---
+### Master pane layout  
 ---
 ![](./resources/master_pane.jpg)
 ---
