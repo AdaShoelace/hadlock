@@ -204,12 +204,15 @@ impl HdlReactor {
         self.lib.sync(false);
         self.grab_keys(focus);
         self.lib.sync(false);
-        let (class, _name) = self.lib.get_class_hint(focus);
+        let class_hint = self.lib.get_class_hint(focus);
 
-        if class != "firefox" || ww.is_trans {
-            //debug!("name: {}", class);
-            self.lib.take_focus(focus);
+        match class_hint {
+            Ok((class, _name)) if class != "firefox" || ww.is_trans => {
+                self.lib.take_focus(focus);
+            },
+            _ => ()
         }
+
         if !(ww.current_state == WindowState::Monocle || ww.current_state == WindowState::Maximized)
         {
             self.lib.set_border_width(focus, CONFIG.border_width as u32);
