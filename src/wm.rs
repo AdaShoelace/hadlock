@@ -122,6 +122,7 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
         });
     });
     mon.add_ws(old_ws);
+    
 
     if mon.contains_ws(ws) {
         let mut new_ws = mon.remove_ws(ws).expect("Should also be here");
@@ -170,16 +171,14 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         mon.add_window(w, ww.clone());
 
         windows.into_iter().for_each(|(win, rect)| {
-            let ww = mon.remove_window(win).unwrap();
-            let new_ww = WindowWrapper {
+            mon.swap_window(win, |_mon, ww| WindowWrapper {
                 restore_position: rect.get_position(),
                 window_rect: rect,
                 previous_state: WindowState::Free,
                 current_state: WindowState::Free,
-                handle_state: vec![/*HandleState::Resize, HandleState::Move, */HandleState::Map].into(),
+                handle_state: vec![HandleState::Map].into(),
                 ..ww
-            };
-            mon.add_window(win, new_ww);
+            });
         });
 
         mon.current_ws = prev_ws;
@@ -192,16 +191,14 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         mon.add_window(w, ww.clone());
         let windows = mon.place_window(w);
         windows.into_iter().for_each(|(win, rect)| {
-            let ww = mon.remove_window(win).unwrap();
-            let new_ww = WindowWrapper {
+            mon.swap_window(win, |_mon, ww| WindowWrapper {
                 restore_position: rect.get_position(),
                 previous_state: WindowState::Free,
                 current_state: WindowState::Free,
                 window_rect: rect,
                 handle_state: HandleState::Map.into(),
                 ..ww
-            };
-            mon.add_window(win, new_ww);
+            });
         });
 
         mon.current_ws = prev_ws;
