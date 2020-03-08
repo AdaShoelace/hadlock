@@ -78,12 +78,7 @@ impl Reducer<action::ClientMessageRequest> for State {
                 .monitors
                 .get_mut(&self.current_monitor)
                 .expect("ClientMessageRequest - monitor - get_mut");
-            let old_ww = mon.remove_window(action.win).unwrap();
-            let new_ww = wm::toggle_monocle(mon, old_ww);
-            self.monitors
-                .get_mut(&self.current_monitor)
-                .expect("ClientMessageRequest - monitor - get_mut")
-                .add_window(action.win, new_ww);
+            mon.swap_window(action.win, |mon, ww| wm::toggle_monocle(mon, ww));
         }
     }
 }
