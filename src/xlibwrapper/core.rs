@@ -1,6 +1,6 @@
 #![allow(unused_variables, deprecated, dead_code)]
 use std::ffi::CString;
-use std::mem;
+use std::mem::{self, MaybeUninit};
 use std::os::raw::*;
 pub use x11_dl::xlib;
 
@@ -170,8 +170,8 @@ impl XlibWrapper {
             (self.lib.XUngrabKey)(self.display, xlib::AnyKey, xlib::AnyModifier, self.root);
             (self.lib.XDeleteProperty)(self.display, self.root, self.xatom.NetClientList);
             let keys = vec![
-                "Left", "Right", "Up", "Down", "Return", "q", "d", "e", "l","r","1", "2", "3", "4", "5",
-                "6", "7", "8", "9",
+                "Left", "Right", "Up", "Down", "Return", "q", "d", "e", "l", "r", "1", "2", "3",
+                "4", "5", "6", "7", "8", "9",
             ];
 
             let _ = keys
@@ -810,23 +810,32 @@ impl XlibWrapper {
         self.get_atom_prop_value(w, self.xatom.NetWMWindowType)
     }
 
-    pub fn get_class_hint(&self, w: Window) -> (String, String) {
+    pub fn get_class_hint(
+        &self,
+        w: Window,
+    ) -> Result<(String, String), Box<dyn std::error::Error>> {
         unsafe {
-            let mut hint_return = xlib::XClassHint {
-                res_class: mem::uninitialized(),
-                res_name: mem::uninitialized(),
-            };
-            (self.lib.XGetClassHint)(self.display, w, &mut hint_return);
-            (
-                CString::from_raw(hint_return.res_class)
-                    .to_str()
-                    .expect("res_class fucked up")
-                    .to_string(),
-                CString::from_raw(hint_return.res_name)
-                    .to_str()
-                    .expect("res_name fucked up")
-                    .to_string(),
-            )
+            let mut hint_return = MaybeUninit::<xlib::XClassHint>::zeroed();
+
+            (self.lib.XGetClassHint)(self.display, w, hint_return.as_mut_ptr());
+
+            if std::ptr::eq((*hint_return.as_ptr()).res_class, 0 as *const i8)
+                || std::ptr::eq((*hint_return.as_ptr()).res_class, 0 as *const i8)
+            {
+                return Err("XClassHint uninitialized".into());
+            }
+
+            let class = CString::from_raw(hint_return.assume_init().res_class).into_string();
+
+            let name = CString::from_raw(hint_return.assume_init().res_name).into_string();
+
+            match (class, name) {
+                (Ok(class), Ok(name)) => {
+                    drop(hint_return.assume_init());
+                    Ok((class, name))
+                }
+                _ => Err("Failed to create string from raw string".into()),
+            }
         }
     }
 
