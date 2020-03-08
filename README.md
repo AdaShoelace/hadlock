@@ -10,7 +10,7 @@ The architecture behind hadlock is inspired by redux but is not as strict as can
 ## Layouts  
 ### Floating  
 ---
-![](.resources/hadlock-floating.jpg)
+![](./resources/hadlock-floating.jpg)
 ---
 ### Master pane layout  
 ---
