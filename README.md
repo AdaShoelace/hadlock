@@ -1,8 +1,8 @@
 # Hadlock  
 
-### Work in progress
-Hadlock is a tiling window manager for X.  
-The architecture behind hadlock is inspired by redux but is not as strict as can be.  
+Hadlock is a tiling and stacking window manager for X.  
+It is written completely in rust with and architecture heavily inspired by redux.  
+
 
 ---
 ![](./resources/multimonitor.gif)
@@ -37,6 +37,15 @@ The architecture behind hadlock is inspired by redux but is not as strict as can
 - [ ] Move windows 
 - [x] Move windows between workspaces 
 - [ ] Resize windows 
+
+---  
+### Planned features  
+- Custom keybindings  
+- Application rules (bind an applicaiton to a specific monitor and workspace)
+- Window gaps
+- Hot reloading config
+- Ability to script your own window layout  
+
 
 ## Installation
 Create `/usr/share/xsessions/hadlock.desktop` containing:  
