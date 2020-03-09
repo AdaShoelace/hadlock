@@ -229,11 +229,6 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
 pub fn reorder(state: &mut State) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;
     debug!("reorder focus: {}", state.focus_w);
-    let current_state = if mon.get_current_ws()?.get_current_layout() == LayoutTag::Floating {
-        WindowState::Free
-    } else {
-        WindowState::Tiled
-    };
 
     let windows = mon
         .get_current_ws()?
@@ -250,12 +245,19 @@ pub fn reorder(state: &mut State) -> Option<()> {
 
     let rects = mon.reorder(state.focus_w, &windows);
 
+    let (current_state, handle_state) = if mon.get_current_layout()? == LayoutTag::Floating {
+        (WindowState::Free, vec![HandleState::Move, HandleState::Resize])
+    } else {
+        let current_state = if rects.len() == 1 { WindowState::Maximized } else { WindowState::Tiled };
+        (current_state, vec![HandleState::Maximize])
+    };
+
     for (win, rect) in rects {
         let ww = mon.remove_window(win)?;
         let new_ww = WindowWrapper {
             window_rect: rect,
             current_state,
-            handle_state: vec![HandleState::Move, HandleState::Resize].into(),
+            handle_state: handle_state.clone().into(),
             ..ww
         };
         mon.add_window(win, new_ww);
