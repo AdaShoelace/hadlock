@@ -31,36 +31,27 @@ impl ColumnMaster {
         screen: &Screen,
         dock_area: &DockArea,
     ) -> (Size, Position) {
+        let (mut size, mut pos) = (
+            Size {
+                width: screen.width,
+                height: screen.height,
+            },
+            Position {
+                x: screen.x,
+                y: screen.y,
+            },
+        );
         match dock_area.as_rect(screen) {
-            Some(dock) => (
-                Size {
-                    width: screen.width - 2 * CONFIG.border_width,
-                    height: screen.height - dock.get_size().height - 2 * CONFIG.border_width,
-                },
-                Position {
-                    x: screen.x,
-                    y: screen.y + dock.get_size().height,
-                },
-            ),
-            None => (
-                Size {
-                    width: screen.width - 2 * CONFIG.border_width,
-                    height: screen.height + 2 * CONFIG.border_width,
-                },
-                Position {
-                    x: screen.x,
-                    y: screen.y,
-                },
-            ),
+            Some(dock) => {
+                size.height -= dock.get_size().height;
+                pos.y += dock.get_size().height;
+                (size, pos)
+            }
+            None => (size, pos),
         }
     }
 
-    fn column_height(
-        &self,
-        screen: &Screen,
-        dock: &DockArea,
-        column: &Vec<&WindowWrapper>,
-    ) -> i32 {
+    fn column_height(&self, screen: &Screen, dock: &DockArea, column: &Vec<&WindowWrapper>) -> i32 {
         let dock_height = match dock.as_rect(screen) {
             Some(dock_rect) => dock_rect.get_size().height,
             None => 0,
@@ -124,7 +115,10 @@ impl Layout for ColumnMaster {
                 x: screen.x,
                 y: screen.y + dock_height,
             };
-            let windows = windows.into_iter().filter(|win| w != win.window()).collect::<Vec<&WindowWrapper>>();
+            let windows = windows
+                .into_iter()
+                .filter(|win| w != win.window())
+                .collect::<Vec<&WindowWrapper>>();
             for (index, win) in windows.iter().enumerate() {
                 let pos = Position {
                     x: column_x,
@@ -137,10 +131,10 @@ impl Layout for ColumnMaster {
                     height: self.column_height(&screen, &dock_area, &windows),
                 };
                 /*debug!(
-                    "Pushing w: {}, at pos: {:#?} with size: {:#?}",
-                    win.window(),
-                    pos,
-                    size
+                "Pushing w: {}, at pos: {:#?} with size: {:#?}",
+                win.window(),
+                pos,
+                size
                 );*/
                 ret_vec.push((win.window(), Rect::new(pos, size)))
             }

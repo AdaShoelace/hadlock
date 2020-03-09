@@ -2,14 +2,16 @@
 use {
     crate::{
         config::CONFIG,
+        layout::LayoutTag,
         models::{
             monitor::Monitor, rect::*, window_type::WindowType, windowwrapper::*, HandleState,
+            WindowState,
         },
         state::State,
         wm,
         xlibwrapper::action,
-        xlibwrapper::masks::*,
         xlibwrapper::core::*,
+        xlibwrapper::masks::*,
         xlibwrapper::util::*,
         xlibwrapper::xlibmodels::*,
     },
@@ -103,7 +105,8 @@ impl Reducer<action::MapRequest> for State {
                         .collect::<Vec<&mut Monitor>>()
                         .remove(0);
                     mon.set_dock_area(dock);
-                    self.lib.select_input(action.win, PointerMotionMask | SubstructureRedirectMask);
+                    self.lib
+                        .select_input(action.win, PointerMotionMask | SubstructureRedirectMask);
                     self.lib.map_window(action.win);
                     return;
                 }
@@ -143,24 +146,54 @@ impl Reducer<action::MapRequest> for State {
             }
             let windows = mon.place_window(action.win);
             //debug!("Place in map_request: {:?}", windows);
-            debug!("Windows in mon before place_window: {:?}", mon.get_current_ws().unwrap().clients.keys().collect::<Vec<&Window>>());
+            debug!(
+                "Windows in mon before place_window: {:?}",
+                mon.get_current_ws()
+                    .unwrap()
+                    .clients
+                    .keys()
+                    .collect::<Vec<&Window>>()
+            );
+            let window_amount = windows.len();
             let _ = windows.into_iter().for_each(|(win, rect)| {
                 match mon.remove_window(win) {
                     Some(ww) => {
                         let ww = WindowWrapper {
                             window_rect: rect,
+                            current_state: WindowState::Free,
                             handle_state: vec![HandleState::Move, HandleState::Resize].into(),
                             ..ww
                         };
                         mon.add_window(win, ww);
                     }
                     None => {
-                        let ww = WindowWrapper::new(action.win, rect, false);
+                        debug!("Mapping window not already in mon");
+                        let ww = {
+                            let ww = if window_amount == 1
+                                && mon.get_current_layout().unwrap() != LayoutTag::Floating
+                            {
+                                let mut ww = WindowWrapper::new(action.win, rect, false);
+                                ww.current_state = WindowState::Maximized;
+                                ww.handle_state
+                                    .replace(vec![HandleState::New, HandleState::Maximize]);
+                                ww
+                            } else {
+                                WindowWrapper::new(action.win, rect, false)
+                            };
+                            ww
+                        };
                         mon.add_window(action.win, ww);
                     }
                 };
             });
-            debug!("Windows in mon after place_window: {:?}", mon.get_current_ws().unwrap().clients.keys().collect::<Vec<&Window>>());
+            debug!(
+                "Windows in mon after place_window: {:?}",
+                mon.get_current_ws()
+                    .unwrap()
+                    .clients
+                    .keys()
+                    .collect::<Vec<&Window>>()
+            );
         }
     }
 }
