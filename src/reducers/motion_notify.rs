@@ -37,7 +37,18 @@ impl Reducer<action::MotionNotify> for State {
             .get_current_layout()
             .expect("MotionNotify - monitor - get_current_layout");
 
-        if layout != LayoutTag::Floating { return }
+        let is_trans =  match self.monitors
+            .get(&self.current_monitor)
+            .expect("MotionNotify - monitor - get - action.win is_trans")
+            .get_client(action.win) {
+                Some(client) => {
+                    client.is_trans
+                },
+                None => { return }
+        };
+
+
+        if layout != LayoutTag::Floating && !is_trans { return }
         
         let new_pos = calculcate_destination(self, &action);
 
