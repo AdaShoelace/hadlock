@@ -156,9 +156,7 @@ fn managed_client(
             }
 
             HDLKeysym::XK_f => {
-                let mon = state
-                    .monitors
-                    .get_mut(&state.current_monitor)?;
+                let mon = state.monitors.get_mut(&state.current_monitor)?;
                 mon.swap_window(state.focus_w, |mon, ww| wm::toggle_monocle(mon, ww));
             }
 
@@ -192,10 +190,8 @@ fn managed_client(
 
         match into_hdl_keysym(&state.lib.keycode_to_key_sym(keycode)) {
             HDLKeysym::XK_f => {
-                let mon = state
-                    .monitors
-                    .get_mut(&state.current_monitor)?;
-                    mon.swap_window(state.focus_w, |mon, ww| wm::toggle_maximize(mon, ww));
+                let mon = state.monitors.get_mut(&state.current_monitor)?;
+                mon.swap_window(state.focus_w, |mon, ww| wm::toggle_maximize(mon, ww));
             }
 
             HDLKeysym::XK_Right | HDLKeysym::XK_l => {
@@ -213,6 +209,9 @@ fn managed_client(
             }
             HDLKeysym::XK_c => {
                 let mon = state.monitors.get_mut(&state.current_monitor)?;
+                if mon.get_current_layout()? != LayoutTag::Floating {
+                    return Some(());
+                }
                 let windows = mon.place_window(state.focus_w);
 
                 for (win, rect) in windows.into_iter() {
@@ -319,7 +318,6 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
             handle_state: HandleState::Shift.into(),
             ..win
         });
-
     }
     Some(())
 }
