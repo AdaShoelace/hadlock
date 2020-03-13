@@ -1,8 +1,8 @@
 #![allow(dead_code)]
-use std::collections::HashMap;
+use indexmap::IndexMap;
 
 use crate::{
-    layout::{floating, column_master, Layout, LayoutTag},
+    layout::{column_master, floating, Layout, LayoutTag},
     models::windowwrapper::WindowWrapper,
     xlibwrapper::xlibmodels::Window,
 };
@@ -10,7 +10,7 @@ use crate::{
 #[derive(Debug)]
 pub struct Workspace {
     pub tag: u32,
-    pub clients: HashMap<Window, WindowWrapper>,
+    pub clients: IndexMap<Window, WindowWrapper>,
     pub layout: Box<dyn Layout>,
     available_layouts: Vec<LayoutTag>,
     current_tag: LayoutTag,
@@ -26,7 +26,7 @@ impl Workspace {
             current_tag: LayoutTag::Floating,
         }
     }
-    
+
     pub fn get_current_layout(&self) -> LayoutTag {
         self.current_tag
     }
@@ -36,13 +36,14 @@ impl Workspace {
             .available_layouts
             .iter()
             .position(|lt| self.current_tag == *lt)
-            .unwrap() + 1;
-        
+            .unwrap()
+            + 1;
+
         let index = index % self.available_layouts.len();
         self.current_tag = self.available_layouts[index];
         self.layout = match self.current_tag {
             LayoutTag::Floating => Box::new(floating::Floating::default()),
-            LayoutTag::ColumnMaster => Box::new(column_master::ColumnMaster::default())
+            LayoutTag::ColumnMaster => Box::new(column_master::ColumnMaster::default()),
         }
     }
 
@@ -51,12 +52,18 @@ impl Workspace {
     }
 
     pub fn add_window(&mut self, w: Window, ww: WindowWrapper) {
-        //warn!("{} added to desktop: {}", w, self.tag);
         self.clients.insert(w, ww);
+        self.clients.sort_by(|_ka, va, _kb, vb| va.toc.cmp(&vb.toc));
     }
 
     pub fn remove_window(&mut self, w: Window) -> Option<WindowWrapper> {
-        self.clients.remove(&w)
+        let ret = self.clients.remove(&w);
+        self.clients.sort_by(|_ka, va, _kb, vb| va.toc.cmp(&vb.toc));
+        ret
+    }
+
+    pub fn get_newest(&self) -> Option<(&Window, &WindowWrapper)> {
+        self.clients.iter().last()
     }
 }
 

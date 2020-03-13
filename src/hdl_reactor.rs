@@ -1,6 +1,6 @@
 use {
     crate::config::CONFIG,
-    crate::models::{internal_action, windowwrapper::*, HandleState, WindowState},
+    crate::models::{internal_action::InternalAction, windowwrapper::*, HandleState, WindowState},
     crate::state::*,
     crate::{
         xlibwrapper::core::XlibWrapper,
@@ -14,7 +14,7 @@ use {
 
 pub struct HdlReactor {
     lib: Rc<XlibWrapper>,
-    tx: Sender<internal_action::InternalAction>,
+    tx: Sender<InternalAction>,
 }
 
 impl Reactor<State> for HdlReactor {
@@ -33,7 +33,7 @@ impl Reactor<State> for HdlReactor {
                 }
                 HandleState::UpdateLayout => {
                     debug!("layout shall be updated");
-                    let _ = self.tx.send(internal_action::InternalAction::UpdateLayout);
+                    let _ = self.tx.send(InternalAction::UpdateLayout);
                 }
                 _ => (),
             }
@@ -54,7 +54,6 @@ impl Reactor<State> for HdlReactor {
                                 self.lib.move_window(*key, val.get_position());
                                 self.lib.resize_window(*key, val.get_size());
                                 self.subscribe_to_events(*key);
-                                //debug!("Mapping: {}", *key);
                                 self.lib.map_window(*key);
                                 set_handled = true;
                             }
@@ -68,7 +67,6 @@ impl Reactor<State> for HdlReactor {
                                 set_handled = true;
                             }
                             HandleState::Move => {
-                                //debug!("Move pos: {:?}", val.get_position());
                                 self.lib.move_window(*key, val.get_position());
                                 set_handled = true;
                             }
@@ -80,20 +78,17 @@ impl Reactor<State> for HdlReactor {
                                 set_handled = true;
                             }
                             HandleState::Resize => {
-                                //debug!("Resize in reactor");
                                 self.lib.resize_window(*key, val.get_size());
                                 set_handled = true;
                             }
                             HandleState::Focus => {
-                                //debug!("Focus");
                                 self.set_focus(*key, &val);
                                 set_handled = true;
                             }
                             HandleState::Unfocus => {
-                                //debug!("Unfocus");
                                 self.unset_focus(*key, &val);
                                 set_handled = true;
-                                let _ = self.tx.send(internal_action::InternalAction::Focus);
+                                let _ = self.tx.send(InternalAction::Focus);
                             }
                             HandleState::Shift => {
                                 self.lib.move_window(*key, val.get_position());
@@ -103,6 +98,7 @@ impl Reactor<State> for HdlReactor {
                                 set_handled = true;
                             }
                             HandleState::Maximize | HandleState::Monocle => {
+                                debug!("Maximise: {}", key);
                                 self.lib.move_window(*key, val.get_position());
                                 self.lib.resize_window(*key, val.get_size());
                                 self.set_focus(*key, &val);
@@ -124,20 +120,22 @@ impl Reactor<State> for HdlReactor {
                                     .get(&state.current_monitor)
                                     .expect("HdlReactor - Destroy")
                                     .get_current_windows();
-                                debug!("Destroying: {}", key);
                                 self.kill_window(*key, windows);
-                                debug!(
-                                    "Vec after destroy: {:?}",
-                                    state
-                                        .monitors
-                                        .get(&state.current_monitor)
-                                        .unwrap()
-                                        .get_current_windows()
-                                );
-                                let _ = self.tx.send(internal_action::InternalAction::Focus);
+
+                                match mon.get_newest() {
+                                    None =>
+                                    {
+                                        let _ = self.tx.send(InternalAction::Focus);
+                                    }
+                                    Some(win) => {
+                                        debug!("should fucking focus");
+                                        let _ = self.tx.send( InternalAction::FocusSpecific(*win.0));
+                                    }
+                                }
+
                                 let _ =
-                                    self.tx.send(internal_action::InternalAction::Destroy(*key));
-                                let _ = self.tx.send(internal_action::InternalAction::UpdateLayout);
+                                    self.tx.send(InternalAction::Destroy(*key));
+                                let _ = self.tx.send(InternalAction::UpdateLayout);
                             }
                             _ => (),
                         });
@@ -151,7 +149,7 @@ impl Reactor<State> for HdlReactor {
     }
 }
 impl HdlReactor {
-    pub fn new(lib: Rc<XlibWrapper>, tx: Sender<internal_action::InternalAction>) -> Self {
+    pub fn new(lib: Rc<XlibWrapper>, tx: Sender<InternalAction>) -> Self {
         Self { lib, tx }
     }
 
@@ -209,8 +207,8 @@ impl HdlReactor {
         match class_hint {
             Ok((class, _name)) if class != "firefox" || ww.is_trans => {
                 self.lib.take_focus(focus);
-            },
-            _ => ()
+            }
+            _ => (),
         }
 
         if !(ww.current_state == WindowState::Monocle || ww.current_state == WindowState::Maximized)

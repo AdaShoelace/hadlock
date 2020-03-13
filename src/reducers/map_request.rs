@@ -122,6 +122,7 @@ impl Reducer<action::MapRequest> for State {
             .monitors
             .get_mut(&self.current_monitor)
             .expect("MapRequest: get_client_mut");
+
         if mon.contains_window(action.win) {
             let ww = match mon.remove_window(action.win) {
                 Some(ww) => ww,
