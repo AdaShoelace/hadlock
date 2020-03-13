@@ -207,6 +207,9 @@ fn managed_client(
             HDLKeysym::XK_Up | HDLKeysym::XK_k => {
                 shift_window(state, Direction::North);
             }
+            HDLKeysym::XK_m => {
+                swap_master(state);
+            }
             HDLKeysym::XK_c => {
                 let mon = state.monitors.get_mut(&state.current_monitor)?;
                 if mon.get_current_layout()? != LayoutTag::Floating {
@@ -322,6 +325,32 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
     Some(())
 }
 
+fn swap_master(state: &mut State) -> Option<()> {
+    let mon = state.monitors.get_mut(&state.current_monitor)?;
+    let newest = mon.get_newest()?.clone();
+    match (newest.0.clone(), newest.1.clone()) {
+        (win, client) => if win != state.focus_w {
+            let client_toc = client.toc;
+            let mut tmp_toc = std::time::Instant::now();
+            mon.swap_window(state.focus_w, |_mon, ww| WindowWrapper {
+                toc: {
+                    tmp_toc = ww.toc;
+                    client_toc
+                },
+                ..ww
+            })?;
+            mon.swap_window(win, |_mon, ww| WindowWrapper {
+                toc: tmp_toc,
+                ..ww
+            })?;
+            wm::reorder(state);
+            
+        },
+    }
+
+    Some(())
+}
+
 fn circulate_layout(state: &mut State) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;
     let ws = mon.get_current_ws_mut()?;
@@ -331,7 +360,7 @@ fn circulate_layout(state: &mut State) -> Option<()> {
         .summary("Layout switched")
         .body(&format!("New layout: {}", ws.layout))
         .icon("firefox")
-        .timeout(Timeout::Milliseconds(3000))
+        .timeout(Timeout::Milliseconds(1500))
         .show();
     match notify_res {
         Ok(_) => Some(()),
