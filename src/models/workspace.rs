@@ -65,10 +65,6 @@ impl Workspace {
     pub fn get_newest(&self) -> Option<(&Window, &WindowWrapper)> {
         self.clients.iter().last()
     }
-
-    pub fn get_newest_mut(&mut self) -> Option<(&Window, &mut WindowWrapper)> {
-        self.clients.iter_mut().last()
-    }
 }
 
 impl PartialEq for Workspace {

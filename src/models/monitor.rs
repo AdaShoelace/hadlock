@@ -64,9 +64,6 @@ impl Monitor {
         self.workspaces.get(&self.current_ws)?.get_newest()
     }
 
-    pub fn get_newest_mut(&mut self) -> Option<(&Window, &mut WindowWrapper)> {
-        self.workspaces.get_mut(&self.current_ws)?.get_newest_mut()
-    }
     /* In current workspace */
     pub fn swap_window<F>(&mut self, win: Window, mut f: F) -> Option<()> 
         where F: FnMut(&Monitor, WindowWrapper) -> WindowWrapper + Sized
