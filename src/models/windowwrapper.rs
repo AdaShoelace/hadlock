@@ -5,6 +5,7 @@ use super::WindowState;
 use crate::xlibwrapper::util::*;
 use crate::xlibwrapper::xlibmodels::*;
 use std::cell::RefCell;
+use std::time::Instant;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WindowWrapper {
@@ -19,6 +20,7 @@ pub struct WindowWrapper {
     pub handle_state: RefCell<Vec<HandleState>>,
     pub current_state: WindowState,
     pub previous_state: WindowState,
+    pub toc: Instant
 }
 
 impl WindowWrapper {
@@ -36,6 +38,7 @@ impl WindowWrapper {
             handle_state: RefCell::new(vec![HandleState::New]),
             current_state: WindowState::Free,
             previous_state: WindowState::Free,
+            toc: Instant::now()
         }
     }
 

@@ -130,12 +130,6 @@ impl Layout for ColumnMaster {
                     width: column_width,
                     height: self.column_height(&screen, &dock_area, &windows),
                 };
-                /*debug!(
-                "Pushing w: {}, at pos: {:#?} with size: {:#?}",
-                win.window(),
-                pos,
-                size
-                );*/
                 ret_vec.push((win.window(), Rect::new(pos, size)))
             }
             ret_vec.push((w, Rect::new(pos, size)));
@@ -193,7 +187,10 @@ impl Layout for ColumnMaster {
         if windows.is_empty() {
             return vec![];
         } else {
-            let focus = windows.remove(0).window();
+            let focus = match windows.pop() {
+                Some(ww) => ww.window(),
+                _ => focus
+            };
             self.place_window(&dock_area, &screen, focus, windows)
         }
     }

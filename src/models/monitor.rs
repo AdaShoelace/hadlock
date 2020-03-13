@@ -60,7 +60,9 @@ impl Monitor {
             .remove_window(w)?;
         Some(ret)
     }
-  
+    pub fn get_newest(&self) -> Option<(&Window, &WindowWrapper)> {
+        self.workspaces.get(&self.current_ws)?.get_newest()
+    }
     /* In current workspace */
     pub fn swap_window<F>(&mut self, win: Window, f: F) -> Option<()> 
         where F: Fn(&Monitor, WindowWrapper) -> WindowWrapper + Sized
