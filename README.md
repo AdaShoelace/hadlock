@@ -123,8 +123,10 @@ At the moment custom key bindings is not available (it will come in the future)
 * `mod + right/left/up/down` or `mod + h/j/k/l` snap window to edge  
 * `shift + mod + right/left/up/down` resize window  
 * `mod + mouse1 + mousemovement` move window  
-* `mod + mouse1` raise window
+* `mod + mouse1` raise window  
 
+**Column Master**  
+* `mod + m` swap master window
 
 ## Testing
 In order to test/run hadlock some dependencies are needed:
