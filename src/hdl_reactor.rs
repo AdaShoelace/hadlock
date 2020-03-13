@@ -123,18 +123,16 @@ impl Reactor<State> for HdlReactor {
                                 self.kill_window(*key, windows);
 
                                 match mon.get_newest() {
-                                    None =>
-                                    {
+                                    None => {
                                         let _ = self.tx.send(InternalAction::Focus);
                                     }
                                     Some(win) => {
                                         debug!("should fucking focus");
-                                        let _ = self.tx.send( InternalAction::FocusSpecific(*win.0));
+                                        let _ = self.tx.send(InternalAction::FocusSpecific(*win.0));
                                     }
                                 }
 
-                                let _ =
-                                    self.tx.send(InternalAction::Destroy(*key));
+                                let _ = self.tx.send(InternalAction::Destroy(*key));
                                 let _ = self.tx.send(InternalAction::UpdateLayout);
                             }
                             _ => (),
@@ -186,8 +184,8 @@ impl HdlReactor {
 
     fn grab_keys(&self, w: Window) {
         let _keys = vec![
-            "q", "Left", "Up", "Right", "Down", "Return", "f", "e", "c", "h", "j", "k", "l", "d",
-            "r", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+            "q", "Left", "Up", "Right", "Down", "Return", "c", "d", "e", "f", "h", "j", "k", "l",
+            "m", "r", "1", "2", "3", "4", "5", "6", "7", "8", "9",
         ]
         .iter()
         .map(|key| keysym_lookup::into_keysym(key).expect("Core: no such key"))
