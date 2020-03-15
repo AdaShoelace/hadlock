@@ -94,10 +94,19 @@ impl Workspace {
             return None;
         }
         match self.clients.get_full(&ww.window()) {
-            Some((index, ..)) => {
-                let (index, len) = (index as isize, self.clients.len() as isize);
-                let index = ((index + 1) % len - 1).abs() as usize;
-                Some(self.clients.get_index(index)?.1)
+            Some((mut index, ..)) => {
+                if index == self.clients.len() - 2 || index == self.clients.len() - 1 {
+                    index = 0;
+                } else {
+                    index += 1;
+                }
+                let ret = self.clients.get_index(index)?.1;
+
+                if ret.window() == ww.window() {
+                    return None;
+                } else {
+                    return Some(ret);
+                }
             }
             _ => None,
         }

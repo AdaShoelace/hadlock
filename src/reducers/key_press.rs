@@ -307,20 +307,39 @@ fn root(
 
 fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;
-    //debug!("focus_w in shift_window: {}", state.focus_w);
     if mon.get_current_layout()? != LayoutTag::Floating {
         let (newest, _) = mon.get_newest()?;
-
-        match direction {
-            Direction::South => {
-                debug!("vi hamnade här");
-                if let Some(ww) = mon.get_previous(state.focus_w) {
+        if state.focus_w != *newest {
+            match direction {
+                Direction::North => {
+                    if let Some(ww) = mon.get_previous(state.focus_w) {
+                        let _ = state
+                            .tx
+                            .send(internal_action::InternalAction::FocusSpecific(ww.window()));
+                    }
+                }
+                Direction::South => {
+                    if let Some(ww) = mon.get_next(state.focus_w) {
+                        let _ = state
+                            .tx
+                            .send(internal_action::InternalAction::FocusSpecific(ww.window()));
+                    }
+                }
+                Direction::West => {
                     let _ = state
                         .tx
-                        .send(internal_action::InternalAction::FocusSpecific(ww.window()));
+                        .send(internal_action::InternalAction::FocusSpecific(*newest));
                 }
+                _ => (),
             }
-            _ => (),
+        }
+
+        if state.focus_w == *newest && direction == Direction::East {
+            if let Some(ww) = mon.get_next(state.focus_w) {
+                let _ = state
+                    .tx
+                    .send(internal_action::InternalAction::FocusSpecific(ww.window()));
+            }
         }
         return Some(());
     }
@@ -339,6 +358,7 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
 }
 
 fn swap_master(state: &mut State) -> Option<()> {
+    debug!("Swap master");
     let mon = state.monitors.get_mut(&state.current_monitor)?;
     let newest = mon.get_newest()?.clone();
     match (newest.0.clone(), newest.1.clone()) {

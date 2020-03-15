@@ -51,6 +51,7 @@ impl Reactor<State> for HdlReactor {
                                 self.lib.add_to_save_set(*key);
                                 self.lib.add_to_root_net_client_list(*key);
                                 self.lib.set_border_width(*key, CONFIG.border_width as u32);
+                                self.lib.set_border_color(*key, CONFIG.background_color);
                                 self.lib.move_window(*key, val.get_position());
                                 self.lib.resize_window(*key, val.get_size());
                                 self.subscribe_to_events(*key);
@@ -222,7 +223,7 @@ impl HdlReactor {
         self.lib.ungrab_all_buttons(w);
         self.lib.sync(false);
         //self.lib.ungrab_keys(w);
-        self.lib.sync(false);
+        //self.lib.sync(false);
         self.lib.set_border_color(w, CONFIG.background_color);
         self.lib.resize_window(w, ww.get_size());
         self.lib.remove_focus(w);

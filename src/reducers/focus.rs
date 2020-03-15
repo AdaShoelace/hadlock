@@ -50,19 +50,16 @@ impl Reducer<action::Focus> for State {
 
                 //set focus
                 self.focus_w = action.win;
-                /*let mut new_focus = match curr_mon.remove_window(self.focus_w) {
+                let mut new_focus = match curr_mon.remove_window(self.focus_w) {
                     Some(win) => win,
                     None => return,
-                };*/
+                };
 
-                if let Some(w) = curr_mon.get_client_mut(action.win) {
-                    w.handle_state = HandleState::Focus.into();
-                }
-                /*new_focus = WindowWrapper {
+                new_focus = WindowWrapper {
                     handle_state: HandleState::Focus.into(),
                     ..new_focus
                 };
-                curr_mon.add_window(self.focus_w, new_focus);*/
+                curr_mon.add_window(self.focus_w, new_focus);
             }
             None => (),
         }
