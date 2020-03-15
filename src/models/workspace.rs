@@ -57,13 +57,50 @@ impl Workspace {
     }
 
     pub fn remove_window(&mut self, w: Window) -> Option<WindowWrapper> {
-        let ret = self.clients.remove(&w);
+        let ret = self.clients.shift_remove(&w);
         self.clients.sort_by(|_ka, va, _kb, vb| va.toc.cmp(&vb.toc));
         ret
     }
 
     pub fn get_newest(&self) -> Option<(&Window, &WindowWrapper)> {
         self.clients.iter().last()
+    }
+
+    pub fn get_previous(&self, ww: &WindowWrapper) -> Option<&WindowWrapper> {
+        if self.clients.len() <= 1 {
+            return None;
+        }
+        match self.clients.get_full(&ww.window()) {
+            Some((mut index, ..)) => {
+                if index == 0 {
+                    index = self.clients.len() - 2;
+                } else {
+                    index -= 1;
+                }
+                let ret = self.clients.get_index(index)?.1;
+
+                if ret.window() == ww.window() {
+                    return None;
+                } else {
+                    return Some(ret);
+                }
+            }
+            _ => None,
+        }
+    }
+
+    pub fn get_next(&self, ww: &WindowWrapper) -> Option<&WindowWrapper> {
+        if self.clients.len() <= 1 {
+            return None;
+        }
+        match self.clients.get_full(&ww.window()) {
+            Some((index, ..)) => {
+                let (index, len) = (index as isize, self.clients.len() as isize);
+                let index = ((index + 1) % len - 1).abs() as usize;
+                Some(self.clients.get_index(index)?.1)
+            }
+            _ => None,
+        }
     }
 }
 

@@ -18,7 +18,7 @@ pub enum WindowState {
     Tiled,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Direction {
     North,
     West,

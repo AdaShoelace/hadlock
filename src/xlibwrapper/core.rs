@@ -442,12 +442,12 @@ impl XlibWrapper {
     pub fn remove_focus(&self, _w: Window) {
         unsafe {
             (self.lib.XDeleteProperty)(self.display, self.root, self.xatom.NetActiveWindow);
-            (self.lib.XSetInputFocus)(
+            /*(self.lib.XSetInputFocus)(
                 self.display,
                 self.root,
                 xlib::RevertToPointerRoot,
                 xlib::CurrentTime,
-            );
+            );*/
         }
     }
 
@@ -483,7 +483,7 @@ impl XlibWrapper {
             );
             mem::forget(list);
         }
-        self.send_xevent_atom(w, self.xatom.WMTakeFocus);
+        //self.send_xevent_atom(w, self.xatom.WMTakeFocus);
         self.sync(false);
     }
 

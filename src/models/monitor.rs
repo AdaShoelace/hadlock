@@ -64,6 +64,23 @@ impl Monitor {
         self.workspaces.get(&self.current_ws)?.get_newest()
     }
 
+    pub fn get_previous(&self, win: Window) -> Option<&WindowWrapper> {
+
+        let ws = self.workspaces.get(&self.current_ws)?;
+        match ws.clients.get(&win) {
+            Some(ww) => ws.get_previous(ww),
+            _ => None
+        }
+    }
+
+    pub fn get_next(&self, win: Window) -> Option<&WindowWrapper> {
+        let ws = self.workspaces.get(&self.current_ws)?;
+        match ws.clients.get(&win) {
+            Some(ww) => ws.get_next(ww),
+            _ => None
+        }
+    }
+
     /* In current workspace */
     pub fn swap_window<F>(&mut self, win: Window, mut f: F) -> Option<()> 
         where F: FnMut(&Monitor, WindowWrapper) -> WindowWrapper + Sized
