@@ -307,8 +307,21 @@ fn root(
 
 fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;
+    //debug!("focus_w in shift_window: {}", state.focus_w);
+    if mon.get_current_layout()? != LayoutTag::Floating {
+        let (newest, _) = mon.get_newest()?;
 
-    if mon.get_current_ws()?.get_current_layout() != LayoutTag::Floating {
+        match direction {
+            Direction::South => {
+                debug!("vi hamnade här");
+                if let Some(ww) = mon.get_previous(state.focus_w) {
+                    let _ = state
+                        .tx
+                        .send(internal_action::InternalAction::FocusSpecific(ww.window()));
+                }
+            }
+            _ => (),
+        }
         return Some(());
     }
 
@@ -329,23 +342,21 @@ fn swap_master(state: &mut State) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;
     let newest = mon.get_newest()?.clone();
     match (newest.0.clone(), newest.1.clone()) {
-        (win, client) => if win != state.focus_w {
-            let client_toc = client.toc;
-            let mut tmp_toc = std::time::Instant::now();
-            mon.swap_window(state.focus_w, |_mon, ww| WindowWrapper {
-                toc: {
-                    tmp_toc = ww.toc;
-                    client_toc
-                },
-                ..ww
-            })?;
-            mon.swap_window(win, |_mon, ww| WindowWrapper {
-                toc: tmp_toc,
-                ..ww
-            })?;
-            wm::reorder(state);
-            
-        },
+        (win, client) => {
+            if win != state.focus_w {
+                let client_toc = client.toc;
+                let mut tmp_toc = std::time::Instant::now();
+                mon.swap_window(state.focus_w, |_mon, ww| WindowWrapper {
+                    toc: {
+                        tmp_toc = ww.toc;
+                        client_toc
+                    },
+                    ..ww
+                })?;
+                mon.swap_window(win, |_mon, ww| WindowWrapper { toc: tmp_toc, ..ww })?;
+                wm::reorder(state);
+            }
+        }
     }
 
     Some(())

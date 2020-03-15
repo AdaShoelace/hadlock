@@ -88,7 +88,7 @@ impl Reactor<State> for HdlReactor {
                             HandleState::Unfocus => {
                                 self.unset_focus(*key, &val);
                                 set_handled = true;
-                                let _ = self.tx.send(InternalAction::Focus);
+                                //let _ = self.tx.send(InternalAction::Focus);
                             }
                             HandleState::Shift => {
                                 self.lib.move_window(*key, val.get_position());
@@ -204,6 +204,7 @@ impl HdlReactor {
 
         match class_hint {
             Ok((class, _name)) if class != "firefox" || ww.is_trans => {
+                debug!("taking focus: {}", focus);
                 self.lib.take_focus(focus);
             }
             _ => (),
@@ -220,7 +221,7 @@ impl HdlReactor {
     pub fn unset_focus(&self, w: Window, ww: &WindowWrapper) {
         self.lib.ungrab_all_buttons(w);
         self.lib.sync(false);
-        self.lib.ungrab_keys(w);
+        //self.lib.ungrab_keys(w);
         self.lib.sync(false);
         self.lib.set_border_color(w, CONFIG.background_color);
         self.lib.resize_window(w, ww.get_size());
