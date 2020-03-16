@@ -124,14 +124,8 @@ impl Reactor<State> for HdlReactor {
                                     .get_current_windows();
                                 self.kill_window(*key, windows);
 
-                                match mon.get_newest() {
-                                    None => {
-                                        let _ = self.tx.send(InternalAction::Focus);
-                                    }
-                                    Some(win) => {
-                                        debug!("should fucking focus");
-                                        let _ = self.tx.send(InternalAction::FocusSpecific(*win.0));
-                                    }
+                                if let None = mon.get_newest() {
+                                    let _ = self.tx.send(InternalAction::Focus);
                                 }
 
                                 let _ = self.tx.send(InternalAction::Destroy(*key));
