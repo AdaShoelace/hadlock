@@ -2,7 +2,10 @@
 
 use crate::{
     layout::LayoutTag,
-    models::{rect::*, screen::*, windowwrapper::*, workspace::*, HandleState, WindowState, monitor::Monitor},
+    models::{
+        monitor::Monitor, rect::*, screen::*, windowwrapper::*, workspace::*, HandleState,
+        WindowState,
+    },
     state::State,
     xlibwrapper::{util::*, xlibmodels::*},
 };
@@ -104,37 +107,23 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     };
 
     if ws == mon.current_ws {
-        state.current_monitor = mon.id;
         state.lib.move_cursor(Position {
             x: mon.screen.x + (mon.screen.width / 2),
             y: mon.screen.y + (mon.screen.height / 2),
         });
         mon.handle_state.replace(HandleState::Focus.into());
+
+        let mon = state.monitors.get_mut(&state.current_monitor)?;
+        update_ws_handle_state(mon, mon.current_ws, vec![HandleState::Unfocus]);
+
+        state.current_monitor = mon.id;
         return Some(());
     }
 
-    let mut old_ws = mon.remove_ws(mon.current_ws).expect("Should be here..");
-    old_ws.clients.values_mut().for_each(|client| {
-        client.handle_state.replace_with(|old| {
-            let mut new = vec![HandleState::Unmap];
-            old.append(&mut new);
-            old.to_vec()
-        });
-    });
-    mon.add_ws(old_ws);
-    
+    update_ws_handle_state(mon, mon.current_ws, vec![HandleState::Unmap, HandleState::Unfocus]);
 
     if mon.contains_ws(ws) {
-        let mut new_ws = mon.remove_ws(ws).expect("Should also be here");
-        new_ws.clients.values_mut().for_each(|client| {
-            client.handle_state.replace_with(|old| {
-                let mut new = vec![HandleState::Map];
-                old.append(&mut new);
-                old.to_vec()
-            });
-        });
-        //debug!("swithcing to ws: {:?}", new_ws);
-        mon.add_ws(new_ws);
+        update_ws_handle_state(mon, ws, vec![HandleState::Map]);
     } else {
         mon.add_ws(Workspace::new(ws));
     }
@@ -152,6 +141,17 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     Some(())
 }
 
+fn update_ws_handle_state(mon: &mut Monitor, ws: u32, mut handle_state: Vec<HandleState>) {
+    let mut new_ws = mon.remove_ws(ws).expect("Should also be here");
+    new_ws.clients.values_mut().for_each(|client| {
+        client.handle_state.replace_with(|old| {
+            old.append(&mut handle_state);
+            old.to_vec()
+        });
+    });
+    mon.add_ws(new_ws);
+}
+
 pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
     let ww = state
         .monitors
@@ -164,21 +164,31 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
     };
 
     if ws == mon.current_ws {
+        debug!("is current");
         let prev_ws = mon.current_ws;
         mon.current_ws = ws;
         state.lib.unmap_window(w);
         let windows = mon.place_window(w);
         mon.add_window(w, ww.clone());
-
         windows.into_iter().for_each(|(win, rect)| {
+            let (new_win, new_ww) = mon.get_newest().clone().unwrap();
+            let new_win = new_win.clone();
+            let new_ww = new_ww.clone();
             mon.swap_window(win, |_mon, ww| WindowWrapper {
                 restore_position: rect.get_position(),
                 window_rect: rect,
                 previous_state: WindowState::Free,
                 current_state: WindowState::Free,
                 handle_state: vec![HandleState::Map].into(),
+                toc: if win == w { new_ww.toc.clone() } else { ww.toc },
                 ..ww
             });
+            if win == w {
+                mon.swap_window(new_win.clone(), |_mon, win_wrap| WindowWrapper {
+                    toc: ww.toc,
+                    ..win_wrap
+                });
+            }
         });
 
         mon.current_ws = prev_ws;
@@ -191,14 +201,24 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         mon.add_window(w, ww.clone());
         let windows = mon.place_window(w);
         windows.into_iter().for_each(|(win, rect)| {
+            let (new_win, new_ww) = mon.get_newest().clone().unwrap();
+            let new_win = new_win.clone();
+            let new_ww = new_ww.clone();
             mon.swap_window(win, |_mon, ww| WindowWrapper {
                 restore_position: rect.get_position(),
+                window_rect: rect,
                 previous_state: WindowState::Free,
                 current_state: WindowState::Free,
-                window_rect: rect,
-                handle_state: HandleState::Map.into(),
+                handle_state: vec![HandleState::Map].into(),
+                toc: if win == w { new_ww.toc.clone() } else { ww.toc },
                 ..ww
             });
+            if win == w {
+                mon.swap_window(new_win.clone(), |_mon, win_wrap| WindowWrapper {
+                    toc: ww.toc,
+                    ..win_wrap
+                });
+            }
         });
 
         mon.current_ws = prev_ws;
@@ -246,21 +266,36 @@ pub fn reorder(state: &mut State) -> Option<()> {
     let rects = mon.reorder(state.focus_w, &windows);
 
     let (current_state, handle_state) = if mon.get_current_layout()? == LayoutTag::Floating {
-        (WindowState::Free, vec![HandleState::Move, HandleState::Resize])
+        (
+            WindowState::Free,
+            vec![HandleState::Move, HandleState::Resize],
+        )
     } else {
-        let current_state = if rects.len() == 1 { WindowState::Maximized } else { WindowState::Tiled };
-        (current_state, vec![HandleState::Maximize])
+        if rects.len() == 1 {
+            (WindowState::Maximized, vec![HandleState::Maximize])
+        } else {
+            (
+                WindowState::Tiled,
+                vec![HandleState::Move, HandleState::Resize],
+            )
+        }
     };
 
     for (win, rect) in rects {
-        let ww = mon.remove_window(win)?;
+        /*let ww = mon.remove_window(win)?;
         let new_ww = WindowWrapper {
             window_rect: rect,
             current_state,
             handle_state: handle_state.clone().into(),
             ..ww
         };
-        mon.add_window(win, new_ww);
+        mon.add_window(win, new_ww);*/
+        mon.swap_window(win, |_mon, ww| WindowWrapper {
+            window_rect: rect,
+            current_state,
+            handle_state: handle_state.clone().into(),
+            ..ww
+        });
     }
     debug!("return from reorder");
     Some(())

@@ -54,6 +54,7 @@ impl Workspace {
     pub fn add_window(&mut self, w: Window, ww: WindowWrapper) {
         self.clients.insert(w, ww);
         self.clients.sort_by(|_ka, va, _kb, vb| va.toc.cmp(&vb.toc));
+        debug!("window order: {:?}", self.clients.keys().collect::<Vec<&Window>>());
     }
 
     pub fn remove_window(&mut self, w: Window) -> Option<WindowWrapper> {

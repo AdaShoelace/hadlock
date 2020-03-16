@@ -143,6 +143,7 @@ impl Reducer<action::MapRequest> for State {
         } else {
             if mon.contains_window(action.parent) {
                 self.lib.map_window(action.win);
+                self.lib.take_focus(action.win);
                 return;
             }
             let windows = mon.place_window(action.win);

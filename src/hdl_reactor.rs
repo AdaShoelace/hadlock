@@ -60,6 +60,7 @@ impl Reactor<State> for HdlReactor {
                             }
                             HandleState::Map => {
                                 self.lib.move_window(*key, val.get_position());
+                                self.lib.resize_window(*key, val.get_size());
                                 self.lib.map_window(*key);
                                 set_handled = true;
                             }
@@ -201,15 +202,7 @@ impl HdlReactor {
         self.lib.sync(false);
         self.grab_keys(focus);
         self.lib.sync(false);
-        let class_hint = self.lib.get_class_hint(focus);
-
-        match class_hint {
-            Ok((class, _name)) if class != "firefox" || ww.is_trans => {
-                debug!("taking focus: {}", focus);
-                self.lib.take_focus(focus);
-            }
-            _ => (),
-        }
+        self.lib.take_focus(focus);
 
         if !(ww.current_state == WindowState::Monocle || ww.current_state == WindowState::Maximized)
         {
