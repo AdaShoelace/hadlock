@@ -1,4 +1,5 @@
 use crate::xlibwrapper::util::Color;
+use crate::layout::LayoutTag;
 use serde::{self, Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -27,6 +28,9 @@ pub struct Config {
         default = "default_focused_background_color"
     )]
     pub focused_background_color: Color,
+
+    #[serde(rename = "defaultLayout", default = "default_layout")]
+    pub default_layout: LayoutTag,
 
     #[serde(rename = "workspaces", default = "default_workspaces")]
     pub workspaces: BTreeMap<u8, String>,
@@ -66,6 +70,10 @@ fn default_focused_background_color() -> Color {
     Color::DefaultFocusedBackground
 }
 
+fn default_layout() -> LayoutTag {
+    LayoutTag::Floating
+}
+
 fn default_workspaces() -> BTreeMap<u8, String> {
     let mut workspaces: BTreeMap<u8, String> = BTreeMap::new();
     let _ = (1..=9).for_each(|ws| {
@@ -92,6 +100,7 @@ impl Default for Config {
             border_color: Color::DefaultBorder,
             background_color: Color::DefaultBackground,
             focused_background_color: Color::DefaultFocusedBackground,
+            default_layout: default_layout(),
             workspaces: {
                 let mut workspaces: BTreeMap<u8, String> = BTreeMap::new();
                 let _ = (1..=9).for_each(|ws| {
