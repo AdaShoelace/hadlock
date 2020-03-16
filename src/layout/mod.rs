@@ -6,8 +6,9 @@ pub mod column_master;
 use crate::models::{dockarea::DockArea, screen::Screen, windowwrapper::WindowWrapper, Direction, rect::Rect};
 use crate::xlibwrapper::util::{Position, Size};
 use crate::xlibwrapper::xlibmodels::Window;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
 pub enum LayoutTag {
     Floating,
     ColumnMaster
@@ -20,6 +21,13 @@ impl std::fmt::Display for LayoutTag {
             Self::ColumnMaster => "ColumnMaster"
         };
         write!(f, "{}", tag)
+    }
+}
+
+pub fn layout_from_tag(tag: LayoutTag) -> Box<dyn Layout> {
+    match tag {
+        LayoutTag::Floating => Box::new(floating::Floating::default()),
+        LayoutTag::ColumnMaster => Box::new(column_master::ColumnMaster::default())
     }
 }
 
