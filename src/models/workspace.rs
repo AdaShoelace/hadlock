@@ -2,7 +2,8 @@
 use indexmap::IndexMap;
 
 use crate::{
-    layout::{column_master, floating, Layout, LayoutTag},
+    config::*,
+    layout::{self, column_master, floating, Layout, LayoutTag},
     models::windowwrapper::WindowWrapper,
     xlibwrapper::xlibmodels::Window,
 };
@@ -21,9 +22,9 @@ impl Workspace {
         Self {
             tag,
             clients: Default::default(),
-            layout: Box::new(floating::Floating::default()),
+            layout: layout::layout_from_tag(CONFIG.default_layout),
             available_layouts: vec![LayoutTag::Floating, LayoutTag::ColumnMaster],
-            current_tag: LayoutTag::Floating,
+            current_tag: CONFIG.default_layout,
         }
     }
 
