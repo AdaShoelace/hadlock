@@ -34,9 +34,10 @@ It is written completely in rust with and architecture heavily inspired by redux
 - [x] Snapping widows
 - [ ] Cycle through windows
 ### Tiled (Master pane) 
-- [ ] Move windows 
+- [x] Swap master window
 - [x] Move windows between workspaces 
-- [ ] Resize windows 
+### Tiled (General)
+- [x] Keyboard navigation
 
 ---  
 ### Planned features  
@@ -74,6 +75,7 @@ The config file is written is json and should be placed in `~/.config/hadlock`
 		"Custom": "#939393"
 	},
 	"focusedBackgroundColor": "DefaultFocusedBackground",
+	"defaultLayout": "ColumnMaster",
 	"workspaces": {
 		"1": "1",
 		"2": "2",
