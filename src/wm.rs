@@ -114,16 +114,41 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
         mon.handle_state.replace(HandleState::Focus.into());
 
         let mon = state.monitors.get_mut(&state.current_monitor)?;
-        update_ws_handle_state(mon, mon.current_ws, vec![HandleState::Unfocus]);
 
+        let mut new_ws = mon.remove_ws(mon.current_ws).expect("Should also be here");
+        new_ws.clients.values_mut().for_each(|client| {
+            client.handle_state.replace_with(|old| {
+                let mut handle_state = vec![HandleState::Unfocus];
+                old.append(&mut handle_state);
+                old.to_vec()
+            });
+        });
+        mon.add_ws(new_ws);
         state.current_monitor = mon.id;
         return Some(());
     }
 
-    update_ws_handle_state(mon, mon.current_ws, vec![HandleState::Unmap, HandleState::Unfocus]);
+
+    let mut new_ws = mon.remove_ws(mon.current_ws).expect("Should also be here");
+    new_ws.clients.values_mut().for_each(|client| {
+        client.handle_state.replace_with(|old| {
+            let mut handle_state = vec![HandleState::Unmap, HandleState::Unfocus];
+            old.append(&mut handle_state);
+            old.to_vec()
+        });
+    });
+    mon.add_ws(new_ws);
 
     if mon.contains_ws(ws) {
-        update_ws_handle_state(mon, ws, vec![HandleState::Map]);
+        let mut new_ws = mon.remove_ws(ws).expect("Should also be here");
+        new_ws.clients.values_mut().for_each(|client| {
+            client.handle_state.replace_with(|old| {
+                let mut handle_state = vec![HandleState::Map];
+                old.append(&mut handle_state);
+                old.to_vec()
+            });
+        });
+        mon.add_ws(new_ws);
     } else {
         mon.add_ws(Workspace::new(ws));
     }
@@ -139,17 +164,6 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     });
     mon.handle_state.replace(HandleState::Focus);
     Some(())
-}
-
-fn update_ws_handle_state(mon: &mut Monitor, ws: u32, mut handle_state: Vec<HandleState>) {
-    let mut new_ws = mon.remove_ws(ws).expect("Should also be here");
-    new_ws.clients.values_mut().for_each(|client| {
-        client.handle_state.replace_with(|old| {
-            old.append(&mut handle_state);
-            old.to_vec()
-        });
-    });
-    mon.add_ws(new_ws);
 }
 
 pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
