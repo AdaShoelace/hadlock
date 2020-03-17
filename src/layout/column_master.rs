@@ -32,9 +32,9 @@ impl ColumnMaster {
         dock_area: &DockArea,
     ) -> (Size, Position) {
         let gap = if CONFIG.smart_gaps {
-            CONFIG.outer_gap
-        } else {
             0
+        } else {
+            CONFIG.outer_gap
         };
         let (mut size, mut pos) = (
             Size {
