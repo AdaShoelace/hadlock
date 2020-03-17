@@ -5,6 +5,7 @@ It is written completely in rust with and architecture heavily inspired by redux
 
 
 ---
+![](./resources/gaps.jpg)
 ![](./resources/multimonitor.gif)
 ---
 ## Layouts  
@@ -49,6 +50,7 @@ It is written completely in rust with and architecture heavily inspired by redux
 
 
 ## Installation
+build with `cargo build --release` and put the binary in a directory in your `$PATH` eg `/usr/local/bin`  
 Create `/usr/share/xsessions/hadlock.desktop` containing:  
 
 ```
@@ -75,6 +77,9 @@ The config file is written is json and should be placed in `~/.config/hadlock`
 		"Custom": "#939393"
 	},
 	"focusedBackgroundColor": "DefaultFocusedBackground",
+	"outerGap": 14,
+	"innerGap": 6,
+	"smartGaps": true,
 	"defaultLayout": "ColumnMaster",
 	"workspaces": {
 		"1": "1",
@@ -128,6 +133,7 @@ At the moment custom key bindings is not available (it will come in the future)
 * `mod + mouse1` raise window  
 
 **Column Master**  
+* `mod + right/left/up/down` or `mod + h/j/k/l` change focus window  
 * `mod + m` swap master window
 
 ## Testing
