@@ -5,7 +5,9 @@ It is written completely in rust with and architecture heavily inspired by redux
 
 
 ---
+### Gaps
 ![](./resources/gaps.jpg)
+### Multimonitor
 ![](./resources/multimonitor.gif)
 ---
 ## Layouts  
