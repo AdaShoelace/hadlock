@@ -2,6 +2,7 @@
 use {
     crate::{
         config::CONFIG,
+        layout::*,
         models::{rect::*, window_type::WindowType, windowwrapper::*, HandleState},
         state::State,
         xlibwrapper::action,
@@ -17,12 +18,12 @@ use {
 impl Reducer<action::LeaveNotify> for State {
     fn reduce(&mut self, action: action::LeaveNotify) {
         //debug!("LeaveNotify");
-        if let Some(w) = self
+
+        let mon = self
             .monitors
             .get_mut(&self.current_monitor)
-            .expect("LeaveNotify - monitor - get_mut")
-            .get_client_mut(action.win)
-        {
+            .expect("LeaveNotify - monitor - get_mut");
+        if let Some(w) = mon.get_client_mut(action.win) {
             w.handle_state = HandleState::Unfocus.into();
         }
     }

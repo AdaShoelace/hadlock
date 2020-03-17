@@ -31,14 +31,19 @@ impl ColumnMaster {
         screen: &Screen,
         dock_area: &DockArea,
     ) -> (Size, Position) {
+        let gap = if CONFIG.smart_gaps {
+            CONFIG.outer_gap
+        } else {
+            0
+        };
         let (mut size, mut pos) = (
             Size {
-                width: screen.width,
-                height: screen.height,
+                width: screen.width - gap * 2,
+                height: screen.height - gap * 2,
             },
             Position {
-                x: screen.x,
-                y: screen.y,
+                x: screen.x + gap,
+                y: screen.y + gap,
             },
         );
         match dock_area.as_rect(screen) {
@@ -57,13 +62,16 @@ impl ColumnMaster {
             None => 0,
         };
 
-        ((screen.height - dock_height)
+        let mut ret = ((screen.height - dock_height - 2 * CONFIG.outer_gap)
             / if column.len() > 1 {
                 column.len() as i32
             } else {
                 1
             })
-            - 2 * CONFIG.border_width
+            - 2 * CONFIG.border_width;
+
+        if column.len() > 2 { ret -= ((column.len() as i32 - 1).abs() * CONFIG.inner_gap ) / column.len() as i32 }
+        ret
     }
 }
 
@@ -99,8 +107,9 @@ impl Layout for ColumnMaster {
 
         let mut ret_vec = Vec::<(Window, Rect)>::new();
 
-        let column_width = (screen.width / 2) - 2 * CONFIG.border_width;
-        let column_x = screen.x + screen.width / 2;
+        let column_width =
+            ((screen.width / 2) - 2 * CONFIG.border_width) - (CONFIG.outer_gap + (CONFIG.inner_gap / 2));
+        let column_x = (screen.x + screen.width / 2) + CONFIG.inner_gap;
 
         if windows.is_empty() {
             let (size, pos) = self.column_maximize(w, &screen, &dock_area);
@@ -109,11 +118,11 @@ impl Layout for ColumnMaster {
         } else {
             let size = Size {
                 width: column_width,
-                height: screen.height - dock_height - 2 * CONFIG.border_width,
+                height: screen.height - dock_height - 2 * CONFIG.border_width - 2 * CONFIG.outer_gap,
             };
             let pos = Position {
-                x: screen.x,
-                y: screen.y + dock_height,
+                x: screen.x + CONFIG.outer_gap,
+                y: screen.y + dock_height + CONFIG.outer_gap,
             };
             let windows = windows
                 .into_iter()
@@ -124,7 +133,7 @@ impl Layout for ColumnMaster {
                     x: column_x,
                     y: ((screen.y + dock_height)
                         + self.column_height(&screen, &dock_area, &windows) * index as i32)
-                        + (2 * CONFIG.border_width) * index as i32,
+                        + (2 * CONFIG.border_width) * index as i32 + CONFIG.outer_gap + (CONFIG.inner_gap * index as i32),
                 };
                 let size = Size {
                     width: column_width,
@@ -189,7 +198,7 @@ impl Layout for ColumnMaster {
         } else {
             let focus = match windows.pop() {
                 Some(ww) => ww.window(),
-                _ => focus
+                _ => focus,
             };
             self.place_window(&dock_area, &screen, focus, windows)
         }

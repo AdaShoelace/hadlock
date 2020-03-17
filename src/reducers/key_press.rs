@@ -269,6 +269,18 @@ fn root(
             HDLKeysym::XK_d => {
                 spawn_process("dmenu_recency", vec![]);
             }
+            HDLKeysym::XK_Right | HDLKeysym::XK_l => {
+                shift_window(state, Direction::East);
+            }
+            HDLKeysym::XK_Left | HDLKeysym::XK_h => {
+                shift_window(state, Direction::West);
+            }
+            HDLKeysym::XK_Down | HDLKeysym::XK_j => {
+                shift_window(state, Direction::South);
+            }
+            HDLKeysym::XK_Up | HDLKeysym::XK_k => {
+                shift_window(state, Direction::North);
+            }
             HDLKeysym::XK_r => {
                 let current_layout = state
                     .monitors
@@ -343,7 +355,7 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
         }
         return Some(());
     }
-
+    if state.focus_w == state.lib.get_root() { return Some(()) }
     let windows = mon.shift_window(state.focus_w, direction);
 
     for win in windows.into_iter() {
