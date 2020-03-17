@@ -41,6 +41,9 @@ pub struct Config {
     #[serde(rename = "defaultLayout", default = "default_layout")]
     pub default_layout: LayoutTag,
 
+    #[serde(rename = "defaultLayout", default = "default_layout")]
+    pub default_layout: LayoutTag,
+
     #[serde(rename = "workspaces", default = "default_workspaces")]
     pub workspaces: BTreeMap<u8, String>,
 
