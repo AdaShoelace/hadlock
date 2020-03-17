@@ -28,6 +28,18 @@ pub struct Config {
         default = "default_focused_background_color"
     )]
     pub focused_background_color: Color,
+    
+    #[serde(rename = "outerGap", default = "default_outer_gap")]
+    pub outer_gap: i32,
+
+    #[serde(rename = "innerGap", default = "default_inner_gap")]
+    pub inner_gap: i32,
+
+    #[serde(rename = "smartGaps", default = "default_smart_gaps")]
+    pub smart_gaps: bool,
+
+    #[serde(rename = "defaultLayout", default = "default_layout")]
+    pub default_layout: LayoutTag,
 
     #[serde(rename = "defaultLayout", default = "default_layout")]
     pub default_layout: LayoutTag,
@@ -70,6 +82,18 @@ fn default_focused_background_color() -> Color {
     Color::DefaultFocusedBackground
 }
 
+fn default_outer_gap() -> i32 {
+    0
+}
+
+fn default_inner_gap() -> i32 {
+    0
+}
+
+fn default_smart_gaps() -> bool {
+    false
+}
+
 fn default_layout() -> LayoutTag {
     LayoutTag::Floating
 }
@@ -93,13 +117,16 @@ fn default_commands() -> Vec<super::Command> {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            decorate: false,
-            decoration_height: 20,
-            border_width: 2,
-            inner_border_width: 0,
-            border_color: Color::DefaultBorder,
-            background_color: Color::DefaultBackground,
-            focused_background_color: Color::DefaultFocusedBackground,
+            decorate: default_decorate(),
+            decoration_height: default_decoration_height(),
+            border_width: default_border_width(),
+            inner_border_width: default_inner_border_width(),
+            border_color: default_border_color(),
+            background_color: default_background_color(),
+            focused_background_color: default_focused_background_color(),
+            outer_gap: default_outer_gap(),
+            inner_gap: default_inner_gap(),
+            smart_gaps: default_smart_gaps(),
             default_layout: default_layout(),
             workspaces: {
                 let mut workspaces: BTreeMap<u8, String> = BTreeMap::new();
