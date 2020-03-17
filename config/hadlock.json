@@ -1,5 +1,5 @@
 {
-	"borderWidth": 1,
+	"borderWidth": 2,
 	"borderColor": 	{
 		"Custom": "#480222"
 	},
@@ -7,6 +7,9 @@
 		"Custom": "#939393"
 	},
 	"focusedBackgroundColor": "DefaultFocusedBackground",
+	"outerGap": 20,
+	"innerGap": 5,
+	"smartGaps": true,
 	"defaultLayout": "ColumnMaster",
 	"workspaces": {
 		"1": "1",
