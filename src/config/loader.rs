@@ -29,8 +29,13 @@ pub(super) fn load_config() -> Config {
         let mut file_content = String::new();
         file.read_to_string(&mut file_content)
             .expect(&format!("Failed to read file content: {:?}", path));
-        let config: Config = serde_json::from_str(&file_content).expect("Failed to map config");
-        Config::from(config)
+        match serde_json::from_str(&file_content) {
+            Ok(config) => Config::from(config),
+            Err(err) => {
+                error!("{}", err);
+                Config::default()
+            }
+        }
     } else {
         debug!("Path either doesn't exist or is not a file");
         Config::default()
