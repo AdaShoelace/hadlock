@@ -46,7 +46,7 @@ It is written completely in rust with and architecture heavily inspired by redux
 ### Planned features  
 - Custom keybindings  
 - Application rules (bind an applicaiton to a specific monitor and workspace)
-- Window gaps
+- ~~Window gaps~~
 - Hot reloading config
 - Ability to script your own window layout  
 
