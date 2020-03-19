@@ -272,19 +272,16 @@ impl XlibWrapper {
                 1,
             );
 
-            if let Ok(cstring) = CString::new("Hadlock") {
-                    (self.lib.XChangeProperty)(
-                        self.display,
-                        ewmh,
-                        self.xatom.NetWMName,
-                        xlib::XA_CARDINAL,
-                        8,
-                        xlib::PropModeReplace,
-                        cstring.as_ptr() as *const u8,
-                        "Hadlock".len() as i32,
-                    );
-                    mem::forget(cstring);
-            }
+            (self.lib.XChangeProperty)(
+                self.display,
+                ewmh as c_ulong,
+                self.xatom.NetWMName as c_ulong,
+                self.xatom.NetUtf8String as c_ulong,
+                8,
+                0,
+                "Hadlok".as_ptr() as *mut c_uchar,
+                5,
+            );
 
             (self.lib.XChangeProperty)(
                 self.display,
@@ -297,20 +294,26 @@ impl XlibWrapper {
                 1,
             );
 
-            if let Ok(cstring) = CString::new("Hadlock") {
-                    (self.lib.XChangeProperty)(
-                        self.display,
-                        self.root,
-                        self.xatom.NetWMName,
-                        xlib::XA_CARDINAL,
-                        8,
-                        xlib::PropModeReplace,
-                        cstring.as_ptr() as *const u8,
-                        "Hadlock".len() as i32,
-                    );
-                    mem::forget(cstring);
-            }
+            (self.lib.XChangeProperty)(
+                self.display,
+                self.root,
+                self.xatom.NetWMName as c_ulong,
+                self.xatom.NetUtf8String as c_ulong,
+                8,
+                0,
+                "Hadlok".as_ptr() as *mut c_uchar,
+                5,
+            );
         }
+
+        //set the WM NAME
+        self.set_desktop_prop_string("Hadlok", self.xatom.NetWMName);
+
+        self.set_desktop_prop_u64(
+            self.root as u64,
+            self.xatom.NetSupportingWmCheck,
+            xlib::XA_WINDOW,
+        );
 
         //set a viewport
         let data = vec![0 as u32, 0 as u32];
@@ -403,7 +406,7 @@ impl XlibWrapper {
                     self.root,
                     atom,
                     xlib::XA_CARDINAL,
-                    8,
+                    32,
                     xlib::PropModeReplace,
                     cstring.as_ptr() as *const u8,
                     value.len() as i32,
