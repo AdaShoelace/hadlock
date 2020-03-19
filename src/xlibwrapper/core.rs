@@ -238,7 +238,16 @@ impl XlibWrapper {
                 &mut text,
                 self.xatom.NetDesktopNames,
             );
+            self.support_wm_check();
+        }
 
+        //set a viewport
+        let data = vec![0 as u32, 0 as u32];
+        self.set_desktop_prop(&data, self.xatom.NetDesktopViewport);
+    }
+
+    fn support_wm_check(&self) {
+        unsafe {
             let mut attribute = 1u32;
             let attrib_ptr: *mut u32 = &mut attribute;
             let ewmh = (self.lib.XCreateWindow)(
@@ -259,13 +268,11 @@ impl XlibWrapper {
             let mut child: u32 = ewmh as u32;
             let child_ptr: *mut u32 = &mut child;
 
-            let window = self.get_atom("WINDOW");
-
             (self.lib.XChangeProperty)(
                 self.display,
-                ewmh as c_ulong,
-                self.xatom.NetSupportingWmCheck as c_ulong,
-                window as c_ulong,
+                self.root,
+                self.xatom.NetSupportingWmCheck,
+                xlib::XA_CARDINAL,
                 32,
                 0,
                 child_ptr as *mut c_uchar,
@@ -274,52 +281,45 @@ impl XlibWrapper {
 
             (self.lib.XChangeProperty)(
                 self.display,
-                ewmh as c_ulong,
-                self.xatom.NetWMName as c_ulong,
-                self.xatom.NetUtf8String as c_ulong,
-                8,
-                0,
-                "Hadlok".as_ptr() as *mut c_uchar,
-                5,
-            );
-
-            (self.lib.XChangeProperty)(
-                self.display,
-                self.root,
-                self.xatom.NetSupportingWmCheck as c_ulong,
-                window as c_ulong,
+                ewmh,
+                self.xatom.NetSupportingWmCheck,
+                xlib::XA_CARDINAL,
                 32,
                 0,
                 child_ptr as *mut c_uchar,
                 1,
             );
 
-            (self.lib.XChangeProperty)(
-                self.display,
-                self.root,
-                self.xatom.NetWMName as c_ulong,
-                self.xatom.NetUtf8String as c_ulong,
-                8,
-                0,
-                "Hadlok".as_ptr() as *mut c_uchar,
-                5,
-            );
+            if let Ok(cstring) = CString::new("Hadlock") {
+                (self.lib.XChangeProperty)(
+                    self.display,
+                    ewmh,
+                    self.xatom.NetWMName,
+                    self.xatom.NetUtf8String,
+                    8,
+                    xlib::PropModeReplace,
+                    cstring.as_ptr() as *const u8,
+                    "Hadlock".len() as i32,
+                );
+                mem::forget(cstring);
+            }
+
+
+            if let Ok(cstring) = CString::new("Hadlock") {
+                (self.lib.XChangeProperty)(
+                    self.display,
+                    self.root,
+                    self.xatom.NetWMName,
+                    self.xatom.NetUtf8String,
+                    8,
+                    xlib::PropModeReplace,
+                    cstring.as_ptr() as *const u8,
+                    "Hadlock".len() as i32,
+                );
+                mem::forget(cstring);
+            }
         }
-
-        //set the WM NAME
-        self.set_desktop_prop_string("Hadlok", self.xatom.NetWMName);
-
-        self.set_desktop_prop_u64(
-            self.root as u64,
-            self.xatom.NetSupportingWmCheck,
-            xlib::XA_WINDOW,
-        );
-
-        //set a viewport
-        let data = vec![0 as u32, 0 as u32];
-        self.set_desktop_prop(&data, self.xatom.NetDesktopViewport);
     }
-
     fn get_atom(&self, s: &str) -> u64 {
         unsafe {
             match CString::new(s) {
