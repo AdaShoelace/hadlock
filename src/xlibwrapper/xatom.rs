@@ -10,6 +10,7 @@ pub struct XAtom {
     pub WMDelete: xlib::Atom,
     pub WMState: xlib::Atom,
     pub WMTakeFocus: xlib::Atom,
+    pub Window: xlib::Atom,
     pub NetActiveWindow: xlib::Atom,
     pub NetSupported: xlib::Atom,
     pub NetWMName: xlib::Atom,
@@ -103,6 +104,9 @@ impl XAtom {
         }
         if atom == self.WMTakeFocus {
             return "WM_TAKE_FOCUS";
+        }
+        if atom == self.Window {
+            return "WINDOW"
         }
         if atom == self.NetActiveWindow {
             return "_NET_ACTIVE_WINDOW";
@@ -204,6 +208,7 @@ impl XAtom {
             NetActiveWindow: from(xlib, dpy, "_NET_ACTIVE_WINDOW"),
             NetSupported: from(xlib, dpy, "_NET_SUPPORTED"),
             NetWMName: from(xlib, dpy, "_NET_WM_NAME"),
+            Window: from(xlib, dpy, "WINDOW"),
 
             NetWMState: from(xlib, dpy, "_NET_WM_STATE"),
             NetWMStateModal: from(xlib, dpy, "_NET_WM_STATE_MODAL"),
