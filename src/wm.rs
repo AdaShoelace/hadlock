@@ -238,10 +238,12 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         mon.current_ws = prev_ws;
         state.lib.unmap_window(w);
     } else {
-        let mut new_ws = Workspace::new(ws);
+        let prev_ws = mon.current_ws;
+        mon.current_ws = ws;
+        mon.add_ws(Workspace::new(ws));
         let windows = mon.place_window(w);
 
-        windows.into_iter().for_each(|(_, rect)| {
+        windows.into_iter().for_each(|(win, rect)| {
             let new_ww = WindowWrapper {
                 restore_position: rect.get_position(),
                 previous_state: WindowState::Free,
@@ -250,10 +252,10 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
                 handle_state: HandleState::Map.into(),
                 ..ww
             };
-            new_ws.add_window(w, new_ww);
+            mon.add_window(win, new_ww);
         });
 
-        mon.add_ws(new_ws);
+        mon.current_ws = prev_ws;
         state.lib.unmap_window(w);
     }
 
