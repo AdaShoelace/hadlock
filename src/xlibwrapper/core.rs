@@ -432,6 +432,17 @@ impl XlibWrapper {
             mem::forget(xdata);
         }
     }
+    
+    pub fn atom_name(&self, atom: xlib::Atom) -> Result<String, Box<dyn std::error::Error>> {
+        use std::ffi::CStr;
+        unsafe {
+            let ret = (self.lib.XGetAtomName)(
+                self.display,
+                atom
+            );
+            Ok(CStr::from_ptr(ret).to_str()?.to_string())
+        }
+    }
 
     pub fn add_to_save_set(&self, w: Window) {
         unsafe {

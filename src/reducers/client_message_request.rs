@@ -20,7 +20,6 @@ use {
 impl Reducer<action::ClientMessageRequest> for State {
     // Full credit for this solution goes to lex148
     fn reduce(&mut self, action: action::ClientMessageRequest) {
-
         let name = self.lib.xatom.get_name(action.message_type);
 
         debug!("client message: {}", name);
@@ -40,11 +39,10 @@ impl Reducer<action::ClientMessageRequest> for State {
             .get(2)
             .expect("client_message_request: cleanupt");
         debug!("data_two: {:?}", data_two);
-        
+
         if action.message_type == self.lib.xatom.NetCurrentDesktop {
             wm::set_current_ws(self, data_zero as u32);
         }
-
 
         if action.message_type == self.lib.xatom.NetWMState
             && (data_one == self.lib.xatom.NetWMStateFullscreen as i64
@@ -78,7 +76,11 @@ impl Reducer<action::ClientMessageRequest> for State {
                 .monitors
                 .get_mut(&self.current_monitor)
                 .expect("ClientMessageRequest - monitor - get_mut");
-            mon.swap_window(action.win, |mon, ww| wm::toggle_monocle(mon, ww));
+            mon.swap_window(action.win, |mon, ww| {
+                let ww = wm::toggle_monocle(mon, ww);
+                debug!("client_message_request fullscreen: {:#?}", ww);
+                ww
+            });
         }
     }
 }

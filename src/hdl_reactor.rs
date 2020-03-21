@@ -123,13 +123,14 @@ impl Reactor<State> for HdlReactor {
                                     .expect("HdlReactor - Destroy")
                                     .get_current_windows();
                                 self.kill_window(*key, windows);
+                                
+                                if let Some(ww) = mon.get_previous(*key) {
+                                    let _ = self.tx.send(InternalAction::FocusSpecific(ww.window()));
+                                }
 
                                 if let None = mon.get_newest() {
                                     let _ = self.tx.send(InternalAction::Focus);
                                 }
-
-                                let _ = self.tx.send(InternalAction::Destroy(*key));
-                                let _ = self.tx.send(InternalAction::UpdateLayout);
                             }
                             _ => (),
                         });
