@@ -19,17 +19,17 @@ use {
 
 impl Reducer<action::ConfigurationRequest> for State {
     fn reduce(&mut self, action: action::ConfigurationRequest) {
-        //debug!("ConfigurationRequest for window: {} - {:?}", action.win, action.win_changes);
+        debug!("ConfigurationRequest for window: {} - {:?}", action.win, action.win_changes);
         let mon = self
             .monitors
             .get_mut(&self.current_monitor)
             .expect("ConfigurationRequest - monitor - get_mut");
 
         if mon.contains_window(action.win) {
-            if action.value_mask & (xlib::CWX | xlib::CWY) as u64 == (xlib::CWX | xlib::CWY) as u64
+            /*if action.value_mask & (xlib::CWX | xlib::CWY) as u64 == (xlib::CWX | xlib::CWY) as u64
             {
                 return;
-            }
+            }*/
             let ww = mon.remove_window(action.win).expect("ConfigurationRequest - monitor - remove_window");
             self.lib.configure_window(
                 action.win,

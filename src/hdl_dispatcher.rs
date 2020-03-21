@@ -28,7 +28,7 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
 
     loop {
         let xevent = xlib.next_event();
-        //debug!("Event: {:?}", xevent);
+        // debug!("Event: {:?}", xevent);
         match xevent.get_type() {
             xlib::ConfigureRequest => {
                 let event = xlib::XConfigureRequestEvent::from(xevent);
@@ -124,16 +124,16 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
             let event = xlib::XExposeEvent::from(xevent);
             action::Expose{win: event.window};
             },*/
-            /*xlib::DestroyNotify => {
+            xlib::DestroyNotify => {
                 let event = xlib::XDestroyWindowEvent::from(xevent);
-                store.dispatch(action::DestroyNotify { win: event.window })
-            }*/
+                store.dispatch(action::Destroy { win: event.window })
+            }
             xlib::PropertyNotify => {
                 let event = xlib::XPropertyEvent::from(xevent);
-                action::PropertyNotify {
+                store.dispatch(action::PropertyNotify {
                     win: event.window,
                     atom: event.atom,
-                };
+                });
             }
             xlib::ClientMessage => {
                 let event = xlib::XClientMessageEvent::from(xevent);
@@ -166,9 +166,7 @@ pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
                     debug!("UpdateLayout");
                     store.dispatch(action::UpdateLayout)
                 },
-                internal_action::InternalAction::Destroy(win) => {
-                    store.dispatch(action::Destroy { win })
-                },
+                _ => ()
             },
             Err(_) => (),
         }

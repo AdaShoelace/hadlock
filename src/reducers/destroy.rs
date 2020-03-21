@@ -2,7 +2,7 @@
 use {
     crate::{
         config::CONFIG,
-        models::{rect::*, window_type::WindowType, windowwrapper::*},
+        models::{rect::*, window_type::WindowType, windowwrapper::*, internal_action::InternalAction},
         state::State,
         xlibwrapper::action,
         xlibwrapper::core::*,
@@ -16,7 +16,7 @@ use {
 
 impl Reducer<action::Destroy> for State {
     fn reduce(&mut self, action: action::Destroy) {
-        //debug!("DestroyNotify");
+        debug!("DestroyNotify");
         if action.win == self.lib.get_root() {
             return;
         }
@@ -27,6 +27,7 @@ impl Reducer<action::Destroy> for State {
             .expect("DestroyNotify - get_mut");
         if mon.contains_window(action.win) {
             mon.remove_window(action.win);
+            let _ = self.tx.send(InternalAction::UpdateLayout);
         }
     }
 }
