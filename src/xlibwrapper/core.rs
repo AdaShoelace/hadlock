@@ -247,65 +247,8 @@ impl XlibWrapper {
     }
 
     fn support_wm_check(&self) {
-        unsafe {
-            let mut attribute = 1u32;
-            let attrib_ptr: *mut u32 = &mut attribute;
-            let ewmh = (self.lib.XCreateWindow)(
-                self.display,
-                self.root,
-                -1,
-                -1,
-                1,
-                1,
-                0,
-                0,
-                2,
-                ::std::ptr::null_mut(),
-                1 << 9,
-                attrib_ptr as *mut xlib::XSetWindowAttributes,
-            ) as u64;
-
-            let mut child: u32 = ewmh as u32;
-            let child_ptr: *mut u32 = &mut child;
-
-            (self.lib.XChangeProperty)(
-                self.display,
-                self.root,
-                self.xatom.NetSupportingWmCheck,
-                xlib::XA_CARDINAL,
-                32,
-                0,
-                child_ptr as *mut c_uchar,
-                1,
-            );
-
-            (self.lib.XChangeProperty)(
-                self.display,
-                ewmh,
-                self.xatom.NetSupportingWmCheck,
-                xlib::XA_CARDINAL,
-                32,
-                0,
-                child_ptr as *mut c_uchar,
-                1,
-            );
-
-            if let Ok(cstring) = CString::new("Hadlock") {
-                (self.lib.XChangeProperty)(
-                    self.display,
-                    ewmh,
-                    self.xatom.NetWMName,
-                    self.xatom.NetUtf8String,
-                    8,
-                    xlib::PropModeReplace,
-                    cstring.as_ptr() as *const u8,
-                    "Hadlock".len() as i32,
-                );
-                mem::forget(cstring);
-            }
-
-
-            if let Ok(cstring) = CString::new("Hadlock") {
+        if let Ok(cstring) = CString::new("Hadlock") {
+            unsafe {
                 (self.lib.XChangeProperty)(
                     self.display,
                     self.root,
@@ -319,7 +262,9 @@ impl XlibWrapper {
                 mem::forget(cstring);
             }
         }
+        self.set_desktop_prop_u64(self.root, self.xatom.NetSupportingWmCheck, xlib::XA_WINDOW);
     }
+
     fn get_atom(&self, s: &str) -> u64 {
         unsafe {
             match CString::new(s) {
