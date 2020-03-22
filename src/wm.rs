@@ -128,7 +128,6 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
         return Some(());
     }
 
-
     let mut new_ws = mon.remove_ws(mon.current_ws).expect("Should also be here");
     new_ws.clients.values_mut().for_each(|client| {
         client.handle_state.replace_with(|old| {
@@ -183,16 +182,22 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         mon.current_ws = ws;
         state.lib.unmap_window(w);
         let windows = mon.place_window(w);
+        let current_state =
+            if windows.len() == 1 && mon.get_current_layout()? != LayoutTag::Floating {
+                WindowState::Maximized
+            } else {
+                WindowState::Free
+            };
         mon.add_window(w, ww.clone());
-        windows.into_iter().for_each(|(win, rect)| {
-            let (new_win, new_ww) = mon.get_newest().clone().unwrap();
+        for (win, rect) in windows.into_iter() {
+            let (new_win, new_ww) = mon.get_newest()?;
             let new_win = new_win.clone();
             let new_ww = new_ww.clone();
             mon.swap_window(win, |_mon, ww| WindowWrapper {
                 restore_position: rect.get_position(),
                 window_rect: rect,
                 previous_state: WindowState::Free,
-                current_state: WindowState::Free,
+                current_state,
                 handle_state: vec![HandleState::Map].into(),
                 toc: if win == w { new_ww.toc.clone() } else { ww.toc },
                 ..ww
@@ -203,8 +208,7 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
                     ..win_wrap
                 });
             }
-        });
-
+        }
         mon.current_ws = prev_ws;
         return Some(());
     }
@@ -214,7 +218,13 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         mon.current_ws = ws;
         mon.add_window(w, ww.clone());
         let windows = mon.place_window(w);
-        windows.into_iter().for_each(|(win, rect)| {
+        let current_state =
+            if windows.len() == 1 && mon.get_current_layout()? != LayoutTag::Floating {
+                WindowState::Maximized
+            } else {
+                WindowState::Free
+            };
+        for (win, rect) in windows.into_iter() {
             let (new_win, new_ww) = mon.get_newest().clone().unwrap();
             let new_win = new_win.clone();
             let new_ww = new_ww.clone();
@@ -222,7 +232,7 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
                 restore_position: rect.get_position(),
                 window_rect: rect,
                 previous_state: WindowState::Free,
-                current_state: WindowState::Free,
+                current_state,
                 handle_state: vec![HandleState::Map].into(),
                 toc: if win == w { new_ww.toc.clone() } else { ww.toc },
                 ..ww
@@ -233,7 +243,7 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
                     ..win_wrap
                 });
             }
-        });
+        }
 
         mon.current_ws = prev_ws;
         state.lib.unmap_window(w);
@@ -242,12 +252,18 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         mon.current_ws = ws;
         mon.add_ws(Workspace::new(ws));
         let windows = mon.place_window(w);
+        let current_state =
+            if windows.len() == 1 && mon.get_current_layout()? != LayoutTag::Floating {
+                WindowState::Maximized
+            } else {
+                WindowState::Free
+            };
 
         windows.into_iter().for_each(|(win, rect)| {
             let new_ww = WindowWrapper {
                 restore_position: rect.get_position(),
                 previous_state: WindowState::Free,
-                current_state: WindowState::Free,
+                current_state,
                 window_rect: rect,
                 handle_state: HandleState::Map.into(),
                 ..ww
