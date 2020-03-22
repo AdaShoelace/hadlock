@@ -332,6 +332,7 @@ pub fn reorder(state: &mut State) -> Option<()> {
     Some(())
 }
 
+#[allow(dead_code)]
 pub fn pointer_is_inside(state: &State, screen: &Screen) -> bool {
     let pointer_pos = state.lib.pointer_pos(state.focus_w);
     //debug!("pointer pos: {:?}", pointer_pos);
@@ -351,6 +352,7 @@ pub fn point_is_inside(_state: &State, screen: &Screen, x: i32, y: i32) -> bool 
     inside_height && inside_width
 }
 
+#[allow(dead_code)]
 pub fn get_monitor_by_mouse(state: &State) -> MonitorId {
     let mon_vec = state
         .monitors
