@@ -18,6 +18,6 @@ use {
 impl Reducer<action::PropertyNotify> for State {
     fn reduce(&mut self, action: action::PropertyNotify) {
         let name = self.lib.atom_name(action.atom).unwrap();
-        debug!("PropertyNotify, Atom name: {}", name);
+        //debug!("PropertyNotify, Atom name: {}", name);
     }
 }
