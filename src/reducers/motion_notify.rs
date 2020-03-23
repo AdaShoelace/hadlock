@@ -23,7 +23,16 @@ impl Reducer<action::MotionNotify> for State {
         let old_mon = self.current_monitor;
 
         if self.current_monitor != actual_mon {
+
+            let _ = self.monitors.get_mut(&old_mon)
+                .expect("whoopsie")
+                .get_client(self.focus_w)
+                .expect("whoopsie again")
+                .handle_state
+                .replace(HandleState::Unfocus.into());
+
             self.current_monitor = actual_mon;
+
             self.monitors
                 .get(&self.current_monitor)
                 .expect("MotionNotify - monitor - get_mut - change handle state")
