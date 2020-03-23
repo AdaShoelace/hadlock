@@ -1,8 +1,8 @@
 #![allow(unused_imports)]
 use {
     crate::{
-        layout::LayoutTag,
         config::CONFIG,
+        layout::LayoutTag,
         models::{rect::*, window_type::WindowType, windowwrapper::*, HandleState, WindowState},
         state::State,
         wm,
@@ -23,13 +23,14 @@ impl Reducer<action::MotionNotify> for State {
         let old_mon = self.current_monitor;
 
         if self.current_monitor != actual_mon {
-
-            let _ = self.monitors.get_mut(&old_mon)
-                .expect("whoopsie")
-                .get_client(self.focus_w)
-                .expect("whoopsie again")
-                .handle_state
-                .replace(HandleState::Unfocus.into());
+            if let Some(mon) = self.monitors.get_mut(&old_mon) {
+                match mon.get_client(self.focus_w) {
+                    Some(client) => {
+                        client.handle_state.replace(HandleState::Unfocus.into());
+                    }
+                    None => (),
+                }
+            }
 
             self.current_monitor = actual_mon;
 
@@ -39,26 +40,28 @@ impl Reducer<action::MotionNotify> for State {
                 .handle_state
                 .replace(HandleState::Focus);
         }
-    
-        let layout = self.monitors
+
+        let layout = self
+            .monitors
             .get(&self.current_monitor)
             .expect("MotionNotify - monitor - get - check layout")
             .get_current_layout()
             .expect("MotionNotify - monitor - get_current_layout");
 
-        let is_trans =  match self.monitors
+        let is_trans = match self
+            .monitors
             .get(&self.current_monitor)
             .expect("MotionNotify - monitor - get - action.win is_trans")
-            .get_client(action.win) {
-                Some(client) => {
-                    client.is_trans
-                },
-                None => { return }
+            .get_client(action.win)
+        {
+            Some(client) => client.is_trans,
+            None => return,
         };
 
+        if layout != LayoutTag::Floating && !is_trans {
+            return;
+        }
 
-        if layout != LayoutTag::Floating && !is_trans { return }
-        
         let new_pos = calculcate_destination(self, &action);
 
         if (action.state & (Button1Mask | Mod4Mask)) == Button1Mask | Mod4Mask {
@@ -71,7 +74,8 @@ impl Reducer<action::MotionNotify> for State {
                     .monitors
                     .get_mut(&old_mon)
                     .expect("MotionNotify - old_mon - get_mut")
-                    .remove_window(action.win).expect("Trying to remove window in motion_notify");
+                    .remove_window(action.win)
+                    .expect("Trying to remove window in motion_notify");
 
                 let _ = self
                     .monitors
@@ -101,18 +105,17 @@ impl Reducer<action::MotionNotify> for State {
 }
 
 fn calculcate_destination(state: &State, action: &action::MotionNotify) -> Position {
-
-        let drag_pos = Position {
-            x: action.x_root,
-            y: action.y_root,
-        };
-        let (delta_x, delta_y) = (
-            drag_pos.x - state.drag_start_pos.0,
-            drag_pos.y - state.drag_start_pos.1,
-        );
-        let dest_pos = Position {
-            x: state.drag_start_frame_pos.0 + delta_x,
-            y: state.drag_start_frame_pos.1 + delta_y,
-        };
-        dest_pos
+    let drag_pos = Position {
+        x: action.x_root,
+        y: action.y_root,
+    };
+    let (delta_x, delta_y) = (
+        drag_pos.x - state.drag_start_pos.0,
+        drag_pos.y - state.drag_start_pos.1,
+    );
+    let dest_pos = Position {
+        x: state.drag_start_frame_pos.0 + delta_x,
+        y: state.drag_start_frame_pos.1 + delta_y,
+    };
+    dest_pos
 }
