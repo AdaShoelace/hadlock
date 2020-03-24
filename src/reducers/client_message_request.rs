@@ -20,7 +20,7 @@ use {
 impl Reducer<action::ClientMessageRequest> for State {
     // Full credit for this solution goes to lex148
     fn reduce(&mut self, action: action::ClientMessageRequest) {
-        let name = self.lib.xatom.get_name(action.message_type);
+        let name = self.lib.xatom().get_name(action.message_type);
 
         debug!("client message: {}", name);
 
@@ -40,13 +40,13 @@ impl Reducer<action::ClientMessageRequest> for State {
             .expect("client_message_request: cleanupt");
         debug!("data_two: {:?}", data_two);
 
-        if action.message_type == self.lib.xatom.NetCurrentDesktop {
+        if action.message_type == self.lib.xatom().NetCurrentDesktop {
             wm::set_current_ws(self, data_zero as u32);
         }
 
-        if action.message_type == self.lib.xatom.NetWMState
-            && (data_one == self.lib.xatom.NetWMStateFullscreen as i64
-                || data_two == self.lib.xatom.NetWMStateFullscreen as i64)
+        if action.message_type == self.lib.xatom().NetWMState
+            && (data_one == self.lib.xatom().NetWMStateFullscreen as i64
+                || data_two == self.lib.xatom().NetWMStateFullscreen as i64)
         {
             //debug!("Actually fullscreen");
             let set_fullscreen = data_zero == 1;
@@ -56,16 +56,16 @@ impl Reducer<action::ClientMessageRequest> for State {
 
             //determine what to change the state to
             let fullscreen = if toggle_fullscreen {
-                !states.contains(&self.lib.xatom.NetWMStateFullscreen)
+                !states.contains(&self.lib.xatom().NetWMStateFullscreen)
             } else {
                 set_fullscreen
             };
 
             //update the list of states
             if fullscreen {
-                states.push(self.lib.xatom.NetWMStateFullscreen);
+                states.push(self.lib.xatom().NetWMStateFullscreen);
             } else {
-                states.retain(|x| x != &self.lib.xatom.NetWMStateFullscreen);
+                states.retain(|x| x != &self.lib.xatom().NetWMStateFullscreen);
             }
             states.sort();
             states.dedup();
