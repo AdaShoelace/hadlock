@@ -13,7 +13,7 @@ use crate::{
 
 #[derive(Debug)]
 pub struct Floating {
-    layout_type: LayoutTag,
+    pub layout_type: LayoutTag,
 }
 
 impl Floating {
@@ -41,6 +41,10 @@ impl std::fmt::Display for Floating {
 }
 
 impl Layout for Floating {
+    fn get_type(&self) -> LayoutTag {
+        self.layout_type
+    }
+
     fn place_window(
         &mut self,
         dock_area: &DockArea,
