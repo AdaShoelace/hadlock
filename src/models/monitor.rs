@@ -336,6 +336,35 @@ mod test {
     }
 
     #[test]
+    fn get_next_pass() {
+        let mut mon = setup_mon(1);
+        let base_ww = WindowWrapper::new(1, Rect::new(Position {x: 0, y: 0}, Size {width: 200, height: 200}), false);
+        let first = base_ww.clone();
+        mon.add_window(base_ww.window(), base_ww.clone());
+        let next_win = 12;
+        let next = WindowWrapper {
+            window: next_win,
+            toc: Instant::now(),
+            ..base_ww
+        };
+        mon.add_window(next_win, next.clone());
+        
+        let tested_win = next_win + 1;
+        let tested = WindowWrapper::new(tested_win, Rect::new(Position {x: 0, y: 0}, Size {width: 200, height: 200}), false);
+        mon.add_window(tested_win + 1, tested);
+        assert_eq!(Some(&next), mon.get_next(first.window()))
+    }
+
+    #[test]
+    fn get_next_fail() {
+        let mut mon = setup_mon(1);
+        let base_ww = WindowWrapper::new(1, Rect::new(Position {x: 0, y: 0}, Size {width: 200, height: 200}), false);
+        let tested = base_ww.clone();
+        mon.add_window(base_ww.window(), base_ww.clone());
+        assert_eq!(None, mon.get_next(tested.window()))
+    }
+
+    #[test]
     fn swap_window_pass() {
         let mut mon = setup_mon(1);
         let base_ww = WindowWrapper::new(1, Rect::new(Position {x: 0, y: 0}, Size {width: 200, height: 200}), false);
@@ -377,5 +406,4 @@ mod test {
         
         assert_eq!(None, mon.get_client(tested.window())) 
     }
-    
 }
