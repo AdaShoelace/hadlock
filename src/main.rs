@@ -13,7 +13,7 @@ mod wm;
 mod xlibwrapper;
 
 use std::{process::Command, rc::Rc, sync::mpsc, thread};
-use xlibwrapper::core::*;
+use xlibwrapper::{DisplayServer, core::*};
 
 use crate::config::*;
 use chrono;
@@ -38,7 +38,7 @@ fn main() -> HadlockResult<()> {
         _ => return,
     });
 
-    hdl_dispatcher::run(xlib, tx);
+    hdl_dispatcher::run(Box::new(xlib), tx);
     Ok(())
 }
 
