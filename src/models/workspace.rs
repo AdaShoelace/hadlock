@@ -55,7 +55,10 @@ impl Workspace {
     pub fn add_window(&mut self, w: Window, ww: WindowWrapper) {
         self.clients.insert(w, ww);
         self.clients.sort_by(|_ka, va, _kb, vb| va.toc.cmp(&vb.toc));
-        debug!("window order: {:?}", self.clients.keys().collect::<Vec<&Window>>());
+        debug!(
+            "window order: {:?}",
+            self.clients.keys().collect::<Vec<&Window>>()
+        );
     }
 
     pub fn remove_window(&mut self, w: Window) -> Option<WindowWrapper> {
@@ -122,3 +125,23 @@ impl PartialEq for Workspace {
 }
 
 impl Eq for Workspace {}
+
+#[cfg(test)]
+mod test {
+    use crate::layout::{self, LayoutTag};
+    use crate::models::workspace::Workspace;
+
+    #[test]
+    fn circulate_layout() {
+        let mut ws = Workspace {
+            tag: 0,
+            clients: Default::default(),
+            layout: layout::layout_from_tag(LayoutTag::Floating),
+            available_layouts: vec![LayoutTag::Floating, LayoutTag::ColumnMaster],
+            current_tag: LayoutTag::Floating,
+        };
+
+        ws.circulate_layout();
+        assert_eq!(LayoutTag::ColumnMaster, ws.layout.get_type())
+    }
+}
