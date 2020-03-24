@@ -2,7 +2,7 @@ use {
     crate::hdl_reactor::HdlReactor,
     crate::models::internal_action,
     crate::state::State,
-    crate::xlibwrapper::core::XlibWrapper,
+    crate::xlibwrapper::DisplayServer,
     crate::xlibwrapper::{action, xlibmodels::*},
     reducer::*,
     std::rc::Rc,
@@ -10,7 +10,7 @@ use {
     x11_dl::xlib,
 };
 
-pub fn run(xlib: Rc<XlibWrapper>, sender: Sender<bool>) {
+pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
     let (tx, rx) = channel::<internal_action::InternalAction>();
     let state = State::new(xlib.clone(), tx.clone());
     let mut store = Store::new(state, HdlReactor::new(xlib.clone(), tx));

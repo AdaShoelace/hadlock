@@ -3,7 +3,7 @@ use {
     crate::models::{internal_action::InternalAction, windowwrapper::*, HandleState, WindowState},
     crate::state::*,
     crate::{
-        xlibwrapper::core::XlibWrapper,
+        xlibwrapper::DisplayServer,
         xlibwrapper::xlibmodels::*,
         xlibwrapper::{masks::*, util::*},
     },
@@ -13,7 +13,7 @@ use {
 };
 
 pub struct HdlReactor {
-    lib: Rc<XlibWrapper>,
+    lib: Box<Rc<dyn DisplayServer>>,
     tx: Sender<InternalAction>,
 }
 
@@ -144,7 +144,7 @@ impl Reactor<State> for HdlReactor {
     }
 }
 impl HdlReactor {
-    pub fn new(lib: Rc<XlibWrapper>, tx: Sender<InternalAction>) -> Self {
+    pub fn new(lib: Box<Rc<dyn DisplayServer>>, tx: Sender<InternalAction>) -> Self {
         Self { lib, tx }
     }
 
