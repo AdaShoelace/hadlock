@@ -13,7 +13,7 @@ use crate::{
 
 #[derive(Debug)]
 pub struct ColumnMaster {
-    layout_type: LayoutTag,
+    pub layout_type: LayoutTag,
 }
 
 impl ColumnMaster {
@@ -90,6 +90,11 @@ impl std::fmt::Display for ColumnMaster {
 }
 
 impl Layout for ColumnMaster {
+
+    fn get_type(&self) -> LayoutTag {
+        self.layout_type
+    }
+
     fn place_window(
         &mut self,
         dock_area: &DockArea,
