@@ -1,7 +1,7 @@
 use {
-    crate::models::{monitor::Monitor, windowwrapper::WindowWrapper, workspace::Workspace},
-    crate::xlibwrapper::{DisplayServer, xlibmodels::*},
     crate::models::internal_action,
+    crate::models::{monitor::Monitor, windowwrapper::WindowWrapper, workspace::Workspace},
+    crate::xlibwrapper::{xlibmodels::*, DisplayServer},
     derivative::*,
     std::collections::HashMap,
     std::rc::Rc,
@@ -24,7 +24,10 @@ pub struct State {
 }
 
 impl State {
-    pub fn new(lib: Box<Rc<dyn DisplayServer>>, tx: Sender<internal_action::InternalAction>) -> Self {
+    pub fn new(
+        lib: Box<Rc<dyn DisplayServer>>,
+        tx: Sender<internal_action::InternalAction>,
+    ) -> Self {
         let focus_w = lib.get_root();
         let monitors = {
             let mut monitors = HashMap::default();

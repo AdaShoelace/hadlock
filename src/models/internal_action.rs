@@ -3,5 +3,5 @@ pub enum InternalAction {
     Focus,
     FocusSpecific(Window),
     _Destroy(Window),
-    UpdateLayout
+    UpdateLayout,
 }

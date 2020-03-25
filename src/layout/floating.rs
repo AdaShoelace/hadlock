@@ -154,7 +154,9 @@ impl Layout for Floating {
             .enumerate()
             .map(|(index, win)| {
                 let pos = Position {
-                    x: space_rect.get_position().x + (index as i32 * win_size_x) + index as i32 * (2 * CONFIG.border_width),
+                    x: space_rect.get_position().x
+                        + (index as i32 * win_size_x)
+                        + index as i32 * (2 * CONFIG.border_width),
                     y: space_rect.get_position().y,
                 };
                 let size = Size {

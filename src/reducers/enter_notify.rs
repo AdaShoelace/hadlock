@@ -2,9 +2,9 @@
 use {
     crate::{
         config::CONFIG,
+        layout::*,
         models::{rect::*, window_type::WindowType, windowwrapper::*, HandleState},
         state::State,
-        layout::*,
         wm,
         xlibwrapper::action,
         xlibwrapper::core::*,
@@ -30,16 +30,18 @@ impl Reducer<action::EnterNotify> for State {
                     .replace(HandleState::Focus);
             }
         }
-        
+
         let mon = self
             .monitors
             .get_mut(&self.current_monitor)
             .expect("EnterNotify - monitor - get_mut");
-        
-        if action.win == self.lib.get_root() && mon.get_current_layout() != Some(LayoutTag::Floating) {
-            return
+
+        if action.win == self.lib.get_root()
+            && mon.get_current_layout() != Some(LayoutTag::Floating)
+        {
+            return;
         }
-        
+
         if let Some(w) = mon.get_client_mut(self.focus_w) {
             w.handle_state = HandleState::Unfocus.into();
         }

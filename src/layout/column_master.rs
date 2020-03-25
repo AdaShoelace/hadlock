@@ -70,7 +70,9 @@ impl ColumnMaster {
             })
             - 2 * CONFIG.border_width;
 
-        if column.len() > 2 { ret -= ((column.len() as i32 - 1).abs() * CONFIG.inner_gap ) / column.len() as i32 }
+        if column.len() > 2 {
+            ret -= ((column.len() as i32 - 1).abs() * CONFIG.inner_gap) / column.len() as i32
+        }
         ret
     }
 }
@@ -90,7 +92,6 @@ impl std::fmt::Display for ColumnMaster {
 }
 
 impl Layout for ColumnMaster {
-
     fn get_type(&self) -> LayoutTag {
         self.layout_type
     }
@@ -112,8 +113,8 @@ impl Layout for ColumnMaster {
 
         let mut ret_vec = Vec::<(Window, Rect)>::new();
 
-        let column_width =
-            ((screen.width / 2) - 2 * CONFIG.border_width) - (CONFIG.outer_gap + (CONFIG.inner_gap / 2));
+        let column_width = ((screen.width / 2) - 2 * CONFIG.border_width)
+            - (CONFIG.outer_gap + (CONFIG.inner_gap / 2));
         let column_x = (screen.x + screen.width / 2) + CONFIG.inner_gap;
 
         if windows.is_empty() {
@@ -123,7 +124,10 @@ impl Layout for ColumnMaster {
         } else {
             let size = Size {
                 width: column_width,
-                height: screen.height - dock_height - 2 * CONFIG.border_width - 2 * CONFIG.outer_gap,
+                height: screen.height
+                    - dock_height
+                    - 2 * CONFIG.border_width
+                    - 2 * CONFIG.outer_gap,
             };
             let pos = Position {
                 x: screen.x + CONFIG.outer_gap,
@@ -138,7 +142,9 @@ impl Layout for ColumnMaster {
                     x: column_x,
                     y: ((screen.y + dock_height)
                         + self.column_height(&screen, &dock_area, &windows) * index as i32)
-                        + (2 * CONFIG.border_width) * index as i32 + CONFIG.outer_gap + (CONFIG.inner_gap * index as i32),
+                        + (2 * CONFIG.border_width) * index as i32
+                        + CONFIG.outer_gap
+                        + (CONFIG.inner_gap * index as i32),
                 };
                 let size = Size {
                     width: column_width,

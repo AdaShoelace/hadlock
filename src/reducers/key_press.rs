@@ -355,7 +355,9 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
         }
         return Some(());
     }
-    if state.focus_w == state.lib.get_root() { return Some(()) }
+    if state.focus_w == state.lib.get_root() {
+        return Some(());
+    }
     let windows = mon.shift_window(state.focus_w, direction);
 
     for win in windows.into_iter() {

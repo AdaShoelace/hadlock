@@ -1,3 +1,7 @@
+use super::{
+    dockarea::DockArea, rect::Rect, screen::Screen, windowwrapper::WindowWrapper,
+    workspace::Workspace, Direction, HandleState,
+};
 use crate::{
     layout::LayoutTag,
     xlibwrapper::{
@@ -5,12 +9,8 @@ use crate::{
         xlibmodels::{MonitorId, Window},
     },
 };
-use super::{
-    dockarea::DockArea, rect::Rect, screen::Screen, windowwrapper::WindowWrapper,
-    workspace::Workspace, Direction, HandleState,
-};
-use std::collections::HashMap;
 use std::cell::RefCell;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Monitor {
@@ -65,11 +65,10 @@ impl Monitor {
     }
 
     pub fn get_previous(&self, win: Window) -> Option<&WindowWrapper> {
-
         let ws = self.workspaces.get(&self.current_ws)?;
         match ws.clients.get(&win) {
             Some(ww) => ws.get_previous(ww),
-            _ => None
+            _ => None,
         }
     }
 
@@ -77,21 +76,22 @@ impl Monitor {
         let ws = self.workspaces.get(&self.current_ws)?;
         match ws.clients.get(&win) {
             Some(ww) => ws.get_next(ww),
-            _ => None
+            _ => None,
         }
     }
 
     /* In current workspace */
-    pub fn swap_window<F>(&mut self, win: Window, mut f: F) -> Option<()> 
-        where F: FnMut(&Monitor, WindowWrapper) -> WindowWrapper + Sized
+    pub fn swap_window<F>(&mut self, win: Window, mut f: F) -> Option<()>
+    where
+        F: FnMut(&Monitor, WindowWrapper) -> WindowWrapper + Sized,
     {
         let old_ww = self
-            .workspaces 
+            .workspaces
             .get_mut(&self.current_ws)?
             .remove_window(win)?;
-        
+
         let new_ww = f(&self, old_ww);
-       
+
         self.add_window(win, new_ww);
         Some(())
     }
@@ -159,7 +159,6 @@ impl Monitor {
     pub fn get_client(&self, w: Window) -> Option<&WindowWrapper> {
         self.workspaces.get(&self.current_ws)?.clients.get(&w)
     }
-
 
     // Layout functions
     pub fn place_window(&mut self, w: Window) -> Vec<(Window, Rect)> {
@@ -238,18 +237,13 @@ impl std::fmt::Display for Monitor {
 #[cfg(test)]
 mod test {
     use crate::models::{
-        rect::*,
-        windowwrapper::*,
-        workspace::Workspace,
-        monitor::Monitor,
-        screen::Screen,
-        WindowState,
-        HandleState,
-    }; 
+        monitor::Monitor, rect::*, screen::Screen, windowwrapper::*, workspace::Workspace,
+        HandleState, WindowState,
+    };
     use crate::xlibwrapper::util::*;
     use std::time::Instant;
-    
-    const ROOT: u64 = 111;    
+
+    const ROOT: u64 = 111;
 
     fn setup_mon(amount_ws: u32) -> Monitor {
         let screen = Screen::new(ROOT, 1920, 1080, 0, 0);
@@ -263,36 +257,76 @@ mod test {
     #[test]
     fn add_window() {
         let mut mon = setup_mon(1);
-        let base_ww = WindowWrapper::new(1, Rect::new(Position {x: 0, y: 0}, Size {width: 200, height: 200}), false);
+        let base_ww = WindowWrapper::new(
+            1,
+            Rect::new(
+                Position { x: 0, y: 0 },
+                Size {
+                    width: 200,
+                    height: 200,
+                },
+            ),
+            false,
+        );
         mon.add_window(base_ww.window(), base_ww.clone());
-        
-        assert_eq!(Some(&base_ww), mon.get_client(base_ww.window())) 
+
+        assert_eq!(Some(&base_ww), mon.get_client(base_ww.window()))
     }
 
     #[test]
     fn remove_window_pass() {
         let mut mon = setup_mon(1);
-        let base_ww = WindowWrapper::new(1, Rect::new(Position {x: 0, y: 0}, Size {width: 200, height: 200}), false);
+        let base_ww = WindowWrapper::new(
+            1,
+            Rect::new(
+                Position { x: 0, y: 0 },
+                Size {
+                    width: 200,
+                    height: 200,
+                },
+            ),
+            false,
+        );
         mon.add_window(base_ww.window(), base_ww.clone());
-        assert_eq!(Some(base_ww.clone()), mon.remove_window(base_ww.window())) 
+        assert_eq!(Some(base_ww.clone()), mon.remove_window(base_ww.window()))
     }
 
     #[test]
     fn remove_window_fail() {
         let mut mon = setup_mon(1);
-        let base_ww = WindowWrapper::new(1, Rect::new(Position {x: 0, y: 0}, Size {width: 200, height: 200}), false);
+        let base_ww = WindowWrapper::new(
+            1,
+            Rect::new(
+                Position { x: 0, y: 0 },
+                Size {
+                    width: 200,
+                    height: 200,
+                },
+            ),
+            false,
+        );
         mon.add_window(base_ww.window(), base_ww.clone());
         let tested = WindowWrapper {
             window: 12,
             ..base_ww
         };
-        assert_eq!(None, mon.remove_window(tested.window())) 
+        assert_eq!(None, mon.remove_window(tested.window()))
     }
 
     #[test]
     fn get_newest_pass() {
         let mut mon = setup_mon(1);
-        let base_ww = WindowWrapper::new(1, Rect::new(Position {x: 0, y: 0}, Size {width: 200, height: 200}), false);
+        let base_ww = WindowWrapper::new(
+            1,
+            Rect::new(
+                Position { x: 0, y: 0 },
+                Size {
+                    width: 200,
+                    height: 200,
+                },
+            ),
+            false,
+        );
         mon.add_window(base_ww.window(), base_ww.clone());
         let tested_win = 12;
         let tested = WindowWrapper {
@@ -313,7 +347,17 @@ mod test {
     #[test]
     fn get_previous_pass() {
         let mut mon = setup_mon(1);
-        let base_ww = WindowWrapper::new(1, Rect::new(Position {x: 0, y: 0}, Size {width: 200, height: 200}), false);
+        let base_ww = WindowWrapper::new(
+            1,
+            Rect::new(
+                Position { x: 0, y: 0 },
+                Size {
+                    width: 200,
+                    height: 200,
+                },
+            ),
+            false,
+        );
         let tested = base_ww.clone();
         mon.add_window(base_ww.window(), base_ww.clone());
         let second_win = 12;
@@ -329,7 +373,17 @@ mod test {
     #[test]
     fn get_previous_fail() {
         let mut mon = setup_mon(1);
-        let base_ww = WindowWrapper::new(1, Rect::new(Position {x: 0, y: 0}, Size {width: 200, height: 200}), false);
+        let base_ww = WindowWrapper::new(
+            1,
+            Rect::new(
+                Position { x: 0, y: 0 },
+                Size {
+                    width: 200,
+                    height: 200,
+                },
+            ),
+            false,
+        );
         let tested = base_ww.clone();
         mon.add_window(base_ww.window(), base_ww.clone());
         assert_eq!(None, mon.get_previous(tested.window()))
@@ -338,7 +392,17 @@ mod test {
     #[test]
     fn get_next_pass() {
         let mut mon = setup_mon(1);
-        let base_ww = WindowWrapper::new(1, Rect::new(Position {x: 0, y: 0}, Size {width: 200, height: 200}), false);
+        let base_ww = WindowWrapper::new(
+            1,
+            Rect::new(
+                Position { x: 0, y: 0 },
+                Size {
+                    width: 200,
+                    height: 200,
+                },
+            ),
+            false,
+        );
         let first = base_ww.clone();
         mon.add_window(base_ww.window(), base_ww.clone());
         let next_win = 12;
@@ -348,9 +412,19 @@ mod test {
             ..base_ww
         };
         mon.add_window(next_win, next.clone());
-        
+
         let tested_win = next_win + 1;
-        let tested = WindowWrapper::new(tested_win, Rect::new(Position {x: 0, y: 0}, Size {width: 200, height: 200}), false);
+        let tested = WindowWrapper::new(
+            tested_win,
+            Rect::new(
+                Position { x: 0, y: 0 },
+                Size {
+                    width: 200,
+                    height: 200,
+                },
+            ),
+            false,
+        );
         mon.add_window(tested_win + 1, tested);
         assert_eq!(Some(&next), mon.get_next(first.window()))
     }
@@ -358,7 +432,17 @@ mod test {
     #[test]
     fn get_next_fail() {
         let mut mon = setup_mon(1);
-        let base_ww = WindowWrapper::new(1, Rect::new(Position {x: 0, y: 0}, Size {width: 200, height: 200}), false);
+        let base_ww = WindowWrapper::new(
+            1,
+            Rect::new(
+                Position { x: 0, y: 0 },
+                Size {
+                    width: 200,
+                    height: 200,
+                },
+            ),
+            false,
+        );
         let tested = base_ww.clone();
         mon.add_window(base_ww.window(), base_ww.clone());
         assert_eq!(None, mon.get_next(tested.window()))
@@ -367,7 +451,17 @@ mod test {
     #[test]
     fn swap_window_pass() {
         let mut mon = setup_mon(1);
-        let base_ww = WindowWrapper::new(1, Rect::new(Position {x: 0, y: 0}, Size {width: 200, height: 200}), false);
+        let base_ww = WindowWrapper::new(
+            1,
+            Rect::new(
+                Position { x: 0, y: 0 },
+                Size {
+                    width: 200,
+                    height: 200,
+                },
+            ),
+            false,
+        );
         mon.add_window(base_ww.window(), base_ww.clone());
 
         let tested = WindowWrapper {
@@ -375,20 +469,30 @@ mod test {
             handle_state: HandleState::Move.into(),
             ..base_ww
         };
-        
+
         mon.swap_window(1, |_mon, ww| WindowWrapper {
             current_state: WindowState::Maximized,
             handle_state: HandleState::Move.into(),
             ..ww
         });
-        
-        assert_eq!(Some(&tested), mon.get_client(tested.window())) 
+
+        assert_eq!(Some(&tested), mon.get_client(tested.window()))
     }
-   
+
     #[test]
     fn swap_window_fail() {
         let mut mon = setup_mon(1);
-        let base_ww = WindowWrapper::new(1, Rect::new(Position {x: 0, y: 0}, Size {width: 200, height: 200}), false);
+        let base_ww = WindowWrapper::new(
+            1,
+            Rect::new(
+                Position { x: 0, y: 0 },
+                Size {
+                    width: 200,
+                    height: 200,
+                },
+            ),
+            false,
+        );
         mon.add_window(base_ww.window(), base_ww.clone());
 
         let tested = WindowWrapper {
@@ -397,13 +501,13 @@ mod test {
             handle_state: HandleState::Move.into(),
             ..base_ww
         };
-        
+
         mon.swap_window(10, |_mon, ww| WindowWrapper {
             current_state: WindowState::Maximized,
             handle_state: HandleState::Move.into(),
             ..ww
         });
-        
-        assert_eq!(None, mon.get_client(tested.window())) 
+
+        assert_eq!(None, mon.get_client(tested.window()))
     }
 }

@@ -43,7 +43,6 @@ pub struct XlibWrapper {
 }
 
 impl XlibWrapper {
-
     pub fn new() -> Self {
         let (disp, root, lib, xatom, cursors) = unsafe {
             let lib = xlib::Xlib::open().expect("xlibwrapper::core: new");
@@ -342,7 +341,6 @@ impl XlibWrapper {
 }
 
 impl DisplayServer for XlibWrapper {
-
     fn get_screens(&self) -> Vec<Screen> {
         use x11_dl::xinerama::XineramaScreenInfo;
         use x11_dl::xinerama::Xlib;
@@ -374,10 +372,6 @@ impl DisplayServer for XlibWrapper {
             roots.iter().map(Screen::from).collect()
         }
     }
-
-
-
-
 
     fn update_desktops(&self, current_ws: u32, num_of_ws: Option<u32>) {
         match num_of_ws {
@@ -434,8 +428,6 @@ impl DisplayServer for XlibWrapper {
         let data = vec![0 as u32, 0 as u32];
         self.set_desktop_prop(&data, self.xatom.NetDesktopViewport);
     }
-
-
 
     fn get_window_states_atoms(&self, window: xlib::Window) -> Vec<xlib::Atom> {
         let mut format_return: i32 = 0;
@@ -504,15 +496,10 @@ impl DisplayServer for XlibWrapper {
         }
     }
 
-
-    
     fn atom_name(&self, atom: xlib::Atom) -> Result<String, Box<dyn std::error::Error>> {
         use std::ffi::CStr;
         unsafe {
-            let ret = (self.lib.XGetAtomName)(
-                self.display,
-                atom
-            );
+            let ret = (self.lib.XGetAtomName)(self.display, atom);
             Ok(CStr::from_ptr(ret).to_str()?.to_string())
         }
     }
@@ -570,7 +557,6 @@ impl DisplayServer for XlibWrapper {
         //self.send_xevent_atom(w, self.xatom.WMTakeFocus);
         self.sync(false);
     }
-
 
     fn set_window_background_color(&self, w: Window, color: Color) {
         if w == self.root {
@@ -868,10 +854,7 @@ impl DisplayServer for XlibWrapper {
         self.get_atom_prop_value(w, self.xatom.NetWMWindowType)
     }
 
-    fn get_class_hint(
-        &self,
-        w: Window,
-    ) -> Result<(String, String), Box<dyn std::error::Error>> {
+    fn get_class_hint(&self, w: Window) -> Result<(String, String), Box<dyn std::error::Error>> {
         unsafe {
             let mut hint_return = MaybeUninit::<xlib::XClassHint>::zeroed();
 
@@ -897,11 +880,7 @@ impl DisplayServer for XlibWrapper {
         }
     }
 
-    fn get_atom_prop_value(
-        &self,
-        window: xlib::Window,
-        prop: xlib::Atom,
-    ) -> Option<xlib::Atom> {
+    fn get_atom_prop_value(&self, window: xlib::Window, prop: xlib::Atom) -> Option<xlib::Atom> {
         // Shamelessly stolen from lex148/leftWM
         let mut format_return: i32 = 0;
         let mut nitems_return: c_ulong = 0;
@@ -1065,7 +1044,6 @@ impl DisplayServer for XlibWrapper {
 
     //new way to get strut
 
-
     fn get_window_type(&self, window: xlib::Window) -> WindowType {
         if let Some(value) = self.get_atom_prop_value(window, self.xatom.NetWMWindowType) {
             if value == self.xatom.NetWMWindowTypeDesktop {
@@ -1099,7 +1077,6 @@ impl DisplayServer for XlibWrapper {
             None => None,
         }
     }
-
 
     fn reparent_client(&self, w: Window, size: Size, pos: Position) -> Window {
         let attr = self.get_window_attributes(w);

@@ -1,5 +1,5 @@
-use crate::xlibwrapper::util::Color;
 use crate::layout::LayoutTag;
+use crate::xlibwrapper::util::Color;
 use serde::{self, Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -28,7 +28,7 @@ pub struct Config {
         default = "default_focused_background_color"
     )]
     pub focused_background_color: Color,
-    
+
     #[serde(rename = "outerGap", default = "default_outer_gap")]
     pub outer_gap: i32,
 

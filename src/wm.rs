@@ -1,5 +1,3 @@
-
-
 use crate::{
     layout::LayoutTag,
     models::{
@@ -167,7 +165,7 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
 
 pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
     if ws == state.monitors.get(&state.current_monitor)?.current_ws {
-        return Some(())
+        return Some(());
     }
 
     let ww = state
@@ -188,7 +186,10 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         let windows = mon.place_window(w);
         let (current_state, handle_state) =
             if windows.len() == 1 && mon.get_current_layout()? != LayoutTag::Floating {
-                (WindowState::Maximized, vec![HandleState::Maximize, HandleState::Map])
+                (
+                    WindowState::Maximized,
+                    vec![HandleState::Maximize, HandleState::Map],
+                )
             } else {
                 (WindowState::Free, HandleState::Map.into())
             };
@@ -226,7 +227,10 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         let windows = mon.place_window(w);
         let (current_state, handle_state) =
             if windows.len() == 1 && mon.get_current_layout()? != LayoutTag::Floating {
-                (WindowState::Maximized, vec![HandleState::Maximize, HandleState::Map])
+                (
+                    WindowState::Maximized,
+                    vec![HandleState::Maximize, HandleState::Map],
+                )
             } else {
                 (WindowState::Free, HandleState::Map.into())
             };
@@ -261,7 +265,10 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         let windows = mon.place_window(w);
         let (current_state, handle_state) =
             if windows.len() == 1 && mon.get_current_layout()? != LayoutTag::Floating {
-                (WindowState::Maximized, vec![HandleState::Maximize, HandleState::Map])
+                (
+                    WindowState::Maximized,
+                    vec![HandleState::Maximize, HandleState::Map],
+                )
             } else {
                 (WindowState::Free, vec![HandleState::Map])
             };

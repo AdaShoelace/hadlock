@@ -106,7 +106,7 @@ impl XAtom {
             return "WM_TAKE_FOCUS";
         }
         if atom == self.Window {
-            return "WINDOW"
+            return "WINDOW";
         }
         if atom == self.NetActiveWindow {
             return "_NET_ACTIVE_WINDOW";
