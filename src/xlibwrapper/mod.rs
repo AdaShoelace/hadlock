@@ -1,5 +1,6 @@
 pub mod action;
 pub mod core;
+pub mod mock_core;
 pub mod cursor;
 pub mod masks;
 pub mod mock_core;
@@ -173,11 +174,18 @@ pub trait DisplayServer {
         unimplemented!()
     }
 
-    fn get_class_hint(&self, _w: Window) -> Result<(String, String), Box<dyn std::error::Error>> {
+    fn get_class_hint(
+        &self,
+        _w: Window,
+    ) -> Result<(String, String), Box<dyn std::error::Error>> {
         unimplemented!()
     }
 
-    fn get_atom_prop_value(&self, _window: xlib::Window, _prop: xlib::Atom) -> Option<xlib::Atom> {
+    fn get_atom_prop_value(
+        &self,
+        _window: xlib::Window,
+        _prop: xlib::Atom,
+    ) -> Option<xlib::Atom> {
         unimplemented!()
     }
 

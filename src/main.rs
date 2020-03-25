@@ -13,7 +13,7 @@ mod wm;
 mod xlibwrapper;
 
 use std::{process::Command, rc::Rc, sync::mpsc, thread};
-use xlibwrapper::{core::*, DisplayServer};
+use xlibwrapper::{DisplayServer, core::*};
 
 use crate::config::*;
 use chrono;

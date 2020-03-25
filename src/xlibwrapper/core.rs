@@ -43,6 +43,7 @@ pub struct XlibWrapper {
 }
 
 impl XlibWrapper {
+
     pub fn new() -> Self {
         let (disp, root, lib, xatom, cursors) = unsafe {
             let lib = xlib::Xlib::open().expect("xlibwrapper::core: new");
@@ -854,7 +855,10 @@ impl DisplayServer for XlibWrapper {
         self.get_atom_prop_value(w, self.xatom.NetWMWindowType)
     }
 
-    fn get_class_hint(&self, w: Window) -> Result<(String, String), Box<dyn std::error::Error>> {
+    fn get_class_hint(
+        &self,
+        w: Window,
+    ) -> Result<(String, String), Box<dyn std::error::Error>> {
         unsafe {
             let mut hint_return = MaybeUninit::<xlib::XClassHint>::zeroed();
 
@@ -880,7 +884,11 @@ impl DisplayServer for XlibWrapper {
         }
     }
 
-    fn get_atom_prop_value(&self, window: xlib::Window, prop: xlib::Atom) -> Option<xlib::Atom> {
+    fn get_atom_prop_value(
+        &self,
+        window: xlib::Window,
+        prop: xlib::Atom,
+    ) -> Option<xlib::Atom> {
         // Shamelessly stolen from lex148/leftWM
         let mut format_return: i32 = 0;
         let mut nitems_return: c_ulong = 0;
