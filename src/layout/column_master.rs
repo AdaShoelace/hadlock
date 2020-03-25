@@ -92,6 +92,7 @@ impl std::fmt::Display for ColumnMaster {
 }
 
 impl Layout for ColumnMaster {
+
     fn get_type(&self) -> LayoutTag {
         self.layout_type
     }

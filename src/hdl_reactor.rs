@@ -3,6 +3,7 @@ use {
     crate::models::{internal_action::InternalAction, windowwrapper::*, HandleState, WindowState},
     crate::state::*,
     crate::{
+        xlibwrapper::DisplayServer,
         xlibwrapper::xlibmodels::*,
         xlibwrapper::DisplayServer,
         xlibwrapper::{masks::*, util::*},
