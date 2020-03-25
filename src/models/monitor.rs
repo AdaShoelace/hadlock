@@ -501,13 +501,13 @@ mod test {
             handle_state: HandleState::Move.into(),
             ..base_ww
         };
-        
+
         mon.swap_window(10, |_mon, ww| WindowWrapper {
             current_state: WindowState::Maximized,
             handle_state: HandleState::Move.into(),
             ..ww
         });
-        
-        assert_eq!(None, mon.get_client(tested.window())) 
+
+        assert_eq!(None, mon.get_client(tested.window()))
     }
 }
