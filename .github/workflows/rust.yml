@@ -19,6 +19,7 @@ jobs:
       run: |
           sudo apt update
           sudo apt install libxinerama-dev
+          sudo apt install libdbus-1-dev
     - name: Build
       run: cargo build --release
     - name: Run tests
