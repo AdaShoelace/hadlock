@@ -20,7 +20,7 @@ pub struct WindowWrapper {
     pub handle_state: RefCell<Vec<HandleState>>,
     pub current_state: WindowState,
     pub previous_state: WindowState,
-    pub toc: Instant
+    pub toc: Instant,
 }
 
 impl WindowWrapper {
@@ -38,7 +38,7 @@ impl WindowWrapper {
             handle_state: RefCell::new(vec![HandleState::New]),
             current_state: WindowState::Free,
             previous_state: WindowState::Free,
-            toc: Instant::now()
+            toc: Instant::now(),
         }
     }
 

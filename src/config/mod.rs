@@ -4,8 +4,6 @@ mod loader;
 use lazy_static::*;
 use serde::{Deserialize, Serialize};
 
-
-
 use config::*;
 
 lazy_static! {

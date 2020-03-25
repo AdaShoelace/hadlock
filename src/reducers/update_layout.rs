@@ -2,11 +2,11 @@
 use {
     crate::{
         config::CONFIG,
+        layout::LayoutTag,
         models::{
             monitor::Monitor, rect::*, window_type::WindowType, windowwrapper::*, HandleState,
-            WindowState, 
+            WindowState,
         },
-        layout::LayoutTag,
         state::State,
         wm,
         xlibwrapper::action,

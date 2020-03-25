@@ -19,7 +19,10 @@ use {
 
 impl Reducer<action::ConfigurationRequest> for State {
     fn reduce(&mut self, action: action::ConfigurationRequest) {
-        debug!("ConfigurationRequest for window: {} - {:?}", action.win, action.win_changes);
+        debug!(
+            "ConfigurationRequest for window: {} - {:?}",
+            action.win, action.win_changes
+        );
         let mon = self
             .monitors
             .get_mut(&self.current_monitor)
@@ -30,7 +33,9 @@ impl Reducer<action::ConfigurationRequest> for State {
             {
                 return;
             }*/
-            let ww = mon.remove_window(action.win).expect("ConfigurationRequest - monitor - remove_window");
+            let ww = mon
+                .remove_window(action.win)
+                .expect("ConfigurationRequest - monitor - remove_window");
             self.lib.configure_window(
                 action.win,
                 action.value_mask as i64,

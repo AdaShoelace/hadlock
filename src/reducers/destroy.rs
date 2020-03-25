@@ -2,7 +2,9 @@
 use {
     crate::{
         config::CONFIG,
-        models::{rect::*, window_type::WindowType, windowwrapper::*, internal_action::InternalAction},
+        models::{
+            internal_action::InternalAction, rect::*, window_type::WindowType, windowwrapper::*,
+        },
         state::State,
         xlibwrapper::action,
         xlibwrapper::core::*,

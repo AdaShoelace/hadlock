@@ -25,7 +25,7 @@ impl Reducer<action::LeaveNotify> for State {
             .expect("LeaveNotify - monitor - get_mut");
 
         if mon.get_current_layout() != Some(LayoutTag::Floating) {
-            return
+            return;
         }
 
         if let Some(w) = mon.get_client_mut(action.win) {

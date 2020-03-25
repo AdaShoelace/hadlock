@@ -3,8 +3,8 @@ use {
     crate::models::{internal_action::InternalAction, windowwrapper::*, HandleState, WindowState},
     crate::state::*,
     crate::{
-        xlibwrapper::DisplayServer,
         xlibwrapper::xlibmodels::*,
+        xlibwrapper::DisplayServer,
         xlibwrapper::{masks::*, util::*},
     },
     reducer::*,
@@ -123,9 +123,10 @@ impl Reactor<State> for HdlReactor {
                                     .expect("HdlReactor - Destroy")
                                     .get_current_windows();
                                 self.kill_window(*key, windows);
-                                
+
                                 if let Some(ww) = mon.get_previous(*key) {
-                                    let _ = self.tx.send(InternalAction::FocusSpecific(ww.window()));
+                                    let _ =
+                                        self.tx.send(InternalAction::FocusSpecific(ww.window()));
                                 }
 
                                 if let None = mon.get_newest() {

@@ -1,28 +1,26 @@
 pub mod action;
 pub mod core;
-pub mod mock_core;
 pub mod cursor;
 pub mod masks;
+pub mod mock_core;
 pub mod util;
 pub mod xatom;
 pub mod xlibmodels;
 
 use {
+    super::models::{dockarea::DockArea, screen::Screen, window_type::WindowType},
     std::os::raw::*,
-    xlibmodels::*,
-    x11_dl::xlib,
-    util::*, 
     util::Position,
-    super::models::{dockarea::DockArea, screen::Screen, window_type::WindowType,},
+    util::*,
+    x11_dl::xlib,
     xatom::XAtom,
+    xlibmodels::*,
 };
 
 pub trait DisplayServer {
-
     fn get_screens(&self) -> Vec<Screen> {
         unimplemented!()
     }
-
 
     fn update_desktops(&self, _current_ws: u32, _num_of_ws: Option<u32>) {
         unimplemented!()
@@ -31,7 +29,6 @@ pub trait DisplayServer {
     fn init_desktops_hints(&self) {
         unimplemented!()
     }
-
 
     fn get_window_states_atoms(&self, _window: xlib::Window) -> Vec<xlib::Atom> {
         unimplemented!()
@@ -45,8 +42,6 @@ pub trait DisplayServer {
         unimplemented!()
     }
 
-
-    
     fn atom_name(&self, _atom: xlib::Atom) -> Result<String, Box<dyn std::error::Error>> {
         unimplemented!()
     }
@@ -178,18 +173,11 @@ pub trait DisplayServer {
         unimplemented!()
     }
 
-    fn get_class_hint(
-        &self,
-        _w: Window,
-    ) -> Result<(String, String), Box<dyn std::error::Error>> {
+    fn get_class_hint(&self, _w: Window) -> Result<(String, String), Box<dyn std::error::Error>> {
         unimplemented!()
     }
 
-    fn get_atom_prop_value(
-        &self,
-        _window: xlib::Window,
-        _prop: xlib::Atom,
-    ) -> Option<xlib::Atom> {
+    fn get_atom_prop_value(&self, _window: xlib::Window, _prop: xlib::Atom) -> Option<xlib::Atom> {
         unimplemented!()
     }
 
@@ -262,7 +250,6 @@ pub trait DisplayServer {
     fn get_upmost_window(&self) -> Option<Window> {
         unimplemented!()
     }
-
 
     fn reparent_client(&self, _w: Window, _size: Size, _pos: Position) -> Window {
         unimplemented!()
