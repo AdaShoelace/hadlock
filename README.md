@@ -1,5 +1,5 @@
 # Hadlock  
-
+![Rust](https://github.com/AdaShoelace/hadlock/workflows/Rust/badge.svg?branch=master)  
 Hadlock is a tiling and stacking window manager for X.  
 It is written completely in rust with and architecture heavily inspired by redux.  
 
