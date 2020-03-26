@@ -385,3 +385,85 @@ pub fn get_monitor_by_point(state: &State, x: i32, y: i32) -> MonitorId {
         None => state.current_monitor,
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::models::{
+        monitor::Monitor, rect::Rect, screen::Screen, windowwrapper::WindowWrapper,
+        workspace::Workspace, WindowState,
+    };
+    use crate::wm;
+    use crate::xlibwrapper::{
+        util::{Position, Size},
+        xlibmodels::{Geometry, Window},
+    };
+
+    const ROOT: Window = 1;
+    const SCREEN_1: Screen = Screen {
+        root: ROOT,
+        x: 0,
+        y: 0,
+        width: 1920,
+        height: 1080,
+    };
+    const WIN_GEOM: Geometry = Geometry {
+        width: 100,
+        height: 100,
+        x: 10,
+        y: 10,
+    };
+
+    #[test]
+    fn window_inside_screen_pass() {
+        assert!(wm::window_inside_screen(&WIN_GEOM, &SCREEN_1))
+    }
+
+    #[test]
+    fn window_inside_screen_fail() {
+        let win_geom = Geometry {
+            width: 100,
+            height: 100,
+            x: -10,
+            y: -10,
+        };
+        assert_ne!(true, wm::window_inside_screen(&win_geom, &SCREEN_1))
+    }
+    // pub fn toggle_maximize(mon: &Monitor, ww: WindowWrapper) -> WindowWrapper;
+
+    #[test]
+    fn toggle_maximize_to_maximized() {
+        let ws = Workspace::new(1);
+        let mon = Monitor::new(1, SCREEN_1, ws);
+
+        let original = WindowWrapper::new(12, Rect::from(WIN_GEOM), false);
+
+        let tested = wm::toggle_maximize(&mon, original.clone());
+
+        assert_eq!(
+            WindowState::Maximized,
+            tested.current_state,
+            "Wrong state: {:?}, should have been {:?}",
+            tested.current_state,
+            WindowState::Maximized
+        );
+        assert_eq!(
+            original.current_state, tested.previous_state,
+            "{:?}, should have been {:?}",
+            tested.previous_state, original.current_state
+        );
+        assert_eq!(
+            original.get_position(),
+            tested.restore_position,
+            "{:?}, should have been: {:?}",
+            tested.restore_position,
+            original.get_position()
+        );
+        assert_eq!(
+            original.get_size(),
+            tested.restore_size,
+            "{:?}, should have been {:?}",
+            tested.restore_size,
+            original.get_size()
+        );
+    }
+}
