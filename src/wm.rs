@@ -99,16 +99,23 @@ pub fn get_mon_by_window(state: &State, w: Window) -> Option<MonitorId> {
 }
 
 pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
+    let mon = state.monitors.get_mut(&state.current_monitor)?;
+    let mut temp_ws = mon.remove_ws(mon.current_ws)?;
+    temp_ws.clients.values_mut().for_each(|client| {
+        client.handle_state.replace_with(|old| {
+            let mut handle_state = vec![HandleState::Unfocus];
+            old.append(&mut handle_state);
+            old.to_vec()
+        });
+    });
+    mon.add_ws(temp_ws);
+
     let mon = match get_mon_by_ws(state, ws) {
         Some(mon) => state.monitors.get_mut(&mon)?,
         None => state.monitors.get_mut(&state.current_monitor)?,
     };
 
     if ws == mon.current_ws {
-        state.lib.move_cursor(Position {
-            x: mon.screen.x + (mon.screen.width / 2),
-            y: mon.screen.y + (mon.screen.height / 2),
-        });
         mon.handle_state.replace(HandleState::Focus.into());
 
         let mon = state.monitors.get_mut(&state.current_monitor)?;
@@ -122,6 +129,30 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
             });
         });
         mon.add_ws(new_ws);
+
+        let mon = state.monitors.get_mut(&get_mon_by_ws(state, ws)?)?;
+
+        let newest = match mon.get_newest() {
+            Some((win, _)) => win.clone(),
+            None => {
+                return Some(());
+            }
+        };
+
+        mon.swap_window(newest, |_mon, ww| WindowWrapper {
+            handle_state: {
+                let old = ww.handle_state.into_inner();
+                let mut old = old
+                    .into_iter()
+                    .filter(|hs| *hs != HandleState::Unfocus)
+                    .collect::<Vec<HandleState>>();
+                let mut appendage = vec![HandleState::Focus];
+                old.append(&mut appendage);
+                old.into()
+            },
+            ..ww
+        });
+        state.focus_w = newest;
         state.current_monitor = mon.id;
         return Some(());
     }
@@ -146,6 +177,18 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
             });
         });
         mon.add_ws(new_ws);
+        match mon.get_newest() {
+            Some((win, _)) => {
+                if let Some(client) = mon.get_client(*win) {
+                    client.handle_state.replace_with(|old| {
+                        let mut handle_state = vec![HandleState::Focus];
+                        old.append(&mut handle_state);
+                        old.to_vec()
+                    });
+                }
+            }
+            _ => (),
+        }
     } else {
         mon.add_ws(Workspace::new(ws));
     }
@@ -155,10 +198,6 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
         mon.remove_ws(mon.current_ws);
     }
     mon.current_ws = ws;
-    state.lib.move_cursor(Position {
-        x: mon.screen.x + (mon.screen.width / 2),
-        y: mon.screen.y + (mon.screen.height / 2),
-    });
     mon.handle_state.replace(HandleState::Focus);
     Some(())
 }
