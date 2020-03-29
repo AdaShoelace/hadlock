@@ -133,6 +133,19 @@ impl Monitor {
         self.workspaces.insert(ws.tag, ws);
     }
 
+    pub fn swap_ws<F>(&mut self, ws: u32, mut f: F) -> Option<()>
+    where
+        F: FnMut(&Monitor, Workspace) -> Workspace + Sized,
+    {
+        let old_ws = self
+            .remove_ws(ws)?;
+
+        let new_ws = f(&self, old_ws);
+
+        self.add_ws(new_ws);
+        Some(())
+    }
+
     pub fn get_current_windows(&self) -> Vec<Window> {
         match self.get_current_ws() {
             Some(ws) => ws.clients.keys().map(|x| *x).collect::<Vec<Window>>(),
