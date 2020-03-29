@@ -24,6 +24,7 @@ impl Reducer<action::MotionNotify> for State {
 
         if self.current_monitor != actual_mon {
             if let Some(mon) = self.monitors.get_mut(&old_mon) {
+                mon.mouse_follow = false;
                 match mon.get_client(self.focus_w) {
                     Some(client) => {
                         client.handle_state.replace(HandleState::Unfocus.into());
