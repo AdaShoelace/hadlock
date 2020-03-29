@@ -29,10 +29,12 @@ impl Reactor<State> for HdlReactor {
                 HandleState::Focus => {
                     debug!("Setting current monitor to: {}", state.current_monitor);
                     self.lib.update_desktops(mon.current_ws, None);
-                    state.lib.move_cursor(Position {
-                        x: mon.screen.x + mon.screen.width / 2,
-                        y: mon.screen.y + mon.screen.height / 2
-                    });
+                    if mon.mouse_follow {
+                        state.lib.move_cursor(Position {
+                            x: mon.screen.x + mon.screen.width / 2,
+                            y: mon.screen.y + mon.screen.height / 2,
+                        });
+                    }
                     mon.handle_state.replace(HandleState::Handled);
                 }
                 HandleState::UpdateLayout => {

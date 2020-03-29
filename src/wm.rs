@@ -5,7 +5,7 @@ use crate::{
         WindowState,
     },
     state::State,
-    xlibwrapper::{util::*, xlibmodels::*},
+    xlibwrapper::{xlibmodels::*},
 };
 
 pub fn window_inside_screen(w_geom: &Geometry, screen: &Screen) -> bool {
@@ -117,6 +117,7 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
 
     if ws == mon.current_ws {
         mon.handle_state.replace(HandleState::Focus.into());
+        mon.mouse_follow = true;
 
         let mon = state.monitors.get_mut(&state.current_monitor)?;
 
@@ -199,6 +200,7 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     }
     mon.current_ws = ws;
     mon.handle_state.replace(HandleState::Focus);
+    mon.mouse_follow = true;
     Some(())
 }
 

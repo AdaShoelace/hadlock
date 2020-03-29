@@ -34,11 +34,12 @@ impl Reducer<action::MotionNotify> for State {
 
             self.current_monitor = actual_mon;
 
-            self.monitors
-                .get(&self.current_monitor)
-                .expect("MotionNotify - monitor - get_mut - change handle state")
-                .handle_state
-                .replace(HandleState::Focus);
+            let mon = self
+                .monitors
+                .get_mut(&self.current_monitor)
+                .expect("MotionNotify - monitor - get_mut - change handle state");
+            mon.handle_state.replace(HandleState::Focus);
+            mon.mouse_follow = false;
         }
 
         let layout = self

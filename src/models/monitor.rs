@@ -19,6 +19,7 @@ pub struct Monitor {
     pub workspaces: HashMap<u32, Workspace>,
     pub dock_area: DockArea,
     pub current_ws: u32,
+    pub mouse_follow: bool,
     pub handle_state: RefCell<HandleState>,
 }
 
@@ -37,6 +38,7 @@ impl Monitor {
             workspaces,
             dock_area: Default::default(),
             current_ws,
+            mouse_follow: false,
             handle_state: RefCell::new(HandleState::Handled),
         }
     }
