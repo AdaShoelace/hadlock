@@ -5,7 +5,7 @@ use crate::{
         WindowState,
     },
     state::State,
-    xlibwrapper::{xlibmodels::*},
+    xlibwrapper::xlibmodels::*,
 };
 
 pub fn window_inside_screen(w_geom: &Geometry, screen: &Screen) -> bool {
@@ -100,15 +100,14 @@ pub fn get_mon_by_window(state: &State, w: Window) -> Option<MonitorId> {
 
 pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;
-    let mut temp_ws = mon.remove_ws(mon.current_ws)?;
-    temp_ws.clients.values_mut().for_each(|client| {
-        client.handle_state.replace_with(|old| {
-            let mut handle_state = vec![HandleState::Unfocus];
-            old.append(&mut handle_state);
-            old.to_vec()
-        });
+    /*let mut temp_ws = mon.remove_ws(mon.current_ws)?;
+    temp_ws.append_handle_state(vec![HandleState::Unfocus]);
+    mon.add_ws(temp_ws);*/
+
+    mon.swap_ws(mon.current_ws, |_mon, mut ws| {
+        ws.append_handle_state(vec![HandleState::Unfocus]);
+        ws
     });
-    mon.add_ws(temp_ws);
 
     let mon = match get_mon_by_ws(state, ws) {
         Some(mon) => state.monitors.get_mut(&mon)?,
@@ -121,16 +120,14 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
 
         let mon = state.monitors.get_mut(&state.current_monitor)?;
 
-        let mut new_ws = mon.remove_ws(mon.current_ws).expect("Should also be here");
-        new_ws.clients.values_mut().for_each(|client| {
-            client.handle_state.replace_with(|old| {
-                let mut handle_state = vec![HandleState::Unfocus];
-                old.append(&mut handle_state);
-                old.to_vec()
-            });
-        });
-        mon.add_ws(new_ws);
+        /*let mut new_ws = mon.remove_ws(mon.current_ws)?;
+        new_ws.append_handle_state(vec![HandleState::Unfocus]);
+        mon.add_ws(new_ws);*/
 
+        mon.swap_ws(mon.current_ws, |_mon, mut ws| {
+            ws.append_handle_state(vec![HandleState::Unfocus]);
+            ws
+        });
         let mon = state.monitors.get_mut(&get_mon_by_ws(state, ws)?)?;
 
         let newest = match mon.get_newest() {
@@ -158,25 +155,17 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
         return Some(());
     }
 
-    let mut new_ws = mon.remove_ws(mon.current_ws).expect("Should also be here");
-    new_ws.clients.values_mut().for_each(|client| {
-        client.handle_state.replace_with(|old| {
-            let mut handle_state = vec![HandleState::Unmap, HandleState::Unfocus];
-            old.append(&mut handle_state);
-            old.to_vec()
-        });
+    /*let mut new_ws = mon.remove_ws(mon.current_ws)?;
+    new_ws.append_handle_state(vec![HandleState::Unmap, HandleState::Unfocus]);
+    mon.add_ws(new_ws);*/
+    mon.swap_ws(mon.current_ws, |_mon, mut ws| {
+        ws.append_handle_state(vec![HandleState::Unmap, HandleState::Unfocus]);
+        ws
     });
-    mon.add_ws(new_ws);
 
     if mon.contains_ws(ws) {
-        let mut new_ws = mon.remove_ws(ws).expect("Should also be here");
-        new_ws.clients.values_mut().for_each(|client| {
-            client.handle_state.replace_with(|old| {
-                let mut handle_state = vec![HandleState::Map];
-                old.append(&mut handle_state);
-                old.to_vec()
-            });
-        });
+        let mut new_ws = mon.remove_ws(ws)?;
+        new_ws.append_handle_state(vec![HandleState::Map]);
         mon.add_ws(new_ws);
         match mon.get_newest() {
             Some((win, _)) => {
@@ -185,6 +174,9 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
                         let mut handle_state = vec![HandleState::Focus];
                         old.append(&mut handle_state);
                         old.to_vec()
+                            .into_iter()
+                            .filter(|hs| *hs != HandleState::Unfocus)
+                            .collect::<Vec<HandleState>>()
                     });
                 }
             }

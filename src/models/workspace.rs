@@ -4,7 +4,7 @@ use indexmap::IndexMap;
 use crate::{
     config::*,
     layout::{self, column_master, floating, Layout, LayoutTag},
-    models::windowwrapper::WindowWrapper,
+    models::{windowwrapper::WindowWrapper, HandleState},
     xlibwrapper::xlibmodels::Window,
 };
 
@@ -115,6 +115,16 @@ impl Workspace {
             }
             _ => None,
         }
+    }
+
+    pub fn append_handle_state(&mut self, handle_states: Vec<HandleState>) {
+        self.clients.values_mut().for_each(|client| {
+            client.handle_state.replace_with(|old| {
+                let mut handle_state = handle_states.clone();
+                old.append(&mut handle_state);
+                old.to_vec()
+            });
+        });
     }
 }
 
