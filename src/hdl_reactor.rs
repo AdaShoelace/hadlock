@@ -43,9 +43,17 @@ impl Reactor<State> for HdlReactor {
                 }
                 _ => (),
             }
+
             mon.workspaces.iter().for_each(|(_key, ws)| {
                 //debug!("ws {} has len: {}", key, ws.clients.len());
                 ws.clients.iter().for_each(|(key, val)| {
+                    if mon.id != state.current_monitor {
+                        val.handle_state.replace_with(|old| {
+                            let mut handle_state = vec![HandleState::Unfocus];
+                            old.append(&mut handle_state);
+                            old.to_vec()
+                        });
+                    }
                     let mut set_handled = false;
                     let handle_state = val.handle_state.clone();
                     //debug!("window: {}, handle_state: {:?}", *key, handle_state);
