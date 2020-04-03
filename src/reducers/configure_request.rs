@@ -23,18 +23,25 @@ impl Reducer<action::ConfigurationRequest> for State {
             "ConfigurationRequest for window: {} - {:?}",
             action.win, action.win_changes
         );
+
+        let mon_id = match wm::get_mon_by_window(&self, action.win) {
+            Some(mon_id) => mon_id,
+            None => {
+                self.lib
+                    .configure_window(action.win, action.value_mask as i64, action.win_changes);
+                return
+            }
+        };
+
         let mon = self
             .monitors
-            .get_mut(&self.current_monitor)
+            .get_mut(&mon_id)
             .expect("ConfigurationRequest - monitor - get_mut");
 
         if mon.contains_window(action.win) {
-            /*if action.value_mask & (xlib::CWX | xlib::CWY) as u64 == (xlib::CWX | xlib::CWY) as u64
-            {
-                return;
-            }*/
+            let ws = mon.get_ws_by_window(action.win).unwrap();
             let ww = mon
-                .remove_window(action.win)
+                .remove_window_non_current(action.win, ws)
                 .expect("ConfigurationRequest - monitor - remove_window");
             self.lib.configure_window(
                 action.win,
@@ -47,10 +54,7 @@ impl Reducer<action::ConfigurationRequest> for State {
                     ..action.win_changes
                 },
             );
-            mon.add_window(ww.window(), ww);
-        } else {
-            self.lib
-                .configure_window(action.win, action.value_mask as i64, action.win_changes);
+            mon.add_window_non_current(ww.window(), ww, ws);
         }
     }
 }
