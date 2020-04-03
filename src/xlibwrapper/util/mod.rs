@@ -1,6 +1,7 @@
 pub mod keysym_lookup;
 
 use serde::{self, de, Deserialize, Deserializer, Serialize};
+use crate::models::screen::Screen;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Position {
@@ -12,6 +13,12 @@ pub struct Position {
 pub struct Size {
     pub width: i32,
     pub height: i32,
+}
+
+impl From<Screen> for (Position, Size) {
+    fn from(screen: Screen) -> Self {
+        (Position{ x: screen.x, y: screen.y}, Size { width: screen.width, height: screen.height })
+    }
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
