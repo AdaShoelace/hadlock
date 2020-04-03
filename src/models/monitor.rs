@@ -54,14 +54,43 @@ impl Monitor {
         }
     }
 
+    pub fn add_window_non_current(&mut self, w: Window, ww: WindowWrapper, ws: u32) {
+        match self.workspaces.get_mut(&ws) {
+            Some(ws) => ws.add_window(w, ww),
+            None => warn!("Monitor: {}, current_ws: {}", self.id, self.current_ws), //TODO: fekking fix
+        }
+    }
+
     pub fn remove_window(&mut self, w: Window) -> Option<WindowWrapper> {
         let ret = self
             .workspaces
-            .get_mut(&self.current_ws)
-            .expect("monitor: remove_window")
+            .get_mut(&self.current_ws)?
             .remove_window(w)?;
         Some(ret)
     }
+
+    pub fn remove_window_non_current(&mut self, w: Window, ws: u32) -> Option<WindowWrapper> {
+        let ret = self
+            .workspaces
+            .get_mut(&ws)?
+            .remove_window(w)?;
+        Some(ret)
+    }
+    
+    pub fn get_ws_by_window(&self, w: Window) -> Option<u32> {
+        let mut tag_vec = self
+            .workspaces
+            .values()
+            .filter(|ws| ws.contains_window(w))
+            .map(|ws| ws.tag)
+            .collect::<Vec<u32>>();
+        if !tag_vec.is_empty(){
+            Some(tag_vec.remove(0))
+        } else {
+            None
+        }
+    }
+
     pub fn get_newest(&self) -> Option<(&Window, &WindowWrapper)> {
         self.workspaces.get(&self.current_ws)?.get_newest()
     }
