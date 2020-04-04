@@ -104,7 +104,7 @@ impl Layout for ColumnMaster {
         w: Window,
         windows: Vec<&WindowWrapper>,
     ) -> Vec<(Window, Rect)> {
-        debug!("Incoming window vector in column_master: {:#?}", windows);
+        //debug!("Incoming window vector in column_master: {:#?}", windows);
         let windows = windows.into_iter().collect::<Vec<&WindowWrapper>>();
 
         let dock_height = match dock_area.as_rect(screen) {
