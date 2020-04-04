@@ -25,11 +25,6 @@ impl Reducer<action::Focus> for State {
 
         match wm::get_mon_by_window(self, action.win) {
             Some(_mon) => {
-                //let (_class, _something) = self.lib.get_class_hint(action.win);
-                /*debug!(
-                    "Sending clients top window is not root. Win ({},{}) is in mon {}",
-                    class, something, mon
-                );*/
                 let curr_mon = self
                     .monitors
                     .get_mut(&self.current_monitor)
