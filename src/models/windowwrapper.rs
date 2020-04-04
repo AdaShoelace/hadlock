@@ -176,4 +176,12 @@ impl WindowWrapper {
     pub fn get_restore_size(&self) -> Size {
         self.restore_size.clone()
     }
+
+    pub fn append_handle_state(&mut self, handle_states: Vec<HandleState>) {
+        self.handle_state.replace_with(|old| {
+            let mut handle_state = handle_states;
+            old.append(&mut handle_state);
+            old.to_vec()
+        });
+    }
 }

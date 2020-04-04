@@ -119,11 +119,7 @@ impl Workspace {
 
     pub fn append_handle_state(&mut self, handle_states: Vec<HandleState>) {
         self.clients.values_mut().for_each(|client| {
-            client.handle_state.replace_with(|old| {
-                let mut handle_state = handle_states.clone();
-                old.append(&mut handle_state);
-                old.to_vec()
-            });
+            client.append_handle_state(handle_states.clone());
         });
     }
 }
