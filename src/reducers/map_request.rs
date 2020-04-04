@@ -102,15 +102,15 @@ impl Reducer<action::MapRequest> for State {
                             };
                         let ww = WindowWrapper {
                             window_rect: rect,
-                            current_state: WindowState::Tiled,
+                            current_state: WindowState::Free,
                             handle_state: handle_state.into(),
                             ..ww
                         };
                         mon.add_window(win, ww);
                     }
-                    None => {
+                    None => if win == action.win {
                         debug!("Mapping window not already in mon");
-                        let ww = {
+                        let mut ww = {
                             let ww = if window_amount == 1
                                 && mon.get_current_layout().unwrap() != LayoutTag::Floating
                             {
@@ -120,25 +120,25 @@ impl Reducer<action::MapRequest> for State {
                                     .replace(vec![HandleState::New, HandleState::Maximize]);
                                 ww
                             } else {
-                                let mut ww = WindowWrapper::new(action.win, rect, false);
-                                ww.append_handle_state(vec!{HandleState::Focus});
-                                self.focus_w = action.win;
-                                ww
+                                WindowWrapper::new(action.win, rect, false)
                             };
                             ww
                         };
+
+                        ww.append_handle_state(vec!{HandleState::Focus});
+                        self.focus_w = action.win;
                         mon.add_window(action.win, ww);
                     }
                 };
             } //);
-            debug!(
-                "Windows in mon after place_window: {:?}",
-                mon.get_current_ws()
+            debug!( "Windows in mon after place_window:\n");
+            mon.get_current_ws()
                 .unwrap()
                 .clients
-                .keys()
-                .collect::<Vec<&Window>>()
-            );
+                .iter()
+                .for_each(|(key, val)| {
+                    debug!("{} : {:?}", key, val.handle_state);
+                });
         }
         }
     }
@@ -169,12 +169,11 @@ impl Reducer<action::MapRequest> for State {
                 }
             }
             None if action.parent == state.lib.get_root() => {
-                let screen = mon.screen.clone();
-                let (pos, size) = screen.into();
-                Position {
-                    x: pos.x + (size.width / 2) - (trans_size.width / 2) as i32,
-                    y: pos.y + (size.height / 2) - (trans_size.height / 2) as i32,
-                }
+                let (pos, size) = mon.screen.clone().into();
+                pos.translate_relative(
+                    (size.width / 2) - (trans_size.width / 2) as i32,
+                    (size.height / 2) - (trans_size.height / 2) as i32
+                )
             }
             None => return,
         };
