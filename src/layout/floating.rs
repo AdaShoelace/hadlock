@@ -128,16 +128,10 @@ impl Layout for Floating {
                     height: screen.height - dock.get_size().height,
                 },
             ),
-            None => Rect::new(
-                Position {
-                    x: screen.x,
-                    y: screen.y,
-                },
-                Size {
-                    width: screen.width,
-                    height: screen.height,
-                },
-            ),
+            None => {
+                let rect_tuple: (Position, Size) = screen.clone().into();
+                Rect::new(rect_tuple.0, rect_tuple.1)
+            },
         };
 
         let win_size_x = (space_rect.get_size().width
@@ -146,7 +140,7 @@ impl Layout for Floating {
             } else {
                 1
             })
-            - 2 * CONFIG.border_width;
+        - 2 * CONFIG.border_width;
         let win_size_y = space_rect.get_size().height - 2 * CONFIG.border_width;
 
         windows
@@ -157,7 +151,7 @@ impl Layout for Floating {
                     x: space_rect.get_position().x
                         + (index as i32 * win_size_x)
                         + index as i32 * (2 * CONFIG.border_width),
-                    y: space_rect.get_position().y,
+                        y: space_rect.get_position().y,
                 };
                 let size = Size {
                     width: win_size_x,
@@ -165,7 +159,7 @@ impl Layout for Floating {
                 };
                 (win.window(), Rect::new(pos, size))
             })
-            .collect::<Vec<(Window, Rect)>>()
+        .collect::<Vec<(Window, Rect)>>()
     }
 
     fn resize_window(
