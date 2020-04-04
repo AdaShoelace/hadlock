@@ -9,6 +9,23 @@ pub struct Position {
     pub y: i32,
 }
 
+impl Position {
+    pub fn new(x: i32, y: i32) -> Self {
+        Self { x, y }
+    }
+
+    pub fn translate(&self, x: i32, y: i32) -> Self {
+        Self::new(x, y)
+    }
+
+    pub fn translate_relative(&self, delta_x: i32, delta_y: i32) -> Self {
+        Self {
+            x: self.x + delta_x,
+            y: self.y + delta_y
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Size {
     pub width: i32,
@@ -47,8 +64,8 @@ where
     match u64::from_str_radix(without_prefix, 16) {
         Ok(res) => Ok(res),
         Err(e) => Err(de::Error::custom(format!(
-            "Failed to deserialize color: {}",
-            e
+                    "Failed to deserialize color: {}",
+                    e
         ))),
     }
 }

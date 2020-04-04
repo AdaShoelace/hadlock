@@ -103,6 +103,7 @@ impl Reactor<State> for HdlReactor {
                             }
                             HandleState::Unfocus => {
                                 self.unset_focus(*key, &val);
+                                debug!("Unfocusing: {}", key);
                                 set_handled = true;
                                 //let _ = self.tx.send(InternalAction::Focus);
                             }
@@ -126,8 +127,6 @@ impl Reactor<State> for HdlReactor {
                             HandleState::MaximizeRestore | HandleState::MonocleRestore => {
                                 self.lib.move_window(*key, val.get_position());
                                 self.lib.resize_window(*key, val.get_size());
-                                self.set_focus(*key, &val);
-                                self.lib.center_cursor(*key);
                                 set_handled = true;
                             }
                             HandleState::Destroy => {
