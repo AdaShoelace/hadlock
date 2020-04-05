@@ -110,6 +110,7 @@ impl Layout for Floating {
         )
     }
 
+
     fn reorder(
         &mut self,
         focus: Window,
@@ -134,24 +135,26 @@ impl Layout for Floating {
             },
         };
 
-        let win_size_x = (space_rect.get_size().width
-            / if windows.len() > 0 {
-                windows.len() as i32
-            } else {
-                1
-            })
-        - 2 * CONFIG.border_width;
-        let win_size_y = space_rect.get_size().height - 2 * CONFIG.border_width;
+        let win_size_x = (space_rect.get_size().width / 2) - 2 * CONFIG.border_width;
+        let win_size_y = (space_rect.get_size().height / 2) - 2 * CONFIG.border_width;
+
+        let center_win_pos = Position {
+            x: (space_rect.get_size().width / 2) - (win_size_x / 2),
+            y: (space_rect.get_size().height / 2) - (win_size_y / 2)
+        };
+
+        let step_size_x = center_win_pos.x / windows.len() as i32;
+        let step_size_y = center_win_pos.y / windows.len() as i32;
 
         windows
             .iter()
+            .rev()
             .enumerate()
             .map(|(index, win)| {
                 let pos = Position {
-                    x: space_rect.get_position().x
-                        + (index as i32 * win_size_x)
-                        + index as i32 * (2 * CONFIG.border_width),
-                        y: space_rect.get_position().y,
+                    x: center_win_pos.x
+                        - (index as i32 * step_size_x),
+                    y: center_win_pos.y - (index as i32 * step_size_y),
                 };
                 let size = Size {
                     width: win_size_x,
@@ -365,3 +368,4 @@ impl Layout for Floating {
         }
     }
 }
+
