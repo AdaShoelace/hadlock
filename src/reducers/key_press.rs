@@ -385,9 +385,14 @@ fn swap_master(state: &mut State) -> Option<()> {
                         tmp_toc = ww.toc;
                         client_toc
                     },
+                    handle_state: HandleState::Unfocus.into(),
                     ..ww
                 })?;
-                mon.swap_window(win, |_mon, ww| WindowWrapper { toc: tmp_toc, ..ww })?;
+                mon.swap_window(win, |_mon, ww| WindowWrapper { 
+                    toc: tmp_toc, 
+                    handle_state: HandleState::Focus.into(),
+                    ..ww 
+                })?;
                 wm::reorder(state);
             }
         }
