@@ -54,6 +54,10 @@ impl Reactor<State> for HdlReactor {
                             old.to_vec()
                         });
                     }
+
+                    if val.is_trans {
+                        self.lib.raise_window(*key);
+                    }
                     let mut set_handled = false;
                     let handle_state = val.handle_state.clone();
                     //debug!("window: {}, handle_state: {:?}", *key, handle_state);
