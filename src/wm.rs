@@ -99,8 +99,8 @@ pub fn get_mon_by_window(state: &State, w: Window) -> Option<MonitorId> {
 pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;
     /*let mut temp_ws = mon.remove_ws(mon.current_ws)?;
-    temp_ws.append_handle_state(vec![HandleState::Unfocus]);
-    mon.add_ws(temp_ws);*/
+      temp_ws.append_handle_state(vec![HandleState::Unfocus]);
+      mon.add_ws(temp_ws);*/
 
     mon.swap_ws(mon.current_ws, |_mon, mut ws| {
         ws.append_handle_state(vec![HandleState::Unfocus]);
@@ -113,14 +113,14 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     };
 
     if ws == mon.current_ws {
-        mon.handle_state.replace(HandleState::Focus.into());
+        mon.handle_state.replace(HandleState::Focus);
         mon.mouse_follow = true;
 
         let mon = state.monitors.get_mut(&state.current_monitor)?;
 
         /*let mut new_ws = mon.remove_ws(mon.current_ws)?;
-        new_ws.append_handle_state(vec![HandleState::Unfocus]);
-        mon.add_ws(new_ws);*/
+          new_ws.append_handle_state(vec![HandleState::Unfocus]);
+          mon.add_ws(new_ws);*/
 
         mon.swap_ws(mon.current_ws, |_mon, mut ws| {
             ws.append_handle_state(vec![HandleState::Unfocus]);
@@ -129,7 +129,7 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
         let mon = state.monitors.get_mut(&get_mon_by_ws(state, ws)?)?;
 
         let newest = match mon.get_newest() {
-            Some((win, _)) => win.clone(),
+            Some((win, _)) => *win,
             None => {
                 return Some(());
             }
@@ -154,8 +154,8 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     }
 
     /*let mut new_ws = mon.remove_ws(mon.current_ws)?;
-    new_ws.append_handle_state(vec![HandleState::Unmap, HandleState::Unfocus]);
-    mon.add_ws(new_ws);*/
+      new_ws.append_handle_state(vec![HandleState::Unmap, HandleState::Unfocus]);
+      mon.add_ws(new_ws);*/
     mon.swap_ws(mon.current_ws, |_mon, mut ws| {
         ws.append_handle_state(vec![HandleState::Unmap, HandleState::Unfocus]);
         ws
@@ -165,20 +165,17 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
         let mut new_ws = mon.remove_ws(ws)?;
         new_ws.append_handle_state(vec![HandleState::Map]);
         mon.add_ws(new_ws);
-        match mon.get_newest() {
-            Some((win, _)) => {
-                if let Some(client) = mon.get_client(*win) {
-                    client.handle_state.replace_with(|old| {
-                        let mut handle_state = vec![HandleState::Focus];
-                        old.append(&mut handle_state);
-                        old.to_vec()
-                            .into_iter()
-                            .filter(|hs| *hs != HandleState::Unfocus)
-                            .collect::<Vec<HandleState>>()
-                    });
-                }
+        if let Some((win, _)) = mon.get_newest() {
+            if let Some(client) = mon.get_client(*win) {
+                client.handle_state.replace_with(|old| {
+                    let mut handle_state = vec![HandleState::Focus];
+                    old.append(&mut handle_state);
+                    old.to_vec()
+                        .into_iter()
+                        .filter(|hs| *hs != HandleState::Unfocus)
+                        .collect::<Vec<HandleState>>()
+                });
             }
-            _ => (),
         }
     } else {
         mon.add_ws(Workspace::new(ws));
@@ -227,7 +224,7 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         mon.add_window(w, ww.clone());
         for (win, rect) in windows.into_iter() {
             let (new_win, new_ww) = mon.get_newest()?;
-            let new_win = new_win.clone();
+            let new_win = *new_win;
             let new_ww = new_ww.clone();
             mon.swap_window(win, |_mon, ww| WindowWrapper {
                 restore_position: rect.get_position(),
@@ -235,11 +232,11 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
                 previous_state: WindowState::Free,
                 current_state,
                 handle_state: handle_state.clone().into(),
-                toc: if win == w { new_ww.toc.clone() } else { ww.toc },
+                toc: if win == w { new_ww.toc } else { ww.toc },
                 ..ww
             });
             if win == w {
-                mon.swap_window(new_win.clone(), |_mon, win_wrap| WindowWrapper {
+                mon.swap_window(new_win, |_mon, win_wrap| WindowWrapper {
                     current_state,
                     handle_state: handle_state.clone().into(),
                     toc: ww.toc,
@@ -267,7 +264,7 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
             };
         for (win, rect) in windows.into_iter() {
             let (new_win, new_ww) = mon.get_newest().clone().unwrap();
-            let new_win = new_win.clone();
+            let new_win = *new_win;
             let new_ww = new_ww.clone();
             mon.swap_window(win, |_mon, ww| WindowWrapper {
                 restore_position: rect.get_position(),
@@ -275,11 +272,11 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
                 previous_state: WindowState::Free,
                 current_state,
                 handle_state: handle_state.clone().into(),
-                toc: if win == w { new_ww.toc.clone() } else { ww.toc },
+                toc: if win == w { new_ww.toc } else { ww.toc },
                 ..ww
             });
             if win == w {
-                mon.swap_window(new_win.clone(), |_mon, win_wrap| WindowWrapper {
+                mon.swap_window(new_win, |_mon, win_wrap| WindowWrapper {
                     current_state,
                     toc: ww.toc,
                     ..win_wrap
@@ -331,9 +328,8 @@ pub fn reorder(state: &mut State) -> Option<()> {
         .get_current_ws()?
         .clients
         .values()
-        .map(|x| x.clone())
-        .collect::<Vec<WindowWrapper>>()
-        .clone();
+        .cloned()
+        .collect::<Vec<WindowWrapper>>();
 
     if state.focus_w == state.lib.get_root() {
         debug!("reorder focus is root");
@@ -347,15 +343,13 @@ pub fn reorder(state: &mut State) -> Option<()> {
             WindowState::Free,
             vec![HandleState::Move, HandleState::Resize],
         )
+    } else if rects.len() == 1 {
+        (WindowState::Maximized, vec![HandleState::Maximize])
     } else {
-        if rects.len() == 1 {
-            (WindowState::Maximized, vec![HandleState::Maximize])
-        } else {
-            (
-                WindowState::Tiled,
-                vec![HandleState::Move, HandleState::Resize],
-            )
-        }
+        (
+            WindowState::Tiled,
+            vec![HandleState::Move, HandleState::Resize],
+        )
     };
 
     for (win, rect) in rects {
@@ -425,7 +419,6 @@ mod test {
     };
     use crate::wm;
     use crate::xlibwrapper::{
-        util::{Position, Size},
         xlibmodels::{Geometry, Window},
     };
 

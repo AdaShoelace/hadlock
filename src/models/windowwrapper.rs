@@ -43,7 +43,7 @@ impl WindowWrapper {
     }
 
     pub fn get_window_state(&self) -> WindowState {
-        self.current_state.clone()
+        self.current_state
     }
 
     pub fn set_window_state(&mut self, state: WindowState) {
@@ -52,7 +52,7 @@ impl WindowWrapper {
     }
 
     pub fn restore_prev_state(&mut self) {
-        let temp = self.current_state.clone();
+        let temp = self.current_state;
         self.current_state = self.previous_state;
         self.previous_state = temp;
     }
@@ -71,29 +71,23 @@ impl WindowWrapper {
 
     pub fn get_dec(&self) -> Option<Window> {
         match self.dec {
-            Some(_) => self.dec.clone(),
+            Some(_) => self.dec,
             None => None,
         }
     }
     pub fn set_dec_size(&mut self, size: Size) {
-        match self.dec_rect {
-            Some(rect) => {
-                self.dec_rect = Some(Rect::new(rect.get_position(), size));
-            }
-            None => {}
+        if let Some(rect) = self.dec_rect {
+            self.dec_rect = Some(Rect::new(rect.get_position(), size));
         }
     }
 
     pub fn set_dec_position(&mut self, position: Position) {
-        match self.dec_rect {
-            Some(rect) => {
-                self.dec_rect = Some(Rect::new(position, rect.get_size()));
-            }
-            None => {}
+        if let Some(rect) = self.dec_rect {
+            self.dec_rect = Some(Rect::new(position, rect.get_size()));
         }
     }
     pub fn get_dec_rect(&self) -> Option<Rect> {
-        self.dec_rect.clone()
+        self.dec_rect
     }
 
     pub fn set_position(&mut self, pos: Position) {
@@ -116,7 +110,7 @@ impl WindowWrapper {
     }
 
     pub fn get_inner_rect(&self) -> Rect {
-        self.window_rect.clone()
+        self.window_rect
     }
 
     pub fn set_inner_rect(&mut self, rect: Rect) {
@@ -166,7 +160,7 @@ impl WindowWrapper {
     }
 
     pub fn get_restore_position(&self) -> Position {
-        self.restore_position.clone()
+        self.restore_position
     }
 
     pub fn save_restore_size(&mut self) {
@@ -174,7 +168,7 @@ impl WindowWrapper {
     }
 
     pub fn get_restore_size(&self) -> Size {
-        self.restore_size.clone()
+        self.restore_size
     }
 
     pub fn append_handle_state(&mut self, handle_states: Vec<HandleState>) {

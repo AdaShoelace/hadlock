@@ -1,4 +1,4 @@
-use super::config::Config;
+use super::config_model::Config;
 use std::env;
 use std::fs;
 use std::io::prelude::*;
@@ -25,12 +25,12 @@ pub(super) fn load_config() -> Config {
     let path = Path::new(path);
 
     if path.exists() && path.is_file() {
-        let mut file = fs::File::open(path).expect(&format!("Failed to open file: {:?}", path));
+        let mut file = fs::File::open(path).unwrap_or_else(|_| panic!("Failed to open file: {:?}", path));
         let mut file_content = String::new();
         file.read_to_string(&mut file_content)
-            .expect(&format!("Failed to read file content: {:?}", path));
+            .unwrap_or_else(|_| panic!("Failed to read file content: {:?}", path));
         match serde_json::from_str(&file_content) {
-            Ok(config) => Config::from(config),
+            Ok(config) => config,
             Err(err) => {
                 error!("{}", err);
                 Config::default()

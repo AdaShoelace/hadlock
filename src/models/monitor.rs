@@ -177,20 +177,19 @@ impl Monitor {
 
     pub fn get_current_windows(&self) -> Vec<Window> {
         match self.get_current_ws() {
-            Some(ws) => ws.clients.keys().map(|x| *x).collect::<Vec<Window>>(),
+            Some(ws) => ws.clients.keys().copied().collect::<Vec<Window>>(),
             None => vec![],
         }
     }
 
     pub fn get_client_keys(&self) -> Vec<Window> {
-        let windows = self
+        self
             .workspaces
             .values()
             .map(|x| x.clients.keys().collect::<Vec<&Window>>())
             .flatten()
-            .map(|x| *x)
-            .collect::<Vec<Window>>();
-        windows
+            .copied()
+            .collect::<Vec<Window>>()
     }
 
     pub fn get_client_mut(&mut self, w: Window) -> Option<&mut WindowWrapper> {
@@ -211,7 +210,7 @@ impl Monitor {
         let ws = self.get_current_ws_mut().expect("monitor: place_window 2");
         let windows = ws.clients.values().collect::<Vec<&WindowWrapper>>();
         ws.layout
-            .place_window(&dock_area.clone(), &screen.clone(), w, windows)
+            .place_window(&dock_area, &screen, w, windows)
     }
 
     pub fn move_window(&mut self, w: Window, x: i32, y: i32) -> (Position, Position) {
@@ -223,13 +222,13 @@ impl Monitor {
             .move_window(&screen, &dock_area, w, true, x, y)
     }
 
-    pub fn reorder(&mut self, focus: Window, windows: &Vec<WindowWrapper>) -> Vec<(Window, Rect)> {
+    pub fn reorder(&mut self, focus: Window, windows: &[WindowWrapper]) -> Vec<(Window, Rect)> {
         let screen = self.screen.clone();
         let dock_area = self.dock_area.clone();
         self.get_current_ws_mut()
             .expect("Monitor: reorder")
             .layout
-            .reorder(focus, &screen, &dock_area, windows.clone())
+            .reorder(focus, &screen, &dock_area, windows.to_vec())
     }
 
     pub fn resize_window(&mut self, w: Window, width: i32, height: i32) -> (Size, Size) {

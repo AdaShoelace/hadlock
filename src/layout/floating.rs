@@ -154,7 +154,7 @@ impl Layout for Floating {
                 let pos = Position {
                     x: center_win_pos.x
                         - (index as i32 * step_size_x),
-                    y: center_win_pos.y - (index as i32 * step_size_y),
+                        y: center_win_pos.y - (index as i32 * step_size_y),
                 };
                 let size = Size {
                     width: win_size_x,
@@ -253,16 +253,9 @@ impl Layout for Floating {
                 let pos = self
                     .move_window(&screen, &dock_area, w, true, screen.x, screen.y)
                     .0;
-                let size = if ww.is_decorated() {
-                    Size {
-                        width: screen.width - 2 * CONFIG.border_width,
-                        height: (screen.height) / 2 - 2 * CONFIG.border_width,
-                    }
-                } else {
-                    Size {
-                        width: screen.width - 2 * CONFIG.border_width,
-                        height: (screen.height) / 2 - 2 * CONFIG.border_width,
-                    }
+                let size = Size {
+                    width: screen.width - 2 * CONFIG.border_width,
+                    height: (screen.height) / 2 - 2 * CONFIG.border_width,
                 };
                 let mut size =
                     Floating::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
@@ -285,16 +278,9 @@ impl Layout for Floating {
                         screen.y,
                     )
                     .0;
-                let size = if ww.is_decorated() {
-                    Size {
-                        width: (screen.width) / 2 - 2 * CONFIG.border_width,
-                        height: screen.height - CONFIG.border_width,
-                    }
-                } else {
-                    Size {
-                        width: (screen.width) / 2 - 2 * CONFIG.border_width,
-                        height: screen.height - CONFIG.border_width,
-                    }
+                let size = Size {
+                    width: (screen.width) / 2 - 2 * CONFIG.border_width,
+                    height: screen.height - CONFIG.border_width,
                 };
                 let mut size =
                     Floating::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
@@ -310,16 +296,9 @@ impl Layout for Floating {
                 let pos = self
                     .move_window(&screen, &dock_area, w, true, screen.x, screen.y)
                     .0;
-                let size = if ww.is_decorated() {
-                    Size {
-                        width: (screen.width) / 2 - 2 * CONFIG.border_width,
-                        height: (screen.height) - CONFIG.border_width,
-                    }
-                } else {
-                    Size {
-                        width: (screen.width) / 2 - 2 * CONFIG.border_width,
-                        height: (screen.height) - CONFIG.border_width,
-                    }
+                let size = Size {
+                    width: (screen.width) / 2 - 2 * CONFIG.border_width,
+                    height: (screen.height) - CONFIG.border_width,
                 };
                 let mut size =
                     Floating::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
@@ -342,16 +321,9 @@ impl Layout for Floating {
                         screen.height / 2 - CONFIG.border_width,
                     )
                     .0;
-                let size = if ww.is_decorated() {
-                    Size {
-                        width: screen.width - 2 * CONFIG.border_width,
-                        height: (screen.height) / 2 - 2 * CONFIG.border_width,
-                    }
-                } else {
-                    Size {
-                        width: screen.width - 2 * CONFIG.border_width,
-                        height: (screen.height) / 2 - CONFIG.border_width,
-                    }
+                let size = Size {
+                    width: screen.width - 2 * CONFIG.border_width,
+                    height: (screen.height) / 2 - 2 * CONFIG.border_width,
                 };
                 let mut size =
                     Floating::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));

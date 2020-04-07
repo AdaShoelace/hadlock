@@ -2,6 +2,7 @@
 use std::ffi::CString;
 use std::mem::{self, MaybeUninit};
 use std::os::raw::*;
+use std::ptr::null;
 pub use x11_dl::xlib;
 
 use super::{masks::*, util::*, xatom::*, xlibmodels::*, DisplayServer};
@@ -49,7 +50,7 @@ impl XlibWrapper {
             let lib = xlib::Xlib::open().expect("xlibwrapper::core: new");
             let disp = (lib.XOpenDisplay)(std::ptr::null_mut());
 
-            if disp == std::ptr::null_mut() {
+            if disp.is_null() {
                 panic!("Failed to load display in xlib::XlibWrapper");
             }
 
@@ -126,7 +127,7 @@ impl XlibWrapper {
                 "4", "5", "6", "7", "8", "9",
             ];
 
-            let _ = keys
+            keys
                 .iter()
                 .map(|key| keysym_lookup::into_keysym(key).expect("Core: no such key"))
                 .for_each(|key_sym| {
@@ -139,7 +140,7 @@ impl XlibWrapper {
     fn get_non_xinerama_screens(&self) -> Vec<xlib::Screen> {
         let mut screens = Vec::new();
         let count = unsafe { (self.lib.XScreenCount)(self.display) };
-        let _ = (0..count).enumerate().for_each(|(i, x)| {
+        (0..count).enumerate().for_each(|(i, x)| {
             let screen = unsafe { *(self.lib.XScreenOfDisplay)(self.display, i as i32) };
             screens.push(screen);
         });
@@ -375,12 +376,9 @@ impl DisplayServer for XlibWrapper {
     }
 
     fn update_desktops(&self, current_ws: u32, num_of_ws: Option<u32>) {
-        match num_of_ws {
-            Some(num) => {
+        if let Some(num) = num_of_ws {
                 let data = vec![num];
                 self.set_desktop_prop(&data, self.xatom.NetNumberOfDesktops);
-            }
-            None => {}
         }
         self.sync(false);
         self.ewmh_current_desktop(current_ws);
@@ -402,7 +400,7 @@ impl DisplayServer for XlibWrapper {
                 .workspaces
                 .values()
                 .map(|x| {
-                    CString::new(x.to_string().clone())
+                    CString::new(x.to_string())
                         .expect("xlibwrapper::core: init_desktops_hints")
                         .into_raw()
                 })
@@ -864,8 +862,8 @@ impl DisplayServer for XlibWrapper {
 
             (self.lib.XGetClassHint)(self.display, w, hint_return.as_mut_ptr());
 
-            if std::ptr::eq((*hint_return.as_ptr()).res_class, 0 as *const i8)
-                || std::ptr::eq((*hint_return.as_ptr()).res_class, 0 as *const i8)
+            if std::ptr::eq((*hint_return.as_ptr()).res_class, null::<i8>())
+                || std::ptr::eq((*hint_return.as_ptr()).res_class, null::<i8>())
             {
                 return Err("XClassHint uninitialized".into());
             }
@@ -876,7 +874,6 @@ impl DisplayServer for XlibWrapper {
 
             match (class, name) {
                 (Ok(class), Ok(name)) => {
-                    drop(hint_return.assume_init());
                     Ok((class, name))
                 }
                 _ => Err("Failed to create string from raw string".into()),
@@ -928,7 +925,7 @@ impl DisplayServer for XlibWrapper {
             modifiers | xlib::LockMask,
         ];
 
-        let _ = mods.into_iter().for_each(|m| {
+        mods.into_iter().for_each(|m| {
             self.grab_key(
                 code as u32,
                 m,

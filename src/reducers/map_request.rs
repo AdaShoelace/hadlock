@@ -62,7 +62,6 @@ impl Reducer<action::MapRequest> for State {
                     ..ww
                 },
             );
-            return;
         } else {
             if mon.contains_window(action.parent) {
                 self.lib.map_window(action.win);
@@ -111,7 +110,7 @@ impl Reducer<action::MapRequest> for State {
                     None => if win == action.win {
                         debug!("Mapping window not already in mon");
                         let mut ww = {
-                            let ww = if window_amount == 1
+                            if window_amount == 1
                                 && mon.get_current_layout().unwrap() != LayoutTag::Floating
                             {
                                 let mut ww = WindowWrapper::new(action.win, rect, false);
@@ -121,8 +120,7 @@ impl Reducer<action::MapRequest> for State {
                                 ww
                             } else {
                                 WindowWrapper::new(action.win, rect, false)
-                            };
-                            ww
+                            }
                         };
 
                         ww.append_handle_state(vec!{HandleState::Focus});
@@ -195,27 +193,22 @@ impl Reducer<action::MapRequest> for State {
                 ..ww
             },
         );
-        return;
     }
 
     fn handle_dock(state: &mut State, action: &action::MapRequest) {
 
-        match state.lib.get_window_strut_array(action.win) {
-            Some(dock) => {
-                debug!("Mapping window is dock!");
-                let w_geom = state.lib.get_geometry(action.win);
-                let mon = state
-                    .monitors
-                    .values_mut()
-                    .filter(|mon| wm::window_inside_screen(&w_geom, &mon.screen))
-                    .collect::<Vec<&mut Monitor>>()
-                    .remove(0);
-                mon.set_dock_area(dock);
-                state.lib
-                    .select_input(action.win, PointerMotionMask | SubstructureRedirectMask);
-                state.lib.map_window(action.win);
-                return;
-            }
-            None => return,
+        if let Some(dock) = state.lib.get_window_strut_array(action.win) {
+            debug!("Mapping window is dock!");
+            let w_geom = state.lib.get_geometry(action.win);
+            let mon = state
+                .monitors
+                .values_mut()
+                .filter(|mon| wm::window_inside_screen(&w_geom, &mon.screen))
+                .collect::<Vec<&mut Monitor>>()
+                .remove(0);
+            mon.set_dock_area(dock);
+            state.lib
+                .select_input(action.win, PointerMotionMask | SubstructureRedirectMask);
+            state.lib.map_window(action.win);
         }
     }

@@ -56,7 +56,7 @@ impl ColumnMaster {
         }
     }
 
-    fn column_height(&self, screen: &Screen, dock: &DockArea, column: &Vec<&WindowWrapper>) -> i32 {
+    fn column_height(&self, screen: &Screen, dock: &DockArea, column: &[&WindowWrapper]) -> i32 {
         let dock_height = match dock.as_rect(screen) {
             Some(dock_rect) => dock_rect.get_size().height,
             None => 0,
@@ -68,7 +68,7 @@ impl ColumnMaster {
             } else {
                 1
             })
-            - 2 * CONFIG.border_width;
+        - 2 * CONFIG.border_width;
 
         if column.len() > 2 {
             ret -= ((column.len() as i32 - 1).abs() * CONFIG.inner_gap) / column.len() as i32
@@ -305,16 +305,9 @@ impl Layout for ColumnMaster {
                 let pos = self
                     .move_window(&screen, &dock_area, w, true, screen.x, screen.y)
                     .0;
-                let size = if ww.is_decorated() {
-                    Size {
-                        width: screen.width - 2 * CONFIG.border_width,
-                        height: (screen.height) / 2 - 2 * CONFIG.border_width,
-                    }
-                } else {
-                    Size {
-                        width: screen.width - 2 * CONFIG.border_width,
-                        height: (screen.height) / 2 - 2 * CONFIG.border_width,
-                    }
+                let size = Size {
+                    width: screen.width - 2 * CONFIG.border_width,
+                    height: (screen.height) / 2 - 2 * CONFIG.border_width,
                 };
                 let mut size = ColumnMaster::get_size(
                     &ww,
@@ -339,16 +332,9 @@ impl Layout for ColumnMaster {
                         screen.y,
                     )
                     .0;
-                let size = if ww.is_decorated() {
-                    Size {
-                        width: (screen.width) / 2 - 2 * CONFIG.border_width,
-                        height: screen.height - CONFIG.border_width,
-                    }
-                } else {
-                    Size {
-                        width: (screen.width) / 2 - 2 * CONFIG.border_width,
-                        height: screen.height - CONFIG.border_width,
-                    }
+                let size = Size {
+                    width: (screen.width) / 2 - 2 * CONFIG.border_width,
+                    height: screen.height - CONFIG.border_width,
                 };
                 let mut size = ColumnMaster::get_size(
                     &ww,
@@ -366,16 +352,9 @@ impl Layout for ColumnMaster {
                 let pos = self
                     .move_window(&screen, &dock_area, w, true, screen.x, screen.y)
                     .0;
-                let size = if ww.is_decorated() {
-                    Size {
-                        width: (screen.width) / 2 - 2 * CONFIG.border_width,
-                        height: (screen.height) - CONFIG.border_width,
-                    }
-                } else {
-                    Size {
-                        width: (screen.width) / 2 - 2 * CONFIG.border_width,
-                        height: (screen.height) - CONFIG.border_width,
-                    }
+                let size = Size {
+                    width: (screen.width) / 2 - 2 * CONFIG.border_width,
+                    height: (screen.height) - CONFIG.border_width,
                 };
                 let mut size = ColumnMaster::get_size(
                     &ww,
@@ -400,16 +379,9 @@ impl Layout for ColumnMaster {
                         screen.height / 2 - CONFIG.border_width,
                     )
                     .0;
-                let size = if ww.is_decorated() {
-                    Size {
-                        width: screen.width - 2 * CONFIG.border_width,
-                        height: (screen.height) / 2 - 2 * CONFIG.border_width,
-                    }
-                } else {
-                    Size {
-                        width: screen.width - 2 * CONFIG.border_width,
-                        height: (screen.height) / 2 - CONFIG.border_width,
-                    }
+                let size = Size {
+                    width: screen.width - 2 * CONFIG.border_width,
+                    height: (screen.height) / 2 - 2 * CONFIG.border_width,
                 };
                 let mut size = ColumnMaster::get_size(
                     &ww,
