@@ -97,7 +97,7 @@ fn default_layout() -> LayoutTag {
 
 fn default_workspaces() -> BTreeMap<u8, String> {
     let mut workspaces: BTreeMap<u8, String> = BTreeMap::new();
-    let _ = (1..=9).for_each(|ws| {
+    (1..=9).for_each(|ws| {
         workspaces.insert(ws, ws.to_string());
     });
     workspaces
@@ -127,7 +127,7 @@ impl Default for Config {
             default_layout: default_layout(),
             workspaces: {
                 let mut workspaces: BTreeMap<u8, String> = BTreeMap::new();
-                let _ = (1..=9).for_each(|ws| {
+                (1..=9).for_each(|ws| {
                     workspaces.insert(ws, ws.to_string());
                 });
                 workspaces

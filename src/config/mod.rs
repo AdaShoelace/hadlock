@@ -1,10 +1,10 @@
-pub mod config;
+pub mod config_model;
 mod loader;
 
 use lazy_static::*;
 use serde::{Deserialize, Serialize};
 
-use config::*;
+use config_model::*;
 
 lazy_static! {
     pub static ref CONFIG: Config = { loader::load_config() };

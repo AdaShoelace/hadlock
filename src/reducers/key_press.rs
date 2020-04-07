@@ -1,4 +1,5 @@
 #![allow(unused_imports)]
+#![allow(clippy::cognitive_complexity)]
 use {
     crate::{
         config::CONFIG,
@@ -37,7 +38,7 @@ impl Reducer<action::KeyPress> for State {
                     .str_to_keycode(&x.to_string())
                     .expect("key_press 1")
             })
-            .collect();
+        .collect();
 
         let mon = match self.monitors.get_mut(&self.current_monitor) {
             Some(mon) => mon,
@@ -54,11 +55,8 @@ impl Reducer<action::KeyPress> for State {
             None if action.win == self.lib.get_root() => {
                 root(self, action, mod_not_shift, mod_and_shift, ws_keys);
             }
-            None => {
-                return;
-            }
+            None => {}
         }
-        //debug!("return from ")
     }
 }
 
@@ -172,9 +170,9 @@ fn managed_client(
                     wm::move_to_ws(state, state.focus_w, ws_num);
                     if state
                         .monitors
-                        .get(&state.current_monitor)?
-                        .get_current_layout()?
-                        != LayoutTag::Floating
+                            .get(&state.current_monitor)?
+                            .get_current_layout()?
+                            != LayoutTag::Floating
                     {
                         wm::reorder(state);
                     }
@@ -293,12 +291,9 @@ fn root(
             _ => (),
         }
 
-        match ws_keys.contains(&keycode) {
-            true => {
-                let ws_num = keycode_to_ws(keycode);
-                wm::set_current_ws(state, ws_num);
-            }
-            _ => {}
+        if ws_keys.contains(&keycode) {
+            let ws_num = keycode_to_ws(keycode);
+            wm::set_current_ws(state, ws_num);
         }
     }
     if mod_and_shift {
@@ -341,7 +336,7 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
                     let _ = state
                         .tx
                         .send(internal_action::InternalAction::FocusSpecific(*newest));
-                }
+                    }
                 _ => (),
             }
         }
@@ -374,32 +369,29 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
 fn swap_master(state: &mut State) -> Option<()> {
     debug!("Swap master");
     let mon = state.monitors.get_mut(&state.current_monitor)?;
-    let newest = mon.get_newest()?.clone();
-    match (newest.0.clone(), newest.1.clone()) {
-        (win, client) => {
-            if win != state.focus_w {
-                let client_toc = client.toc;
-                let mut tmp_toc = std::time::Instant::now();
-                mon.swap_window(state.focus_w, |_mon, ww| WindowWrapper {
-                    toc: {
-                        tmp_toc = ww.toc;
-                        client_toc
-                    },
-                    handle_state: HandleState::Unfocus.into(),
-                    ..ww
-                })?;
-                mon.swap_window(win, |_mon, ww| WindowWrapper { 
-                    toc: tmp_toc, 
-                    handle_state: HandleState::Focus.into(),
-                    ..ww 
-                })?;
-                wm::reorder(state);
-            }
-        }
+    let newest = mon.get_newest()?;
+    let (win, client) = (*newest.0, newest.1.clone());
+    if win != state.focus_w {
+        let client_toc = client.toc;
+        let mut tmp_toc = std::time::Instant::now();
+        mon.swap_window(state.focus_w, |_mon, ww| WindowWrapper {
+            toc: {
+                tmp_toc = ww.toc;
+                client_toc
+            },
+            handle_state: HandleState::Unfocus.into(),
+            ..ww
+        })?;
+        mon.swap_window(win, |_mon, ww| WindowWrapper {
+            toc: tmp_toc,
+            handle_state: HandleState::Focus.into(),
+            ..ww
+        })?;
+        wm::reorder(state);
     }
-
     Some(())
 }
+
 
 fn circulate_layout(state: &mut State) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;

@@ -16,8 +16,6 @@ use std::{process::Command, rc::Rc, sync::mpsc, thread};
 use xlibwrapper::{DisplayServer, core::*};
 
 use crate::config::*;
-use chrono;
-use fern;
 use nix::sys::signal::{self, SigHandler, Signal};
 
 pub type HadlockResult<T> = Result<T, Box<dyn std::error::Error>>;
@@ -33,9 +31,8 @@ fn main() -> HadlockResult<()> {
     // Avoid zombies by ignoring SIGCHLD
     unsafe { signal::signal(Signal::SIGCHLD, SigHandler::SigIgn) }.unwrap();
     call_commands(ExecTime::Pre);
-    thread::spawn(move || match rx.recv() {
-        Ok(true) => call_commands(ExecTime::Post),
-        _ => return,
+    thread::spawn(move || if let Ok(true) = rx.recv() {
+        call_commands(ExecTime::Post)
     });
 
     hdl_dispatcher::run(Box::new(xlib), tx);
@@ -43,7 +40,7 @@ fn main() -> HadlockResult<()> {
 }
 
 fn call_commands(exec_time: ExecTime) {
-    if CONFIG.commands.len() < 1 {
+    if CONFIG.commands.is_empty() {
         return;
     }
 

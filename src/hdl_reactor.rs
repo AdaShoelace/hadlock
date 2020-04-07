@@ -146,7 +146,7 @@ impl Reactor<State> for HdlReactor {
                                         self.tx.send(InternalAction::FocusSpecific(ww.window()));
                                 }
 
-                                if let None = mon.get_newest() {
+                                if mon.get_newest().is_none() {
                                     let _ = self.tx.send(InternalAction::Focus);
                                 }
                             }
@@ -170,12 +170,12 @@ impl HdlReactor {
         self.lib.select_input(
             w,
             SubstructureNotifyMask
-                | SubstructureRedirectMask
-                | EnterWindowMask
-                | LeaveWindowMask
-                | FocusChangeMask
-                | PropertyChangeMask
-                | PointerMotionMask,
+            | SubstructureRedirectMask
+            | EnterWindowMask
+            | LeaveWindowMask
+            | FocusChangeMask
+            | PropertyChangeMask
+            | PointerMotionMask,
         );
         self.lib.flush();
     }
@@ -198,13 +198,13 @@ impl HdlReactor {
     }
 
     fn grab_keys(&self, w: Window) {
-        let _keys = vec![
+        vec![
             "q", "Left", "Up", "Right", "Down", "Return", "c", "d", "e", "f", "h", "j", "k", "l",
             "m", "r", "1", "2", "3", "4", "5", "6", "7", "8", "9",
         ]
-        .iter()
-        .map(|key| keysym_lookup::into_keysym(key).expect("Core: no such key"))
-        .for_each(|key_sym| self.lib.grab_keys(w, key_sym, Mod4Mask | Shift));
+            .iter()
+            .map(|key| keysym_lookup::into_keysym(key).expect("Core: no such key"))
+            .for_each(|key_sym| self.lib.grab_keys(w, key_sym, Mod4Mask | Shift));
     }
 
     fn set_focus(&self, focus: Window, ww: &WindowWrapper) {

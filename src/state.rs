@@ -31,7 +31,7 @@ impl State {
         let focus_w = lib.get_root();
         let monitors = {
             let mut monitors = HashMap::default();
-            let _ = lib.get_screens().iter().enumerate().for_each(|(i, val)| {
+            lib.get_screens().iter().enumerate().for_each(|(i, val)| {
                 info!("Monitors in init: {}", i);
                 monitors.insert(
                     i as u32,

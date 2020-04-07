@@ -14,11 +14,11 @@ impl Rect {
     }
 
     pub fn get_position(&self) -> Position {
-        self.position.clone()
+        self.position
     }
 
     pub fn get_size(&self) -> Size {
-        self.size.clone()
+        self.size
     }
 
     pub fn set_position(&mut self, pos: Position) {

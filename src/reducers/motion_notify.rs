@@ -25,11 +25,8 @@ impl Reducer<action::MotionNotify> for State {
         if self.current_monitor != actual_mon {
             if let Some(mon) = self.monitors.get_mut(&old_mon) {
                 mon.mouse_follow = false;
-                match mon.get_client(self.focus_w) {
-                    Some(client) => {
+                if let Some(client) = mon.get_client(self.focus_w) {
                         client.handle_state.replace(HandleState::Unfocus.into());
-                    }
-                    None => (),
                 }
             }
 
@@ -79,7 +76,7 @@ impl Reducer<action::MotionNotify> for State {
                     .remove_window(action.win)
                     .expect("Trying to remove window in motion_notify");
 
-                let _ = self
+                self
                     .monitors
                     .get_mut(&actual_mon)
                     .expect("MotionNotify - old_mon - get_mut")
@@ -115,9 +112,8 @@ fn calculcate_destination(state: &State, action: &action::MotionNotify) -> Posit
         drag_pos.x - state.drag_start_pos.0,
         drag_pos.y - state.drag_start_pos.1,
     );
-    let dest_pos = Position {
+    Position {
         x: state.drag_start_frame_pos.0 + delta_x,
         y: state.drag_start_frame_pos.1 + delta_y,
-    };
-    dest_pos
+    }
 }

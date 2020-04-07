@@ -85,9 +85,9 @@ impl Workspace {
                 let ret = self.clients.get_index(index)?.1;
 
                 if ret.window() == ww.window() {
-                    return None;
+                    None
                 } else {
-                    return Some(ret);
+                    Some(ret)
                 }
             }
             _ => None,
@@ -108,9 +108,9 @@ impl Workspace {
                 let ret = self.clients.get_index(index)?.1;
 
                 if ret.window() == ww.window() {
-                    return None;
+                    None
                 } else {
-                    return Some(ret);
+                    Some(ret)
                 }
             }
             _ => None,
