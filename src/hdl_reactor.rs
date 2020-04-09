@@ -131,8 +131,10 @@ impl Reactor<State> for HdlReactor {
                             HandleState::MaximizeRestore | HandleState::MonocleRestore => {
                                 self.lib.move_window(*key, val.get_position());
                                 self.lib.resize_window(*key, val.get_size());
-                                self.lib.set_border_width(*key, CONFIG.border_width as u32);
-                                self.lib.set_border_color(*key, CONFIG.background_color);
+                                if ws.clients.len() > 1  {
+                                    self.lib.set_border_width(*key, CONFIG.border_width as u32);
+                                    self.lib.set_border_color(*key, CONFIG.background_color);
+                                }
                                 set_handled = true;
                             }
                             HandleState::Destroy => {

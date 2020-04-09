@@ -114,6 +114,7 @@ impl Reducer<action::MapRequest> for State {
                                 && mon.get_current_layout().unwrap() != LayoutTag::Floating
                             {
                                 let mut ww = WindowWrapper::new(action.win, rect, false);
+                                ww.previous_state = WindowState::Maximized;
                                 ww.current_state = WindowState::Maximized;
                                 ww.handle_state
                                     .replace(vec![HandleState::New, HandleState::Maximize]);
