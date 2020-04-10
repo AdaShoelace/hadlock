@@ -139,12 +139,12 @@ impl Layout for Floating {
         let win_size_y = (space_rect.get_size().height / 2) - 2 * CONFIG.border_width;
 
         let center_win_pos = Position {
-            x: (space_rect.get_size().width / 2) - (win_size_x / 2),
-            y: (space_rect.get_size().height / 2) - (win_size_y / 2)
+            x: space_rect.get_position().x + (space_rect.get_size().width / 2) - (win_size_x / 2),
+            y: space_rect.get_position().y + (space_rect.get_size().height / 2) - (win_size_y / 2)
         };
 
-        let step_size_x = center_win_pos.x / windows.len() as i32;
-        let step_size_y = center_win_pos.y / windows.len() as i32;
+        let step_size_x = (space_rect.get_position().x - center_win_pos.x).abs() / if !windows.is_empty() {windows.len() as i32} else { 1 };
+        let step_size_y = (space_rect.get_position().y - center_win_pos.y).abs() / if !windows.is_empty() {windows.len() as i32} else { 1 };
 
         windows
             .iter()
