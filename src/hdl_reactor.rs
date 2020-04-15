@@ -125,7 +125,6 @@ impl Reactor<State> for HdlReactor {
                                 self.set_focus(*key, &val);
                                 self.lib.set_border_width(*key, 0);
                                 self.lib.raise_window(*key);
-                                self.lib.center_cursor(*key);
                                 set_handled = true;
                             }
                             HandleState::MaximizeRestore | HandleState::MonocleRestore => {
