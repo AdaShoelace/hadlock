@@ -24,9 +24,9 @@ impl Reducer<action::MotionNotify> for State {
 
         if self.current_monitor != actual_mon {
             if let Some(mon) = self.monitors.get_mut(&old_mon) {
-                mon.mouse_follow = false;
+                mon.mouse_follow.replace(false);
                 if let Some(client) = mon.get_client(self.focus_w) {
-                        client.handle_state.replace(HandleState::Unfocus.into());
+                    client.handle_state.replace(HandleState::Unfocus.into());
                 }
             }
 
@@ -37,7 +37,7 @@ impl Reducer<action::MotionNotify> for State {
                 .get_mut(&self.current_monitor)
                 .expect("MotionNotify - monitor - get_mut - change handle state");
             mon.handle_state.replace(HandleState::Focus);
-            mon.mouse_follow = false;
+            mon.mouse_follow.replace(false);
         }
 
         let layout = self
@@ -52,10 +52,10 @@ impl Reducer<action::MotionNotify> for State {
             .get(&self.current_monitor)
             .expect("MotionNotify - monitor - get - action.win is_trans")
             .get_client(action.win)
-        {
-            Some(client) => client.is_trans,
-            None => return,
-        };
+            {
+                Some(client) => client.is_trans,
+                None => return,
+            };
 
         if layout != LayoutTag::Floating && !is_trans {
             return;

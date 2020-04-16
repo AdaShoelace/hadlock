@@ -119,7 +119,7 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
 
     if ws == mon.current_ws {
         mon.handle_state.replace(HandleState::Focus);
-        mon.mouse_follow = true;
+        mon.mouse_follow.replace(true);
 
         let mon = state.monitors.get_mut(&state.current_monitor)?;
 
@@ -192,7 +192,7 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     }
     mon.current_ws = ws;
     mon.handle_state.replace(HandleState::Focus);
-    mon.mouse_follow = true;
+    mon.mouse_follow.replace(true);
     Some(())
 }
 
