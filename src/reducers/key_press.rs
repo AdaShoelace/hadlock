@@ -26,8 +26,8 @@ use {
 
 impl Reducer<action::KeyPress> for State {
     fn reduce(&mut self, action: action::KeyPress) {
-        let mod_not_shift = (action.state & (Mod4Mask | Shift)) == Mod4Mask;
-        let mod_and_shift = (action.state & (Mod4Mask | Shift)) == Mod4Mask | Shift;
+        let super_not_mod = (action.state & (CONFIG.super_key | CONFIG.mod_key)) == CONFIG.super_key;
+        let super_and_mod = (action.state & (CONFIG.super_key | CONFIG.mod_key)) == CONFIG.super_key | CONFIG.mod_key;
 
         let sym = self.lib.keycode_to_key_sym(action.keycode as u8);
         debug!("KeyCode to string: {:?}", into_hdl_keysym(&sym));
@@ -50,10 +50,10 @@ impl Reducer<action::KeyPress> for State {
 
         match mon.get_client(self.focus_w) {
             Some(_) => {
-                managed_client(self, action, mod_not_shift, mod_and_shift, ws_keys);
+                managed_client(self, action, super_not_mod, super_and_mod, ws_keys);
             }
             None if action.win == self.lib.get_root() => {
-                root(self, action, mod_not_shift, mod_and_shift, ws_keys);
+                root(self, action, super_not_mod, super_and_mod, ws_keys);
             }
             None => {}
         }

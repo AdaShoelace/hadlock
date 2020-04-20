@@ -131,7 +131,7 @@ impl XlibWrapper {
                 .iter()
                 .map(|key| keysym_lookup::into_keysym(key).expect("Core: no such key"))
                 .for_each(|key_sym| {
-                    self.grab_keys(self.get_root(), key_sym, xlib::Mod4Mask | xlib::ShiftMask)
+                    self.grab_keys(self.get_root(), key_sym, CONFIG.super_key | CONFIG.mod_key)
                 });
         }
         self.sync(false);
@@ -920,7 +920,7 @@ impl DisplayServer for XlibWrapper {
 
         let mods: Vec<u32> = vec![
             modifiers,
-            modifiers & !Shift,
+            modifiers & !CONFIG.mod_key,
             modifiers | xlib::Mod2Mask,
             modifiers | xlib::LockMask,
         ];

@@ -1,4 +1,6 @@
 {
+	"superKey" : "Super",
+	"modKey": "Shift",
 	"borderWidth": 2,
 	"borderColor": 	{
 		"Custom": "#480222"

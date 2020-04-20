@@ -7,13 +7,14 @@ use serde::{Deserialize, Serialize};
 use config_model::*;
 
 lazy_static! {
-    pub static ref CONFIG: Config = { loader::load_config() };
+    pub static ref CONFIG: Config =  loader::load_config();
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum ExecTime {
     Pre,
     Post,
+    Now
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
