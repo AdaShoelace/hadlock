@@ -1,10 +1,18 @@
+use crate::xlibwrapper::util::keysym_lookup::{ModMask, into_mod};
 use crate::layout::LayoutTag;
 use crate::xlibwrapper::util::Color;
-use serde::{self, Deserialize, Serialize};
+use x11_dl::xlib::{Mod4Mask, ShiftMask};
+use serde::{self, Deserialize, Serialize, Deserializer, de};
 use std::collections::BTreeMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
+    #[serde(rename = "superKey", deserialize_with = "super_deserialize")]
+    pub super_key: ModMask,
+
+    #[serde(rename = "modKey", deserialize_with = "mod_deserialize")]
+    pub mod_key: ModMask,
+
     #[serde(rename = "decorate", default = "default_decorate")]
     pub decorate: bool,
 
@@ -27,9 +35,9 @@ pub struct Config {
         rename = "focusedBackgroundColor",
         default = "default_focused_background_color"
     )]
-    pub focused_background_color: Color,
+        pub focused_background_color: Color,
 
-    #[serde(rename = "outerGap", default = "default_outer_gap")]
+        #[serde(rename = "outerGap", default = "default_outer_gap")]
     pub outer_gap: i32,
 
     #[serde(rename = "innerGap", default = "default_inner_gap")]
@@ -49,6 +57,33 @@ pub struct Config {
 
     #[serde(rename = "commands", default = "default_commands")]
     pub commands: Vec<super::Command>,
+}
+
+fn super_deserialize<'de, D>(desierializer: D) -> Result<ModMask, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: String = Deserialize::deserialize(desierializer)?;
+
+    let ret = into_mod(&s);
+    if ret != 0 {
+        debug!("ControlMask: {}, super_key: {}", x11_dl::xlib::ControlMask, ret);
+        Ok(ret)
+    } else {
+        Err(de::Error::custom(format!(
+                    "{} is not a valid key", s
+        )))
+    }
+}
+
+fn mod_deserialize<'de, D>(desierializer: D) -> Result<ModMask, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: String = Deserialize::deserialize(desierializer)?;
+    let ret = into_mod(&s);
+    debug!("ShiftMask: {}, super_key: {}", x11_dl::xlib::ShiftMask, ret);
+    Ok(ret)
 }
 
 fn default_decorate() -> bool {
@@ -114,6 +149,8 @@ fn default_commands() -> Vec<super::Command> {
 impl Default for Config {
     fn default() -> Self {
         Self {
+            super_key: Mod4Mask,
+            mod_key: ShiftMask,
             decorate: default_decorate(),
             decoration_height: default_decoration_height(),
             border_width: default_border_width(),
