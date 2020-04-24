@@ -8,6 +8,7 @@ pub mod windowwrapper;
 pub mod workspace;
 
 use std::cell::RefCell;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum WindowState {
@@ -18,7 +19,7 @@ pub enum WindowState {
     Tiled,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Direction {
     North,
     West,

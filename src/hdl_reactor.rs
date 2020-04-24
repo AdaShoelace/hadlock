@@ -208,7 +208,7 @@ impl HdlReactor {
         ]
             .iter()
             .map(|key| keysym_lookup::into_keysym(key).expect("Core: no such key"))
-            .for_each(|key_sym| self.lib.grab_keys(w, key_sym, CONFIG.super_key | CONFIG.mod_key));
+            .for_each(|key_sym| self.lib.grab_keys(w, key_sym, CONFIG.super_key | mod_masks()));
     }
 
     fn set_focus(&self, focus: Window, ww: &WindowWrapper) {
