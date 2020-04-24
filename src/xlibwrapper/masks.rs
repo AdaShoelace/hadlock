@@ -1,5 +1,7 @@
 #![allow(non_upper_case_globals, dead_code)]
 use x11::xlib;
+use crate::config::CONFIG;
+use super::util::keysym_lookup::into_mod;
 
 // masks
 pub const SubstructureRedirectMask: i64 = xlib::SubstructureRedirectMask;
@@ -48,3 +50,28 @@ pub const CurrentTime: u64 = xlib::CurrentTime;
 
 pub const FocusChangeMask: i64 = xlib::FocusChangeMask;
 pub const PropertyChangeMask: i64 = xlib::PropertyChangeMask;
+
+pub fn mod_masks() -> u32 {
+    CONFIG
+        .key_bindings
+        .iter()
+        .filter(|binding| binding.mod_key.is_some())
+        .cloned()
+        .map(|binding| binding.mod_key.unwrap())
+        .map(|mod_key| into_mod(&mod_key))
+        .fold(0, |acc, mod_key| {
+            acc | mod_key
+        })
+}
+
+pub fn mod_masks_vec() -> Vec<u32> {
+    CONFIG
+        .key_bindings
+        .iter()
+        .filter(|binding| binding.mod_key.is_some())
+        .cloned()
+        .map(|binding| binding.mod_key.unwrap())
+        .map(|mod_key| into_mod(&mod_key))
+        .collect()
+}
+

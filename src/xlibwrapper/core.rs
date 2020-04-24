@@ -131,7 +131,7 @@ impl XlibWrapper {
                 .iter()
                 .map(|key| keysym_lookup::into_keysym(key).expect("Core: no such key"))
                 .for_each(|key_sym| {
-                    self.grab_keys(self.get_root(), key_sym, CONFIG.super_key | CONFIG.mod_key)
+                    self.grab_keys(self.get_root(), key_sym, CONFIG.super_key | mod_masks())
                 });
         }
         self.sync(false);
