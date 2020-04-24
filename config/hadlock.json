@@ -2,7 +2,7 @@
 	"superKey" : "Super",
 	"modKey": "Shift",
 	"borderWidth": 2,
-	"borderColor": 	{
+	"borderColor":	{
 		"Custom": "#480222"
 	},
 	"backgroundColor": {
@@ -25,6 +25,18 @@
 		"9": "9"
 	},
 	"terminal" : "alacritty",
+	"keyBindings": [
+		{
+			"modKey": "Alt",
+			"key": "Backspace",
+			"effect": "Kill"
+		},
+		{
+			"modKey": "Shift",
+			"key": "Return",
+			"effect": "OpenTerm"
+		}
+	],
 	"commands": [
 		{
 			"execTime": "Pre",

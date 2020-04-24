@@ -17,12 +17,17 @@ use xlibwrapper::{DisplayServer, core::*};
 
 use crate::config::*;
 use nix::sys::signal::{self, SigHandler, Signal};
+use lazy_static::initialize;
 
 pub type HadlockResult<T> = Result<T, Box<dyn std::error::Error>>;
 pub type HadlockOption<T> = Option<T>;
 
 fn main() -> HadlockResult<()> {
     init_logger()?;
+    initialize(&CONFIG);
+
+    debug!("Keybindings: {:?}", CONFIG.key_bindings);
+
     let (tx, rx) = mpsc::channel::<bool>();
 
     let xlib = Rc::new(XlibWrapper::new());

@@ -1,6 +1,9 @@
-use crate::xlibwrapper::util::keysym_lookup::{ModMask, into_mod};
+use super::KeyAction;
+use crate::xlibwrapper::util::{
+    Color,
+    keysym_lookup::{ModMask, into_mod}
+};
 use crate::layout::LayoutTag;
-use crate::xlibwrapper::util::Color;
 use x11_dl::xlib::{Mod4Mask, ShiftMask};
 use serde::{self, Deserialize, Serialize, Deserializer, de};
 use std::collections::BTreeMap;
@@ -35,9 +38,9 @@ pub struct Config {
         rename = "focusedBackgroundColor",
         default = "default_focused_background_color"
     )]
-        pub focused_background_color: Color,
+    pub focused_background_color: Color,
 
-        #[serde(rename = "outerGap", default = "default_outer_gap")]
+    #[serde(rename = "outerGap", default = "default_outer_gap")]
     pub outer_gap: i32,
 
     #[serde(rename = "innerGap", default = "default_inner_gap")]
@@ -48,6 +51,9 @@ pub struct Config {
 
     #[serde(rename = "defaultLayout", default = "default_layout")]
     pub default_layout: LayoutTag,
+
+    #[serde(rename = "keyBindings", default = "default_key_bindings")]
+    pub key_bindings: Vec<KeyAction>,
 
     #[serde(rename = "workspaces", default = "default_workspaces")]
     pub workspaces: BTreeMap<u8, String>,
@@ -130,6 +136,10 @@ fn default_layout() -> LayoutTag {
     LayoutTag::Floating
 }
 
+fn default_key_bindings() -> Vec<KeyAction> {
+    vec![]
+}
+
 fn default_workspaces() -> BTreeMap<u8, String> {
     let mut workspaces: BTreeMap<u8, String> = BTreeMap::new();
     (1..=9).for_each(|ws| {
@@ -162,6 +172,7 @@ impl Default for Config {
             inner_gap: default_inner_gap(),
             smart_gaps: default_smart_gaps(),
             default_layout: default_layout(),
+            key_bindings: default_key_bindings(),
             workspaces: {
                 let mut workspaces: BTreeMap<u8, String> = BTreeMap::new();
                 (1..=9).for_each(|ws| {
