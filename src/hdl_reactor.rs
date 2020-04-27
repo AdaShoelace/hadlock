@@ -1,5 +1,5 @@
 use {
-    crate::config::CONFIG,
+    crate::config::{CONFIG, Key},
     crate::models::{internal_action::InternalAction, windowwrapper::*, HandleState, WindowState},
     crate::state::*,
     crate::{
@@ -202,13 +202,30 @@ impl HdlReactor {
     }
 
     fn grab_keys(&self, w: Window) {
-        vec![
-            "q", "Left", "Up", "Right", "Down", "Return", "c", "d", "e", "f", "h", "j", "k", "l",
-            "m", "r", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-        ]
+        let key_list = CONFIG.key_bindings
             .iter()
-            .map(|key| keysym_lookup::into_keysym(key).expect("Core: no such key"))
-            .for_each(|key_sym| self.lib.grab_keys(w, key_sym, CONFIG.super_key | mod_masks()));
+            .filter(|binding| match binding.key {
+                Key::Letter(_) => true,
+                _ => false
+            })
+            .cloned()
+            .map(|binding|{
+                match binding.key {
+                    Key::Letter(x) => x,
+                    _ => "".to_string()
+                }   
+            })
+            .filter(|key| !key.is_empty())
+            .chain(vec![1,2,3,4,5,6,7,8,9].iter().map(|x| x.to_string()))
+            .collect::<Vec<String>>();
+
+        for mod_key in mod_masks_vec() {
+            for key in &key_list {
+                if let Some(key_sym) = keysym_lookup::into_keysym(&key) {
+                    self.lib.grab_keys(w, key_sym, CONFIG.super_key | mod_key);
+                }
+            }
+        }
     }
 
     fn set_focus(&self, focus: Window, ww: &WindowWrapper) {

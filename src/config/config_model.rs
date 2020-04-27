@@ -4,7 +4,7 @@ use crate::xlibwrapper::util::{
     keysym_lookup::{ModMask, into_mod}
 };
 use crate::layout::LayoutTag;
-use x11_dl::xlib::{Mod4Mask, ShiftMask};
+use x11_dl::xlib::Mod4Mask;
 use serde::{self, Deserialize, Serialize, Deserializer, de};
 use std::collections::BTreeMap;
 
@@ -12,9 +12,6 @@ use std::collections::BTreeMap;
 pub struct Config {
     #[serde(rename = "superKey", deserialize_with = "super_deserialize")]
     pub super_key: ModMask,
-
-    #[serde(rename = "modKey", deserialize_with = "mod_deserialize")]
-    pub mod_key: ModMask,
 
     #[serde(rename = "decorate", default = "default_decorate")]
     pub decorate: bool,
@@ -80,16 +77,6 @@ where
                     "{} is not a valid key", s
         )))
     }
-}
-
-fn mod_deserialize<'de, D>(desierializer: D) -> Result<ModMask, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s: String = Deserialize::deserialize(desierializer)?;
-    let ret = into_mod(&s);
-    debug!("ShiftMask: {}, super_key: {}", x11_dl::xlib::ShiftMask, ret);
-    Ok(ret)
 }
 
 fn default_decorate() -> bool {
@@ -160,7 +147,6 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             super_key: Mod4Mask,
-            mod_key: ShiftMask,
             decorate: default_decorate(),
             decoration_height: default_decoration_height(),
             border_width: default_border_width(),
