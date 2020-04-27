@@ -1,6 +1,6 @@
 #![allow(non_upper_case_globals, dead_code)]
 use x11::xlib;
-use crate::config::CONFIG;
+use crate::config::{CONFIG, KeyAction};
 use super::util::keysym_lookup::into_mod;
 
 // masks
@@ -52,26 +52,40 @@ pub const FocusChangeMask: i64 = xlib::FocusChangeMask;
 pub const PropertyChangeMask: i64 = xlib::PropertyChangeMask;
 
 pub fn mod_masks() -> u32 {
-    CONFIG
+    let ret = CONFIG
         .key_bindings
         .iter()
-        .filter(|binding| binding.mod_key.is_some())
+        .filter(|binding| {
+            if let KeyAction { mod_key: Some(_mod_key), .. } = binding {
+                true
+            } else {
+                false
+            }
+        })
         .cloned()
         .map(|binding| binding.mod_key.unwrap())
         .map(|mod_key| into_mod(&mod_key))
         .fold(0, |acc, mod_key| {
             acc | mod_key
-        })
+        });
+    debug!("mod keys: {:b}", ret);
+    ret
 }
 
 pub fn mod_masks_vec() -> Vec<u32> {
-    CONFIG
+    let mut ret = CONFIG
         .key_bindings
         .iter()
-        .filter(|binding| binding.mod_key.is_some())
+        .filter(|binding| {
+            binding.mod_key.is_some()
+        })
         .cloned()
         .map(|binding| binding.mod_key.unwrap())
         .map(|mod_key| into_mod(&mod_key))
-        .collect()
+        .collect::<Vec<u32>>();
+        ret.dedup();
+        ret.push(0);
+        debug!("mod_masks: {:?}", ret);
+        ret
 }
 

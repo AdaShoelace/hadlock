@@ -163,7 +163,7 @@ pub trait DisplayServer {
         unimplemented!()
     }
 
-    fn keycode_to_key_sym(&self, _keycode: KeyCode) -> String {
+    fn keycode_to_key_sym(&self, _keycode: KeyCode) -> Result<String, Box<dyn std::error::Error>> {
         unimplemented!()
     }
 

@@ -45,7 +45,7 @@ It is written completely in rust with and architecture heavily inspired by redux
 
 ---  
 ### Planned features  
-- Custom keybindings( see [issue](/../../issues/38))  
+- ~~Custom keybindings( see [issue](/../../issues/38))~~
 - Application rules (bind an applicaiton to a specific monitor and workspace)
 - ~~Window gaps~~
 - Hot reloading config( see [issue](/../../issues/42))  
@@ -118,26 +118,8 @@ The config file is written is json and should be placed in `~/.config/hadlock`
 ```
 
 ## Keybindings  
-At the moment custom key bindings is not available (it will come in the future)
-
-(`mod` = windows key/super)
-
-**Layout independent**  
-* `mod + number` change workspace  
-* `shift + mod + number` move window to workspace  
-* `mod + enter` start terminal   
-* `shift + mod + l` circulate layout  
- 
-
-**Floating**  
-* `mod + right/left/up/down` or `mod + h/j/k/l` snap window to edge  
-* `shift + mod + right/left/up/down` resize window  
-* `mod + mouse1 + mousemovement` move window  
-* `mod + mouse1` raise window  
-
-**Column Master**  
-* `mod + right/left/up/down` or `mod + h/j/k/l` change focus window  
-* `mod + m` swap master window
+Fully customizable  
+See example config
 
 ## Testing
 In order to test/run hadlock some dependencies are needed:
