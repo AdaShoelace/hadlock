@@ -122,17 +122,29 @@ impl XlibWrapper {
             mem::forget(supported);
             (self.lib.XUngrabKey)(self.display, xlib::AnyKey, xlib::AnyModifier, self.root);
             (self.lib.XDeleteProperty)(self.display, self.root, self.xatom.NetClientList);
-            let keys = vec![
-                "Left", "Right", "Up", "Down", "Return", "q", "d", "e", "l", "r", "1", "2", "3",
-                "4", "5", "6", "7", "8", "9",
-            ];
-
-            keys
+            let key_list = CONFIG.key_bindings
                 .iter()
-                .map(|key| keysym_lookup::into_keysym(key).expect("Core: no such key"))
-                .for_each(|key_sym| {
-                    self.grab_keys(self.get_root(), key_sym, CONFIG.super_key | mod_masks())
-                });
+                .filter(|binding| match binding.key {
+                    Key::Letter(_) => true,
+                    _ => false
+                })
+                .cloned()
+                .map(|binding|{
+                    match binding.key {
+                        Key::Letter(x) => x,
+                        _ => "".to_string()
+                    }   
+                })
+                .filter(|key| !key.is_empty())
+                .collect::<Vec<String>>();
+
+            for mod_key in mod_masks_vec() {
+                for key in &key_list {
+                    if let Some(key_sym) = keysym_lookup::into_keysym(&key) {
+                        self.grab_keys(self.get_root(), key_sym, CONFIG.super_key | mod_key);
+                    }
+                }
+            }
         }
         self.sync(false);
     }
@@ -364,7 +376,7 @@ impl DisplayServer for XlibWrapper {
                     screen.root = self.root;
                     screen
                 })
-                .collect::<Vec<Screen>>()
+            .collect::<Vec<Screen>>()
         } else {
             let roots: Vec<WindowAttributes> = self
                 .get_roots()
@@ -377,8 +389,8 @@ impl DisplayServer for XlibWrapper {
 
     fn update_desktops(&self, current_ws: u32, num_of_ws: Option<u32>) {
         if let Some(num) = num_of_ws {
-                let data = vec![num];
-                self.set_desktop_prop(&data, self.xatom.NetNumberOfDesktops);
+            let data = vec![num];
+            self.set_desktop_prop(&data, self.xatom.NetNumberOfDesktops);
         }
         self.sync(false);
         self.ewmh_current_desktop(current_ws);
@@ -404,7 +416,7 @@ impl DisplayServer for XlibWrapper {
                         .expect("xlibwrapper::core: init_desktops_hints")
                         .into_raw()
                 })
-                .collect();
+            .collect();
             let ptr = clist_tags.as_mut_ptr();
             (self.lib.Xutf8TextListToTextProperty)(
                 self.display,
@@ -513,11 +525,11 @@ impl DisplayServer for XlibWrapper {
         unsafe {
             (self.lib.XDeleteProperty)(self.display, self.root, self.xatom.NetActiveWindow);
             /*(self.lib.XSetInputFocus)(
-                self.display,
-                self.root,
-                xlib::RevertToPointerRoot,
-                xlib::CurrentTime,
-            );*/
+              self.display,
+              self.root,
+              xlib::RevertToPointerRoot,
+              xlib::CurrentTime,
+              );*/
         }
     }
 
@@ -834,14 +846,15 @@ impl DisplayServer for XlibWrapper {
         }
     }
 
-    fn keycode_to_key_sym(&self, keycode: KeyCode) -> String {
+    fn keycode_to_key_sym(&self, keycode: KeyCode) -> Result<String, Box<dyn std::error::Error>> {
         use std::ffi::CStr;
         unsafe {
             let ret = (self.lib.XKeycodeToKeysym)(self.display, keycode, 0);
+            if ret == xlib::NoSymbol as u64 { return Err("NoSymbol".into()) }
             let ret = (self.lib.XKeysymToString)(ret);
             let c_str: &CStr = CStr::from_ptr(ret);
-            let str_slice: &str = c_str.to_str().unwrap();
-            str_slice.to_owned()
+            let str_slice: &str = c_str.to_str()?;
+            Ok(str_slice.to_owned())
         }
     }
 
@@ -920,7 +933,6 @@ impl DisplayServer for XlibWrapper {
 
         let mods: Vec<u32> = vec![
             modifiers,
-            modifiers & !CONFIG.mod_key,
             modifiers | xlib::Mod2Mask,
             modifiers | xlib::LockMask,
         ];
@@ -1157,7 +1169,7 @@ impl DisplayServer for XlibWrapper {
                 self.xatom.NetWMWindowTypeSplash,
                 self.xatom.NetWMWindowTypeMenu,
             ]
-            .contains(&prop_val)
+                .contains(&prop_val)
             {
                 return false;
             }

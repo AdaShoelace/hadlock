@@ -2,7 +2,7 @@
 #![allow(clippy::cognitive_complexity)]
 use {
     crate::{
-        config::CONFIG,
+        config::{CONFIG, KeyAction, KeyEffect, Axis, Key},
         layout::LayoutTag,
         models::{
             internal_action, rect::*, window_type::WindowType, windowwrapper::*, Direction,
@@ -26,10 +26,11 @@ use {
 
 impl Reducer<action::KeyPress> for State {
     fn reduce(&mut self, action: action::KeyPress) {
-        let super_not_mod = (action.state & (CONFIG.super_key | CONFIG.mod_key)) == CONFIG.super_key;
-        let super_and_mod = (action.state & (CONFIG.super_key | CONFIG.mod_key)) == CONFIG.super_key | CONFIG.mod_key;
 
-        let sym = self.lib.keycode_to_key_sym(action.keycode as u8);
+        let has_mod = action.state & !CONFIG.super_key != 0;
+        let super_is_pressed = action.state & CONFIG.super_key == CONFIG.super_key;
+
+        let sym = self.lib.keycode_to_key_sym(action.keycode as u8).expect("failed to convert action.keycode to KeySym");
         debug!("KeyCode to string: {:?}", into_hdl_keysym(&sym));
 
         let ws_keys: Vec<u8> = (1..=9)
@@ -50,88 +51,54 @@ impl Reducer<action::KeyPress> for State {
 
         match mon.get_client(self.focus_w) {
             Some(_) => {
-                managed_client(self, action, super_not_mod, super_and_mod, ws_keys);
+                managed_client(self, action, super_is_pressed, has_mod, ws_keys);
             }
             None if action.win == self.lib.get_root() => {
-                root(self, action, super_not_mod, super_and_mod, ws_keys);
+                root(self, action, super_is_pressed, has_mod, ws_keys);
             }
             None => {}
         }
     }
 }
 
-fn managed_client(
-    state: &mut State,
-    action: action::KeyPress,
-    mod_not_shift: bool,
-    mod_and_shift: bool,
-    ws_keys: Vec<u8>,
-) -> Option<()> {
-    //debug!("Windows exists: KeyPress");
+fn handle_key_effect(state: &mut State, action: &action::KeyPress, effect: &KeyEffect, ws_keys: &Vec<u8>) -> Option<()> {
     let keycode = action.keycode as u8;
+    match effect {
+        KeyEffect::Kill => {
+            let ww = state
+                .monitors
+                .get_mut(&state.current_monitor)?
+                .get_client_mut(state.focus_w)?;
 
-    if mod_not_shift && state.lib.str_to_keycode("Return")? == keycode {
-        spawn_process(CONFIG.term.as_str(), vec![]);
-    }
-    let resize = state
-        .monitors
-        .get(&state.current_monitor)?
-        .get_current_layout()?
-        == LayoutTag::Floating;
-    if mod_and_shift {
-        let old_size = state
-            .monitors
-            .get(&state.current_monitor)?
-            .get_client(state.focus_w)?
-            .get_size();
-        match into_hdl_keysym(&state.lib.keycode_to_key_sym(keycode)) {
-            HDLKeysym::XK_Right => {
-                if resize {
-                    let mon = state.monitors.get_mut(&state.current_monitor)?;
-
+            ww.handle_state.replace(HandleState::Destroy.into());
+        },
+        KeyEffect::OpenTerm => {
+            spawn_process(CONFIG.term.as_str(), vec![]);
+        },
+        KeyEffect::Resize(delta, axis) => {
+            let resize = state
+                .monitors
+                .get(&state.current_monitor)?
+                .get_current_layout()?
+                == LayoutTag::Floating;
+            let old_size = state
+                .monitors
+                .get(&state.current_monitor)?
+                .get_client(state.focus_w)?
+                .get_size();
+            if resize {
+                let mon = state.monitors.get_mut(&state.current_monitor)?;
+                if *axis == Axis::Horizontal {
                     let (_dec_size, size) =
-                        mon.resize_window(state.focus_w, old_size.width + 10, old_size.height);
+                        mon.resize_window(state.focus_w, old_size.width + (delta), old_size.height);
                     mon.swap_window(state.focus_w, |_, ww| WindowWrapper {
                         window_rect: Rect::new(ww.get_position(), size),
                         handle_state: HandleState::Resize.into(),
                         ..ww
                     });
-                }
-            }
-
-            HDLKeysym::XK_Left => {
-                if resize {
-                    let mon = state.monitors.get_mut(&state.current_monitor)?;
-
+                } else {
                     let (_dec_size, size) =
-                        mon.resize_window(state.focus_w, old_size.width - 10, old_size.height);
-                    mon.swap_window(state.focus_w, |_, ww| WindowWrapper {
-                        window_rect: Rect::new(ww.get_position(), size),
-                        handle_state: HandleState::Resize.into(),
-                        ..ww
-                    });
-                }
-            }
-
-            HDLKeysym::XK_Down => {
-                if resize {
-                    let mon = state.monitors.get_mut(&state.current_monitor)?;
-
-                    let (_dec_size, size) =
-                        mon.resize_window(state.focus_w, old_size.width, old_size.height + 10);
-                    mon.swap_window(state.focus_w, |_, ww| WindowWrapper {
-                        window_rect: Rect::new(ww.get_position(), size),
-                        handle_state: HandleState::Resize.into(),
-                        ..ww
-                    });
-                }
-            }
-
-            HDLKeysym::XK_Up => {
-                if resize {
-                    let mon = state.monitors.get_mut(&state.current_monitor)?;
-                    let (_dec_size, size) =
-                        mon.resize_window(state.focus_w, old_size.width, old_size.height - 10);
+                        mon.resize_window(state.focus_w, old_size.width, old_size.height + (delta));
                     mon.swap_window(state.focus_w, |_mon, ww| WindowWrapper {
                         window_rect: Rect::new(ww.get_position(), size),
                         handle_state: HandleState::Resize.into(),
@@ -139,113 +106,129 @@ fn managed_client(
                     });
                 }
             }
-
-            HDLKeysym::XK_q => {
-                let ww = state
+        },
+        KeyEffect::Exit => state.lib.exit(),
+        KeyEffect::ToggleMonocle => {
+            let mon = state.monitors.get_mut(&state.current_monitor).expect("ToggleMonocle get_mut monitor");
+            mon.swap_window(state.focus_w, |mon, ww| wm::toggle_monocle(mon, ww));
+        },
+        KeyEffect::ToggleMaximize => {
+            let mon = state.monitors.get_mut(&state.current_monitor).expect("ToggleMonocle get_mut monitor");
+            mon.swap_window(state.focus_w, |mon, ww| wm::toggle_maximize(mon, ww));
+        },
+        KeyEffect::CirculateLayout => {
+            debug!("should print layout type");
+            circulate_layout(state);
+            wm::reorder(state);
+        },
+        KeyEffect::ShiftWindow(direction) => {
+            shift_window(state, *direction);
+        },
+        KeyEffect::ChangeCurrentWorkspace => {
+            if ws_keys.contains(&keycode) {
+                let ws_num = keycode_to_ws(keycode);
+                wm::set_current_ws(state, ws_num);
+            }
+        },
+        KeyEffect::MoveToWorkspace => {
+            if ws_keys.contains(&keycode) {
+                let ws_num = keycode_to_ws(keycode);
+                wm::move_to_ws(state, state.focus_w, ws_num);
+                if state
                     .monitors
-                    .get_mut(&state.current_monitor)?
-                    .get_client_mut(state.focus_w)?;
-
-                ww.handle_state.replace(HandleState::Destroy.into());
-            }
-
-            HDLKeysym::XK_e => {
-                state.lib.exit();
-            }
-
-            HDLKeysym::XK_f => {
-                let mon = state.monitors.get_mut(&state.current_monitor)?;
-                mon.swap_window(state.focus_w, |mon, ww| wm::toggle_monocle(mon, ww));
-            }
-
-            HDLKeysym::XK_l => {
-                debug!("should print layout type");
-                circulate_layout(state);
-                wm::reorder(state);
-            }
-
-            _ => {
-                if ws_keys.contains(&keycode) {
-                    let ws_num = keycode_to_ws(keycode);
-                    wm::move_to_ws(state, state.focus_w, ws_num);
-                    if state
-                        .monitors
-                            .get(&state.current_monitor)?
-                            .get_current_layout()?
-                            != LayoutTag::Floating
-                    {
-                        wm::reorder(state);
-                    }
-                    wm::set_current_ws(state, ws_num)?;
-                }
-            }
-        }
-        return Some(());
-    }
-
-    if mod_not_shift {
-        println!("Number pressed");
-
-        match into_hdl_keysym(&state.lib.keycode_to_key_sym(keycode)) {
-            HDLKeysym::XK_f => {
-                let mon = state.monitors.get_mut(&state.current_monitor)?;
-                mon.swap_window(state.focus_w, |mon, ww| wm::toggle_maximize(mon, ww));
-            }
-
-            HDLKeysym::XK_Right | HDLKeysym::XK_l => {
-                shift_window(state, Direction::East);
-            }
-
-            HDLKeysym::XK_Left | HDLKeysym::XK_h => {
-                shift_window(state, Direction::West);
-            }
-            HDLKeysym::XK_Down | HDLKeysym::XK_j => {
-                shift_window(state, Direction::South);
-            }
-            HDLKeysym::XK_Up | HDLKeysym::XK_k => {
-                shift_window(state, Direction::North);
-            }
-            HDLKeysym::XK_m => {
-                swap_master(state);
-            }
-            HDLKeysym::XK_c => {
-                let mon = state.monitors.get_mut(&state.current_monitor)?;
-                if mon.get_current_layout()? != LayoutTag::Floating {
-                    return Some(());
-                }
-                let windows = mon.place_window(state.focus_w);
-
-                for (win, rect) in windows.into_iter() {
-                    mon.swap_window(win, |_, ww| WindowWrapper {
-                        window_rect: rect,
-                        previous_state: ww.current_state,
-                        current_state: WindowState::Free,
-                        handle_state: HandleState::Center.into(),
-                        ..ww
-                    });
-                }
-            }
-            HDLKeysym::XK_d => {
-                spawn_process("dmenu_recency", vec![]);
-            }
-
-            HDLKeysym::XK_r => {
-                let current_layout = state
-                    .monitors
-                    .get(&state.current_monitor)?
-                    .get_current_layout()?;
-                if current_layout == LayoutTag::Floating {
+                        .get(&state.current_monitor)?
+                        .get_current_layout()?
+                        != LayoutTag::Floating
+                {
                     wm::reorder(state);
                 }
+                wm::set_current_ws(state, ws_num)?;
             }
+        },
+        KeyEffect::SwapMaster => {
+            swap_master(state);
+        },
+        KeyEffect::Center => {
+            let mon = state.monitors.get_mut(&state.current_monitor)?;
+            if mon.get_current_layout()? != LayoutTag::Floating {
+                return Some(());
+            }
+            let windows = mon.place_window(state.focus_w);
 
-            _ => {
-                if ws_keys.contains(&keycode) {
-                    //debug!("mod_not_shift switch ws");
-                    let ws_num = keycode_to_ws(keycode);
-                    wm::set_current_ws(state, ws_num)?;
-                }
+            for (win, rect) in windows.into_iter() {
+                mon.swap_window(win, |_, ww| WindowWrapper {
+                    window_rect: rect,
+                    previous_state: ww.current_state,
+                    current_state: WindowState::Free,
+                    handle_state: HandleState::Center.into(),
+                    ..ww
+                });
             }
+        },
+        KeyEffect::Reorder => {
+            let current_layout = state
+                .monitors
+                .get(&state.current_monitor)?
+                .get_current_layout()?;
+            if current_layout == LayoutTag::Floating {
+                wm::reorder(state);
+            }
+        }
+        KeyEffect::Custom(command) => {
+            spawn_process(&command.program, command.args.clone());
+        }
+        _ => ()
+    }
+    Some(())
+}
+
+fn managed_client(
+    state: &mut State,
+    action: action::KeyPress,
+    super_is_pressed: bool,
+    has_mod: bool,
+    ws_keys: Vec<u8>,
+) -> Option<()> {
+    debug!("Windows exists: KeyPress");
+    let keycode = action.keycode as u8;
+
+    if !super_is_pressed { return Some(())}
+
+    for key_action in CONFIG.key_bindings.iter() {
+        match key_action {
+            KeyAction { mod_key: Some(mk), key: Key::Letter(key), effect }  if has_mod => {
+                if into_mod(mk) == (action.state & into_mod(mk))
+                    && state.lib.str_to_keycode(key) == Some(action.keycode as u8) {
+                        debug!("Effect: {:?}", effect);
+                        if let None = handle_key_effect(state, &action, effect, &ws_keys) {
+                            debug!("Something went wrong calling handle_key_effect in root");
+                        }
+                    }
+            },
+            KeyAction { mod_key: None, key: Key::Letter(key), effect }  if !has_mod => {
+                if state.lib.str_to_keycode(key) == Some(action.keycode as u8) {
+                    debug!("Effect: {:?}", effect);
+                    if let None = handle_key_effect(state, &action, effect, &ws_keys) {
+                        debug!("Something went wrong calling handle_key_effect in root");
+                    }
+                }
+            },
+            KeyAction { mod_key: Some(mk), key: Key::Number, effect } if has_mod && ws_keys.contains(&keycode) => {
+                if into_mod(mk) == (action.state & into_mod(mk)) {
+                    debug!("Effect: {:?}", effect);
+                    if let None = handle_key_effect(state, &action, effect, &ws_keys) {
+                        debug!("Something went wrong calling handle_key_effect in root");
+                    }
+                }
+
+            },
+            KeyAction { mod_key: None, key: Key::Number, effect } if !has_mod && ws_keys.contains(&keycode) => {
+                debug!("Effect: {:?}", effect);
+                if let None = handle_key_effect(state, &action, effect, &ws_keys) {
+                    debug!("Something went wrong calling handle_key_effect in root");
+                }
+            },
+            _ => debug!("nope")
         }
     }
     Some(())
@@ -254,59 +237,41 @@ fn managed_client(
 fn root(
     state: &mut State,
     action: action::KeyPress,
-    mod_not_shift: bool,
-    mod_and_shift: bool,
+    super_is_pressed: bool,
+    has_mod: bool,
     ws_keys: Vec<u8>,
 ) -> Option<()> {
     let keycode = action.keycode as u8;
-    if mod_not_shift {
-        match into_hdl_keysym(&state.lib.keycode_to_key_sym(keycode)) {
-            HDLKeysym::XK_Return => {
-                spawn_process(CONFIG.term.as_str(), vec![]);
-            }
-            HDLKeysym::XK_d => {
-                spawn_process("dmenu_recency", vec![]);
-            }
-            HDLKeysym::XK_Right | HDLKeysym::XK_l => {
-                shift_window(state, Direction::East);
-            }
-            HDLKeysym::XK_Left | HDLKeysym::XK_h => {
-                shift_window(state, Direction::West);
-            }
-            HDLKeysym::XK_Down | HDLKeysym::XK_j => {
-                shift_window(state, Direction::South);
-            }
-            HDLKeysym::XK_Up | HDLKeysym::XK_k => {
-                shift_window(state, Direction::North);
-            }
-            HDLKeysym::XK_r => {
-                let current_layout = state
-                    .monitors
-                    .get(&state.current_monitor)?
-                    .get_current_layout()?;
-                if current_layout == LayoutTag::Floating {
-                    wm::reorder(state);
+
+    if !super_is_pressed { return Some(()) }
+
+    for key_action in CONFIG.key_bindings.iter() {
+        match key_action {
+            KeyAction { mod_key: Some(mk), key: Key::Letter(key), effect }  if has_mod => {
+                if into_mod(mk) == (action.state & into_mod(mk))
+                    && state.lib.str_to_keycode(key) == Some(action.keycode as u8) {
+                        debug!("Effect: {:?}", effect);
+                        if let None = handle_key_effect(state, &action, effect, &ws_keys) {
+                            debug!("Something went wrong calling handle_key_effect in root");
+                        }
+                    }
+            },
+            KeyAction { mod_key: None, key: Key::Letter(key), effect }  if !has_mod => {
+                if state.lib.str_to_keycode(key) == Some(action.keycode as u8) {
+                    debug!("Effect: {:?}", effect);
+                    if let None = handle_key_effect(state, &action, effect, &ws_keys) {
+                        debug!("Something went wrong calling handle_key_effect in root");
+                    }
                 }
-            }
-            _ => (),
-        }
+            },
+            KeyAction { mod_key: None, key: Key::Number, effect } if !has_mod && ws_keys.contains(&keycode) => {
+                debug!("Effect: {:?}", effect);
+                if let None = handle_key_effect(state, &action, effect, &ws_keys) {
+                    debug!("Something went wrong calling handle_key_effect in root");
+                }
 
-        if ws_keys.contains(&keycode) {
-            let ws_num = keycode_to_ws(keycode);
-            wm::set_current_ws(state, ws_num);
-        }
-    }
-    if mod_and_shift {
-        match into_hdl_keysym(&state.lib.keycode_to_key_sym(keycode)) {
-            HDLKeysym::XK_e => {
-                state.lib.exit();
-            }
-
-            HDLKeysym::XK_l => {
-                circulate_layout(state);
-                wm::reorder(state);
-            }
-            _ => (),
+            },
+            _ => debug!("nope")
         }
     }
     Some(())
@@ -417,7 +382,7 @@ fn keycode_to_ws(keycode: u8) -> u32 {
     ((keycode - 10) % 10) as u32
 }
 
-fn spawn_process(bin_name: &str, args: Vec<&str>) {
+fn spawn_process(bin_name: &str, args: Vec<String>) {
     let mut cmd = Command::new(bin_name);
     args.into_iter().for_each(|arg| {
         cmd.arg(arg);

@@ -1,6 +1,5 @@
 {
 	"superKey" : "Super",
-	"modKey": "Shift",
 	"borderWidth": 2,
 	"borderColor":	{
 		"Custom": "#480222"
@@ -12,7 +11,7 @@
 	"outerGap": 20,
 	"innerGap": 5,
 	"smartGaps": true,
-	"defaultLayout": "ColumnMaster",
+	"defaultLayout": "Floating",
 	"workspaces": {
 		"1": "1",
 		"2": "2",
@@ -27,15 +26,173 @@
 	"terminal" : "alacritty",
 	"keyBindings": [
 		{
-			"modKey": "Alt",
-			"key": "Backspace",
+			"modKey": "Shift",
+			"key": {
+				"Letter": "q"
+			},
 			"effect": "Kill"
 		},
 		{
 			"modKey": "Shift",
-			"key": "Return",
+			"key": {
+				"Letter": "r"
+			},
+			"effect": "Reorder"
+		},
+		{
+			"modKey": "Shift",
+			"key": {
+				"Letter": "c"
+			},
+			"effect": "Center"
+		},
+		{
+			"key": {
+				"Letter": "Return"
+			},
 			"effect": "OpenTerm"
+		},
+		{
+			"modKey": "Shift",
+			"key": {
+				"Letter": "Right"
+			},
+			"effect": {"Resize": [10, "Horizontal"]}
+		},
+		{
+			"modKey": "Shift",
+			"key": {
+				"Letter": "Left"
+			},
+			"effect": {"Resize": [-10, "Horizontal"]}
+		},
+		{
+			"modKey": "Shift",
+			"key": {
+				"Letter": "Down"
+			},
+			"effect": {"Resize": [10, "Vertical"]}
+		},
+		{
+			"modKey": "Shift",
+			"key": {
+				"Letter": "Up"
+			},
+			"effect": {"Resize": [-10, "Vertical"]}
+		},
+		{
+			"modKey": "Shift",
+			"key": {
+				"Letter": "f"
+			},
+			"effect": "ToggleMonocle"
+		},
+		{
+			"key": {
+				"Letter": "f"
+			},
+			"effect": "ToggleMaximize"
+		},
+		{
+			"modKey": "Shift",
+			"key": {
+				"Letter": "e"
+			},
+			"effect": "Exit"
+		},
+		{
+			"modKey": "Shift",
+			"key": {
+				"Letter": "l"
+			},
+			"effect": "CirculateLayout"
+		},
+		{
+			"key": {
+				"Letter": "Right"
+			},
+			"effect": {"ShiftWindow": "East"}
+		},
+		{
+			"key": {
+				"Letter": "Left"
+			},
+			"effect": {"ShiftWindow": "West"}
+		},
+		{
+			"key": {
+				"Letter": "Up"
+			},
+			"effect": {"ShiftWindow": "North"}
+		},
+		{
+			"key": {
+				"Letter": "Down"
+			},
+			"effect": {"ShiftWindow": "South"}
+		},
+		{
+			"modKey": "Shift",
+			"key": {
+				"Letter": "m"
+			},
+			"effect": "SwapMaster"
+		},
+		{
+			"key": "Number",
+			"effect": "ChangeCurrentWorkspace"
+		},
+		{
+			"key": "Number",
+			"modKey": "Shift",
+			"effect": "MoveToWorkspace"
+		},
+		{
+			"key": {
+				"Letter": "d"
+			},
+			"effect": {
+				"Custom": {
+					"execTime": "Now",
+					"program": "dmenu_recency",
+					"args": []
+				}
+			}
+		},
+		{
+			"key": {
+				"Letter": "Control"
+			},
+			"effect": {
+				"Custom": {
+					"execTime": "Now",
+					"program": "pactl",
+					"args": [
+						"set-sink-volume",
+						"2",
+						"+5%"
+					]
+				}
+			}
+		},
+		{
+			"key": {
+				"Letter": "Control"
+			},
+			"modKey": "Shift",
+			"effect": {
+				"Custom": {
+					"execTime": "Now",
+					"program": "pactl",
+					"args": [
+						"set-sink-volume",
+						"2",
+						"-5%"
+					]
+				}
+			}
 		}
+
 	],
 	"commands": [
 		{
