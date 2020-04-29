@@ -2,7 +2,7 @@
 ![Rust](https://github.com/AdaShoelace/hadlock/workflows/Rust/badge.svg?branch=master)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://bitbucket.org/lbesson/ansi-colors)  
 Hadlock is a tiling and stacking window manager for X.  
-It is written completely in rust with and architecture heavily inspired by redux.  
+It is written completely in rust with an architecture heavily inspired by redux.  
 
 
 ---
