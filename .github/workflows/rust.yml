@@ -34,8 +34,8 @@ jobs:
       uses: svenstaro/upload-release-action@v1-release
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: target/release/mything
-        asset_name: mything
+        file: target/release/hadlock
+        asset_name: Hadlock
         tag: ${{ github.ref }}
         overwrite: true
 
