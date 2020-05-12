@@ -26,6 +26,10 @@ impl Reducer<action::MapRequest> for State {
             handle_transient_window(self, &action);
             return
         }
+        if self.lib.get_window_type(action.win) == WindowType::Dialog {
+            handle_transient_window(self, &action);
+            return
+        }
 
         debug!(
             "MapRequest - window: {} - Parent: {}",
