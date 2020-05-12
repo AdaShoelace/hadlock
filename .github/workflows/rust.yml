@@ -30,17 +30,13 @@ jobs:
       with:
         name: Hadlock
         path: target/release/hadlock
-    - name: Create release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v1-release
       with:
-        tag_name: ${{ github.ref }}
-        release_name: ${{ github.ref }}
-        body: |
-            Changes in this release
-        draft: false
-        prerelease: false
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: target/release/mything
+        asset_name: mything
+        tag: ${{ github.ref }}
+        overwrite: true
 
 
