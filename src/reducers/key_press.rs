@@ -33,6 +33,11 @@ impl Reducer<action::KeyPress> for State {
         let sym = self.lib.keycode_to_key_sym(action.keycode as u8).expect("failed to convert action.keycode to KeySym");
         debug!("KeyCode to string: {:?}", into_hdl_keysym(&sym));
 
+        // Valid key presses must either include super or be one of the XF86 symbols.
+        if !super_is_pressed && !sym.starts_with("XF86") {
+            return;
+        }
+
         let ws_keys: Vec<u8> = (1..=9)
             .map(|x| {
                 self.lib
@@ -51,10 +56,10 @@ impl Reducer<action::KeyPress> for State {
 
         match mon.get_client(self.focus_w) {
             Some(_) => {
-                managed_client(self, action, super_is_pressed, has_mod, ws_keys);
+                managed_client(self, action, has_mod, ws_keys);
             }
             None if action.win == self.lib.get_root() => {
-                root(self, action, super_is_pressed, has_mod, ws_keys);
+                root(self, action, has_mod, ws_keys);
             }
             None => {}
         }
@@ -185,14 +190,11 @@ fn handle_key_effect(state: &mut State, action: &action::KeyPress, effect: &KeyE
 fn managed_client(
     state: &mut State,
     action: action::KeyPress,
-    super_is_pressed: bool,
     has_mod: bool,
     ws_keys: Vec<u8>,
 ) -> Option<()> {
     debug!("Windows exists: KeyPress");
     let keycode = action.keycode as u8;
-
-    if !super_is_pressed { return Some(())}
 
     for key_action in CONFIG.key_bindings.iter() {
         match key_action {
@@ -237,13 +239,10 @@ fn managed_client(
 fn root(
     state: &mut State,
     action: action::KeyPress,
-    super_is_pressed: bool,
     has_mod: bool,
     ws_keys: Vec<u8>,
 ) -> Option<()> {
     let keycode = action.keycode as u8;
-
-    if !super_is_pressed { return Some(()) }
 
     for key_action in CONFIG.key_bindings.iter() {
         match key_action {
