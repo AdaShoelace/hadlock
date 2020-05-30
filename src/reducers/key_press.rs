@@ -200,7 +200,7 @@ fn managed_client(
                 if into_mod(mk) == (action.state & into_mod(mk))
                     && state.lib.str_to_keycode(key) == Some(action.keycode as u8) {
                         debug!("Effect: {:?}", effect);
-                        if let None = handle_key_effect(state, &action, effect, &ws_keys) {
+                        if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
                             debug!("Something went wrong calling handle_key_effect in root");
                         }
                     }
@@ -208,7 +208,7 @@ fn managed_client(
             KeyAction { mod_key: None, key: Key::Letter(key), effect }  if !has_mod => {
                 if state.lib.str_to_keycode(key) == Some(action.keycode as u8) {
                     debug!("Effect: {:?}", effect);
-                    if let None = handle_key_effect(state, &action, effect, &ws_keys) {
+                    if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
                         debug!("Something went wrong calling handle_key_effect in root");
                     }
                 }
@@ -216,7 +216,7 @@ fn managed_client(
             KeyAction { mod_key: Some(mk), key: Key::Number, effect } if has_mod && ws_keys.contains(&keycode) => {
                 if into_mod(mk) == (action.state & into_mod(mk)) {
                     debug!("Effect: {:?}", effect);
-                    if let None = handle_key_effect(state, &action, effect, &ws_keys) {
+                    if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
                         debug!("Something went wrong calling handle_key_effect in root");
                     }
                 }
@@ -224,7 +224,7 @@ fn managed_client(
             },
             KeyAction { mod_key: None, key: Key::Number, effect } if !has_mod && ws_keys.contains(&keycode) => {
                 debug!("Effect: {:?}", effect);
-                if let None = handle_key_effect(state, &action, effect, &ws_keys) {
+                if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
                     debug!("Something went wrong calling handle_key_effect in root");
                 }
             },
@@ -251,7 +251,7 @@ fn root(
                 if into_mod(mk) == (action.state & into_mod(mk))
                     && state.lib.str_to_keycode(key) == Some(action.keycode as u8) {
                         debug!("Effect: {:?}", effect);
-                        if let None = handle_key_effect(state, &action, effect, &ws_keys) {
+                        if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
                             debug!("Something went wrong calling handle_key_effect in root");
                         }
                     }
@@ -259,14 +259,14 @@ fn root(
             KeyAction { mod_key: None, key: Key::Letter(key), effect }  if !has_mod => {
                 if state.lib.str_to_keycode(key) == Some(action.keycode as u8) {
                     debug!("Effect: {:?}", effect);
-                    if let None = handle_key_effect(state, &action, effect, &ws_keys) {
+                    if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
                         debug!("Something went wrong calling handle_key_effect in root");
                     }
                 }
             },
             KeyAction { mod_key: None, key: Key::Number, effect } if !has_mod && ws_keys.contains(&keycode) => {
                 debug!("Effect: {:?}", effect);
-                if let None = handle_key_effect(state, &action, effect, &ws_keys) {
+                if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
                     debug!("Something went wrong calling handle_key_effect in root");
                 }
 
