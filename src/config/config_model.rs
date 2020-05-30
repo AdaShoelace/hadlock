@@ -5,7 +5,7 @@ use crate::xlibwrapper::util::{
 };
 use crate::layout::LayoutTag;
 use x11_dl::xlib::Mod4Mask;
-use serde::{self, Deserialize, Serialize, Deserializer, de};
+use serde::{self, Deserialize, Serialize, Deserializer};
 use std::collections::BTreeMap;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -66,16 +66,15 @@ fn super_deserialize<'de, D>(desierializer: D) -> Result<ModMask, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let s: String = Deserialize::deserialize(desierializer)?;
+    use x11_dl::xlib;
 
+    let s: String = Deserialize::deserialize(desierializer)?;
     let ret = into_mod(&s);
-    if ret != 0 {
-        debug!("ControlMask: {}, super_key: {}", x11_dl::xlib::ControlMask, ret);
+    if ret != 0 && (ret == xlib::Mod4Mask || ret == xlib::ControlMask) {
         Ok(ret)
     } else {
-        Err(de::Error::custom(format!(
-                    "{} is not a valid key", s
-        )))
+        error!("Unsupported superKey: {}, defaulting to Meta", s);
+        Ok(into_mod("Super"))
     }
 }
 
