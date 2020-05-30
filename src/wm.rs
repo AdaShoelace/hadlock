@@ -14,6 +14,7 @@ pub fn window_inside_screen(w_geom: &Geometry, screen: &Screen) -> bool {
     inside_width && inside_height
 }
 
+#[allow(clippy::collapsible_if)]
 pub fn toggle_maximize(mon: &Monitor, ww: WindowWrapper) -> WindowWrapper {
     if mon.get_current_layout() != Some(LayoutTag::Floating) {
         if mon.get_current_ws().unwrap().clients.is_empty() { 
