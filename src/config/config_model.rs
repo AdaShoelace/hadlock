@@ -67,7 +67,6 @@ where
     D: Deserializer<'de>,
 {
     let s: String = Deserialize::deserialize(desierializer)?;
-
     let ret = into_mod(&s);
     if ret != 0 {
         debug!(
