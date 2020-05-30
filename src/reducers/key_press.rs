@@ -61,7 +61,7 @@ impl Reducer<action::KeyPress> for State {
     }
 }
 
-fn handle_key_effect(state: &mut State, action: &action::KeyPress, effect: &KeyEffect, ws_keys: &Vec<u8>) -> Option<()> {
+fn handle_key_effect(state: &mut State, action: &action::KeyPress, effect: &KeyEffect, ws_keys: &[u8]) -> Option<()> {
     let keycode = action.keycode as u8;
     match effect {
         KeyEffect::Kill => {
