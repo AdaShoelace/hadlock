@@ -1,5 +1,5 @@
 use {
-    crate::config::{CONFIG, Key},
+    crate::config::{Key, CONFIG},
     crate::models::{internal_action::InternalAction, windowwrapper::*, HandleState, WindowState},
     crate::state::*,
     crate::{
@@ -131,7 +131,7 @@ impl Reactor<State> for HdlReactor {
                             HandleState::MaximizeRestore | HandleState::MonocleRestore => {
                                 self.lib.move_window(*key, val.get_position());
                                 self.lib.resize_window(*key, val.get_size());
-                                if ws.clients.len() > 1  {
+                                if ws.clients.len() > 1 {
                                     self.lib.set_border_width(*key, CONFIG.border_width as u32);
                                     self.lib.set_border_color(*key, CONFIG.background_color);
                                 }
@@ -174,12 +174,12 @@ impl HdlReactor {
         self.lib.select_input(
             w,
             SubstructureNotifyMask
-            | SubstructureRedirectMask
-            | EnterWindowMask
-            | LeaveWindowMask
-            | FocusChangeMask
-            | PropertyChangeMask
-            | PointerMotionMask,
+                | SubstructureRedirectMask
+                | EnterWindowMask
+                | LeaveWindowMask
+                | FocusChangeMask
+                | PropertyChangeMask
+                | PointerMotionMask,
         );
         self.lib.flush();
     }
@@ -202,21 +202,24 @@ impl HdlReactor {
     }
 
     fn grab_keys(&self, w: Window) {
-        let key_list = CONFIG.key_bindings
+        let key_list = CONFIG
+            .key_bindings
             .iter()
             .filter(|binding| match binding.key {
                 Key::Letter(_) => true,
-                _ => false
+                _ => false,
             })
             .cloned()
-            .map(|binding|{
-                match binding.key {
-                    Key::Letter(x) => x,
-                    _ => "".to_string()
-                }   
+            .map(|binding| match binding.key {
+                Key::Letter(x) => x,
+                _ => "".to_string(),
             })
             .filter(|key| !key.is_empty())
-            .chain(vec![1,2,3,4,5,6,7,8,9].iter().map(|x| x.to_string()))
+            .chain(
+                vec![1, 2, 3, 4, 5, 6, 7, 8, 9]
+                    .iter()
+                    .map(|x| x.to_string()),
+            )
             .collect::<Vec<String>>();
 
         for mod_key in mod_masks_vec() {

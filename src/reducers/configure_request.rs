@@ -29,7 +29,7 @@ impl Reducer<action::ConfigurationRequest> for State {
             None => {
                 self.lib
                     .configure_window(action.win, action.value_mask as i64, action.win_changes);
-                return
+                return;
             }
         };
 

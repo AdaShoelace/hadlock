@@ -1,12 +1,12 @@
 use super::KeyAction;
-use crate::xlibwrapper::util::{
-    Color,
-    keysym_lookup::{ModMask, into_mod}
-};
 use crate::layout::LayoutTag;
-use x11_dl::xlib::Mod4Mask;
-use serde::{self, Deserialize, Serialize, Deserializer, de};
+use crate::xlibwrapper::util::{
+    keysym_lookup::{into_mod, ModMask},
+    Color,
+};
+use serde::{self, de, Deserialize, Deserializer, Serialize};
 use std::collections::BTreeMap;
+use x11_dl::xlib::Mod4Mask;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
@@ -70,12 +70,14 @@ where
 
     let ret = into_mod(&s);
     if ret != 0 {
-        debug!("ControlMask: {}, super_key: {}", x11_dl::xlib::ControlMask, ret);
+        debug!(
+            "ControlMask: {}, super_key: {}",
+            x11_dl::xlib::ControlMask,
+            ret
+        );
         Ok(ret)
     } else {
-        Err(de::Error::custom(format!(
-                    "{} is not a valid key", s
-        )))
+        Err(de::Error::custom(format!("{} is not a valid key", s)))
     }
 }
 

@@ -2,7 +2,7 @@
 #![allow(clippy::cognitive_complexity)]
 use {
     crate::{
-        config::{CONFIG, KeyAction, KeyEffect, Axis, Key},
+        config::{Axis, Key, KeyAction, KeyEffect, CONFIG},
         layout::LayoutTag,
         models::{
             internal_action, rect::*, window_type::WindowType, windowwrapper::*, Direction,
@@ -26,11 +26,13 @@ use {
 
 impl Reducer<action::KeyPress> for State {
     fn reduce(&mut self, action: action::KeyPress) {
-
         let has_mod = action.state & !CONFIG.super_key != 0;
         let super_is_pressed = action.state & CONFIG.super_key == CONFIG.super_key;
 
-        let sym = self.lib.keycode_to_key_sym(action.keycode as u8).expect("failed to convert action.keycode to KeySym");
+        let sym = self
+            .lib
+            .keycode_to_key_sym(action.keycode as u8)
+            .expect("failed to convert action.keycode to KeySym");
         debug!("KeyCode to string: {:?}", into_hdl_keysym(&sym));
 
         // Valid key presses must either include super or be one of the XF86 symbols.
@@ -44,7 +46,7 @@ impl Reducer<action::KeyPress> for State {
                     .str_to_keycode(&x.to_string())
                     .expect("key_press 1")
             })
-        .collect();
+            .collect();
 
         let mon = match self.monitors.get_mut(&self.current_monitor) {
             Some(mon) => mon,
@@ -66,7 +68,12 @@ impl Reducer<action::KeyPress> for State {
     }
 }
 
-fn handle_key_effect(state: &mut State, action: &action::KeyPress, effect: &KeyEffect, ws_keys: &[u8]) -> Option<()> {
+fn handle_key_effect(
+    state: &mut State,
+    action: &action::KeyPress,
+    effect: &KeyEffect,
+    ws_keys: &[u8],
+) -> Option<()> {
     let keycode = action.keycode as u8;
     match effect {
         KeyEffect::Kill => {
@@ -76,10 +83,10 @@ fn handle_key_effect(state: &mut State, action: &action::KeyPress, effect: &KeyE
                 .get_client_mut(state.focus_w)?;
 
             ww.handle_state.replace(HandleState::Destroy.into());
-        },
+        }
         KeyEffect::OpenTerm => {
             spawn_process(CONFIG.term.as_str(), vec![]);
-        },
+        }
         KeyEffect::Resize(delta, axis) => {
             let resize = state
                 .monitors
@@ -111,48 +118,54 @@ fn handle_key_effect(state: &mut State, action: &action::KeyPress, effect: &KeyE
                     });
                 }
             }
-        },
+        }
         KeyEffect::Exit => state.lib.exit(),
         KeyEffect::ToggleMonocle => {
-            let mon = state.monitors.get_mut(&state.current_monitor).expect("ToggleMonocle get_mut monitor");
+            let mon = state
+                .monitors
+                .get_mut(&state.current_monitor)
+                .expect("ToggleMonocle get_mut monitor");
             mon.swap_window(state.focus_w, |mon, ww| wm::toggle_monocle(mon, ww));
-        },
+        }
         KeyEffect::ToggleMaximize => {
-            let mon = state.monitors.get_mut(&state.current_monitor).expect("ToggleMonocle get_mut monitor");
+            let mon = state
+                .monitors
+                .get_mut(&state.current_monitor)
+                .expect("ToggleMonocle get_mut monitor");
             mon.swap_window(state.focus_w, |mon, ww| wm::toggle_maximize(mon, ww));
-        },
+        }
         KeyEffect::CirculateLayout => {
             debug!("should print layout type");
             circulate_layout(state);
             wm::reorder(state);
-        },
+        }
         KeyEffect::ShiftWindow(direction) => {
             shift_window(state, *direction);
-        },
+        }
         KeyEffect::ChangeCurrentWorkspace => {
             if ws_keys.contains(&keycode) {
                 let ws_num = keycode_to_ws(keycode);
                 wm::set_current_ws(state, ws_num);
             }
-        },
+        }
         KeyEffect::MoveToWorkspace => {
             if ws_keys.contains(&keycode) {
                 let ws_num = keycode_to_ws(keycode);
                 wm::move_to_ws(state, state.focus_w, ws_num);
                 if state
                     .monitors
-                        .get(&state.current_monitor)?
-                        .get_current_layout()?
-                        != LayoutTag::Floating
+                    .get(&state.current_monitor)?
+                    .get_current_layout()?
+                    != LayoutTag::Floating
                 {
                     wm::reorder(state);
                 }
                 wm::set_current_ws(state, ws_num)?;
             }
-        },
+        }
         KeyEffect::SwapMaster => {
             swap_master(state);
-        },
+        }
         KeyEffect::Center => {
             let mon = state.monitors.get_mut(&state.current_monitor)?;
             if mon.get_current_layout()? != LayoutTag::Floating {
@@ -169,7 +182,7 @@ fn handle_key_effect(state: &mut State, action: &action::KeyPress, effect: &KeyE
                     ..ww
                 });
             }
-        },
+        }
         KeyEffect::Reorder => {
             let current_layout = state
                 .monitors
@@ -182,7 +195,7 @@ fn handle_key_effect(state: &mut State, action: &action::KeyPress, effect: &KeyE
         KeyEffect::Custom(command) => {
             spawn_process(&command.program, command.args.clone());
         }
-        _ => ()
+        _ => (),
     }
     Some(())
 }
@@ -198,39 +211,55 @@ fn managed_client(
 
     for key_action in CONFIG.key_bindings.iter() {
         match key_action {
-            KeyAction { mod_key: Some(mk), key: Key::Letter(key), effect }  if has_mod => {
+            KeyAction {
+                mod_key: Some(mk),
+                key: Key::Letter(key),
+                effect,
+            } if has_mod => {
                 if into_mod(mk) == (action.state & into_mod(mk))
-                    && state.lib.str_to_keycode(key) == Some(action.keycode as u8) {
-                        debug!("Effect: {:?}", effect);
-                        if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
-                            debug!("Something went wrong calling handle_key_effect in root");
-                        }
+                    && state.lib.str_to_keycode(key) == Some(action.keycode as u8)
+                {
+                    debug!("Effect: {:?}", effect);
+                    if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
+                        debug!("Something went wrong calling handle_key_effect in root");
                     }
-            },
-            KeyAction { mod_key: None, key: Key::Letter(key), effect }  if !has_mod => {
+                }
+            }
+            KeyAction {
+                mod_key: None,
+                key: Key::Letter(key),
+                effect,
+            } if !has_mod => {
                 if state.lib.str_to_keycode(key) == Some(action.keycode as u8) {
                     debug!("Effect: {:?}", effect);
                     if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
                         debug!("Something went wrong calling handle_key_effect in root");
                     }
                 }
-            },
-            KeyAction { mod_key: Some(mk), key: Key::Number, effect } if has_mod && ws_keys.contains(&keycode) => {
+            }
+            KeyAction {
+                mod_key: Some(mk),
+                key: Key::Number,
+                effect,
+            } if has_mod && ws_keys.contains(&keycode) => {
                 if into_mod(mk) == (action.state & into_mod(mk)) {
                     debug!("Effect: {:?}", effect);
                     if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
                         debug!("Something went wrong calling handle_key_effect in root");
                     }
                 }
-
-            },
-            KeyAction { mod_key: None, key: Key::Number, effect } if !has_mod && ws_keys.contains(&keycode) => {
+            }
+            KeyAction {
+                mod_key: None,
+                key: Key::Number,
+                effect,
+            } if !has_mod && ws_keys.contains(&keycode) => {
                 debug!("Effect: {:?}", effect);
                 if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
                     debug!("Something went wrong calling handle_key_effect in root");
                 }
-            },
-            _ => debug!("nope")
+            }
+            _ => debug!("nope"),
         }
     }
     Some(())
@@ -246,31 +275,43 @@ fn root(
 
     for key_action in CONFIG.key_bindings.iter() {
         match key_action {
-            KeyAction { mod_key: Some(mk), key: Key::Letter(key), effect }  if has_mod => {
+            KeyAction {
+                mod_key: Some(mk),
+                key: Key::Letter(key),
+                effect,
+            } if has_mod => {
                 if into_mod(mk) == (action.state & into_mod(mk))
-                    && state.lib.str_to_keycode(key) == Some(action.keycode as u8) {
-                        debug!("Effect: {:?}", effect);
-                        if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
-                            debug!("Something went wrong calling handle_key_effect in root");
-                        }
+                    && state.lib.str_to_keycode(key) == Some(action.keycode as u8)
+                {
+                    debug!("Effect: {:?}", effect);
+                    if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
+                        debug!("Something went wrong calling handle_key_effect in root");
                     }
-            },
-            KeyAction { mod_key: None, key: Key::Letter(key), effect }  if !has_mod => {
+                }
+            }
+            KeyAction {
+                mod_key: None,
+                key: Key::Letter(key),
+                effect,
+            } if !has_mod => {
                 if state.lib.str_to_keycode(key) == Some(action.keycode as u8) {
                     debug!("Effect: {:?}", effect);
                     if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
                         debug!("Something went wrong calling handle_key_effect in root");
                     }
                 }
-            },
-            KeyAction { mod_key: None, key: Key::Number, effect } if !has_mod && ws_keys.contains(&keycode) => {
+            }
+            KeyAction {
+                mod_key: None,
+                key: Key::Number,
+                effect,
+            } if !has_mod && ws_keys.contains(&keycode) => {
                 debug!("Effect: {:?}", effect);
                 if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
                     debug!("Something went wrong calling handle_key_effect in root");
                 }
-
-            },
-            _ => debug!("nope")
+            }
+            _ => debug!("nope"),
         }
     }
     Some(())
@@ -300,7 +341,7 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
                     let _ = state
                         .tx
                         .send(internal_action::InternalAction::FocusSpecific(*newest));
-                    }
+                }
                 _ => (),
             }
         }
@@ -355,7 +396,6 @@ fn swap_master(state: &mut State) -> Option<()> {
     }
     Some(())
 }
-
 
 fn circulate_layout(state: &mut State) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;

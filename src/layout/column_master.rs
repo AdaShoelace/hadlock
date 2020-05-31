@@ -68,7 +68,7 @@ impl ColumnMaster {
             } else {
                 1
             })
-        - 2 * CONFIG.border_width;
+            - 2 * CONFIG.border_width;
 
         if column.len() > 2 {
             ret -= ((column.len() as i32 - 1).abs() * CONFIG.inner_gap) / column.len() as i32
@@ -92,7 +92,6 @@ impl std::fmt::Display for ColumnMaster {
 }
 
 impl Layout for ColumnMaster {
-
     fn get_type(&self) -> LayoutTag {
         self.layout_type
     }
@@ -105,7 +104,10 @@ impl Layout for ColumnMaster {
         windows: Vec<&WindowWrapper>,
     ) -> Vec<(Window, Rect)> {
         //debug!("Incoming window vector in column_master: {:#?}", windows);
-        let windows = windows.into_iter().filter(|ww| !ww.is_trans).collect::<Vec<&WindowWrapper>>();
+        let windows = windows
+            .into_iter()
+            .filter(|ww| !ww.is_trans)
+            .collect::<Vec<&WindowWrapper>>();
 
         let dock_height = match dock_area.as_rect(screen) {
             Some(dock_rect) => dock_rect.get_size().height,

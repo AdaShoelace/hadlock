@@ -52,10 +52,10 @@ impl Reducer<action::MotionNotify> for State {
             .get(&self.current_monitor)
             .expect("MotionNotify - monitor - get - action.win is_trans")
             .get_client(action.win)
-            {
-                Some(client) => client.is_trans,
-                None => return,
-            };
+        {
+            Some(client) => client.is_trans,
+            None => return,
+        };
 
         if layout != LayoutTag::Floating && !is_trans {
             return;
@@ -76,8 +76,7 @@ impl Reducer<action::MotionNotify> for State {
                     .remove_window(action.win)
                     .expect("Trying to remove window in motion_notify");
 
-                self
-                    .monitors
+                self.monitors
                     .get_mut(&actual_mon)
                     .expect("MotionNotify - old_mon - get_mut")
                     .add_window(action.win, ww);

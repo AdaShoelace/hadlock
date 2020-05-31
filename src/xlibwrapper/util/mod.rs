@@ -1,7 +1,7 @@
 pub mod keysym_lookup;
 
-use serde::{self, de, Deserialize, Deserializer, Serialize};
 use crate::models::screen::Screen;
+use serde::{self, de, Deserialize, Deserializer, Serialize};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Position {
@@ -21,7 +21,7 @@ impl Position {
     pub fn translate_relative(self, delta_x: i32, delta_y: i32) -> Self {
         Self {
             x: self.x + delta_x,
-            y: self.y + delta_y
+            y: self.y + delta_y,
         }
     }
 }
@@ -34,7 +34,16 @@ pub struct Size {
 
 impl From<Screen> for (Position, Size) {
     fn from(screen: Screen) -> Self {
-        (Position{ x: screen.x, y: screen.y}, Size { width: screen.width, height: screen.height })
+        (
+            Position {
+                x: screen.x,
+                y: screen.y,
+            },
+            Size {
+                width: screen.width,
+                height: screen.height,
+            },
+        )
     }
 }
 
@@ -64,8 +73,8 @@ where
     match u64::from_str_radix(without_prefix, 16) {
         Ok(res) => Ok(res),
         Err(e) => Err(de::Error::custom(format!(
-                    "Failed to deserialize color: {}",
-                    e
+            "Failed to deserialize color: {}",
+            e
         ))),
     }
 }
@@ -90,7 +99,7 @@ impl Color {
 }
 
 pub fn from_c_bool(b: i32) -> bool {
-    b != 0 
+    b != 0
 }
 
 pub fn to_c_bool(b: bool) -> i32 {

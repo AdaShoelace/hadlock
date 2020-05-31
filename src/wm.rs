@@ -17,21 +17,19 @@ pub fn window_inside_screen(w_geom: &Geometry, screen: &Screen) -> bool {
 #[allow(clippy::collapsible_if)]
 pub fn toggle_maximize(mon: &Monitor, ww: WindowWrapper) -> WindowWrapper {
     if mon.get_current_layout() != Some(LayoutTag::Floating) {
-        if mon.get_current_ws().unwrap().clients.is_empty() { 
-            return ww
+        if mon.get_current_ws().unwrap().clients.is_empty() {
+            return ww;
         }
     }
     let ww_state = ww.current_state;
     match ww_state {
-        WindowState::Maximized => {
-            WindowWrapper {
-                window_rect: Rect::new(ww.restore_position, ww.restore_size),
-                previous_state: ww.current_state,
-                current_state: ww.previous_state,
-                handle_state: vec![HandleState::MaximizeRestore, HandleState::Focus].into(),
-                ..ww
-            }
-        }
+        WindowState::Maximized => WindowWrapper {
+            window_rect: Rect::new(ww.restore_position, ww.restore_size),
+            previous_state: ww.current_state,
+            current_state: ww.previous_state,
+            handle_state: vec![HandleState::MaximizeRestore, HandleState::Focus].into(),
+            ..ww
+        },
         _ => {
             let (pos, size) = mon.maximize(ww.window(), &ww);
             WindowWrapper {
@@ -50,15 +48,13 @@ pub fn toggle_maximize(mon: &Monitor, ww: WindowWrapper) -> WindowWrapper {
 pub fn toggle_monocle(mon: &Monitor, ww: WindowWrapper) -> WindowWrapper {
     let ww_state = ww.current_state;
     match ww_state {
-        WindowState::Monocle => {
-            WindowWrapper {
-                window_rect: Rect::new(ww.restore_position, ww.restore_size),
-                previous_state: ww.current_state,
-                current_state: ww.previous_state,
-                handle_state: HandleState::MonocleRestore.into(),
-                ..ww
-            }
-        }
+        WindowState::Monocle => WindowWrapper {
+            window_rect: Rect::new(ww.restore_position, ww.restore_size),
+            previous_state: ww.current_state,
+            current_state: ww.previous_state,
+            handle_state: HandleState::MonocleRestore.into(),
+            ..ww
+        },
         _ => {
             let (pos, size) = mon.monocle(ww.window(), &ww);
             WindowWrapper {
@@ -105,8 +101,8 @@ pub fn get_mon_by_window(state: &State, w: Window) -> Option<MonitorId> {
 pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;
     /*let mut temp_ws = mon.remove_ws(mon.current_ws)?;
-      temp_ws.append_handle_state(vec![HandleState::Unfocus]);
-      mon.add_ws(temp_ws);*/
+    temp_ws.append_handle_state(vec![HandleState::Unfocus]);
+    mon.add_ws(temp_ws);*/
 
     mon.swap_ws(mon.current_ws, |_mon, mut ws| {
         ws.append_handle_state(vec![HandleState::Unfocus]);
@@ -125,8 +121,8 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
         let mon = state.monitors.get_mut(&state.current_monitor)?;
 
         /*let mut new_ws = mon.remove_ws(mon.current_ws)?;
-          new_ws.append_handle_state(vec![HandleState::Unfocus]);
-          mon.add_ws(new_ws);*/
+        new_ws.append_handle_state(vec![HandleState::Unfocus]);
+        mon.add_ws(new_ws);*/
 
         mon.swap_ws(mon.current_ws, |_mon, mut ws| {
             ws.append_handle_state(vec![HandleState::Unfocus]);
@@ -160,8 +156,8 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     }
 
     /*let mut new_ws = mon.remove_ws(mon.current_ws)?;
-      new_ws.append_handle_state(vec![HandleState::Unmap, HandleState::Unfocus]);
-      mon.add_ws(new_ws);*/
+    new_ws.append_handle_state(vec![HandleState::Unmap, HandleState::Unfocus]);
+    mon.add_ws(new_ws);*/
     mon.swap_ws(mon.current_ws, |_mon, mut ws| {
         ws.append_handle_state(vec![HandleState::Unmap, HandleState::Unfocus]);
         ws
@@ -424,9 +420,7 @@ mod test {
         workspace::Workspace, WindowState,
     };
     use crate::wm;
-    use crate::xlibwrapper::{
-        xlibmodels::{Geometry, Window},
-    };
+    use crate::xlibwrapper::xlibmodels::{Geometry, Window};
 
     const ROOT: Window = 1;
     const SCREEN_1: Screen = Screen {

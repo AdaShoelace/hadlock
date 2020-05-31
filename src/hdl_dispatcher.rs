@@ -51,9 +51,9 @@ pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
             xlib::MapRequest => {
                 let event = xlib::XMapRequestEvent::from(xevent);
                 /*debug!(
-                  "window type: {}",
-                  xlib.get_window_type(event.window).get_name()
-                  );*/
+                "window type: {}",
+                xlib.get_window_type(event.window).get_name()
+                );*/
                 store.dispatch(action::MapRequest {
                     win: event.window,
                     parent: event.parent,
@@ -94,9 +94,9 @@ pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
                 })
             }
             /*xlib::KeyRelease => {
-              let event = xlib::XKeyEvent::from(xevent);
-              action::KeyRelease{win: event.window, state: event.state, keycode: event.keycode};
-              },*/
+            let event = xlib::XKeyEvent::from(xevent);
+            action::KeyRelease{win: event.window, state: event.state, keycode: event.keycode};
+            },*/
             xlib::MotionNotify => {
                 //debug!("motion");
 
@@ -121,9 +121,9 @@ pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
                 store.dispatch(action::LeaveNotify { win: event.window })
             }
             /*xlib::Expose => {
-              let event = xlib::XExposeEvent::from(xevent);
-              action::Expose{win: event.window};
-              },*/
+            let event = xlib::XExposeEvent::from(xevent);
+            action::Expose{win: event.window};
+            },*/
             xlib::DestroyNotify => {
                 let event = xlib::XDestroyWindowEvent::from(xevent);
                 store.dispatch(action::Destroy { win: event.window })

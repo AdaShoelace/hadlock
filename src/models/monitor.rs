@@ -70,13 +70,10 @@ impl Monitor {
     }
 
     pub fn remove_window_non_current(&mut self, w: Window, ws: u32) -> Option<WindowWrapper> {
-        let ret = self
-            .workspaces
-            .get_mut(&ws)?
-            .remove_window(w)?;
+        let ret = self.workspaces.get_mut(&ws)?.remove_window(w)?;
         Some(ret)
     }
-    
+
     pub fn get_ws_by_window(&self, w: Window) -> Option<u32> {
         let mut tag_vec = self
             .workspaces
@@ -84,7 +81,7 @@ impl Monitor {
             .filter(|ws| ws.contains_window(w))
             .map(|ws| ws.tag)
             .collect::<Vec<u32>>();
-        if !tag_vec.is_empty(){
+        if !tag_vec.is_empty() {
             Some(tag_vec.remove(0))
         } else {
             None
@@ -166,8 +163,7 @@ impl Monitor {
     where
         F: FnMut(&Monitor, Workspace) -> Workspace + Sized,
     {
-        let old_ws = self
-            .remove_ws(ws)?;
+        let old_ws = self.remove_ws(ws)?;
 
         let new_ws = f(&self, old_ws);
 
@@ -183,8 +179,7 @@ impl Monitor {
     }
 
     pub fn get_client_keys(&self) -> Vec<Window> {
-        self
-            .workspaces
+        self.workspaces
             .values()
             .map(|x| x.clients.keys().collect::<Vec<&Window>>())
             .flatten()
@@ -209,8 +204,7 @@ impl Monitor {
         let dock_area = self.dock_area.clone();
         let ws = self.get_current_ws_mut().expect("monitor: place_window 2");
         let windows = ws.clients.values().collect::<Vec<&WindowWrapper>>();
-        ws.layout
-            .place_window(&dock_area, &screen, w, windows)
+        ws.layout.place_window(&dock_area, &screen, w, windows)
     }
 
     pub fn move_window(&mut self, w: Window, x: i32, y: i32) -> (Position, Position) {

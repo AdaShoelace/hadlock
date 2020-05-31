@@ -13,11 +13,11 @@ mod wm;
 mod xlibwrapper;
 
 use std::{process::Command, rc::Rc, sync::mpsc, thread};
-use xlibwrapper::{DisplayServer, core::*};
+use xlibwrapper::{core::*, DisplayServer};
 
 use crate::config::*;
-use nix::sys::signal::{self, SigHandler, Signal};
 use lazy_static::initialize;
+use nix::sys::signal::{self, SigHandler, Signal};
 
 pub type HadlockResult<T> = Result<T, Box<dyn std::error::Error>>;
 pub type HadlockOption<T> = Option<T>;
@@ -36,8 +36,10 @@ fn main() -> HadlockResult<()> {
     // Avoid zombies by ignoring SIGCHLD
     unsafe { signal::signal(Signal::SIGCHLD, SigHandler::SigIgn) }.unwrap();
     call_commands(ExecTime::Pre);
-    thread::spawn(move || if let Ok(true) = rx.recv() {
-        call_commands(ExecTime::Post)
+    thread::spawn(move || {
+        if let Ok(true) = rx.recv() {
+            call_commands(ExecTime::Post)
+        }
     });
 
     hdl_dispatcher::run(Box::new(xlib), tx);

@@ -110,7 +110,6 @@ impl Layout for Floating {
         )
     }
 
-
     fn reorder(
         &mut self,
         focus: Window,
@@ -132,7 +131,7 @@ impl Layout for Floating {
             None => {
                 let rect_tuple: (Position, Size) = screen.clone().into();
                 Rect::new(rect_tuple.0, rect_tuple.1)
-            },
+            }
         };
 
         let win_size_x = (space_rect.get_size().width / 2) - 2 * CONFIG.border_width;
@@ -140,11 +139,21 @@ impl Layout for Floating {
 
         let center_win_pos = Position {
             x: space_rect.get_position().x + (space_rect.get_size().width / 2) - (win_size_x / 2),
-            y: space_rect.get_position().y + (space_rect.get_size().height / 2) - (win_size_y / 2)
+            y: space_rect.get_position().y + (space_rect.get_size().height / 2) - (win_size_y / 2),
         };
 
-        let step_size_x = (space_rect.get_position().x - center_win_pos.x).abs() / if !windows.is_empty() {windows.len() as i32} else { 1 };
-        let step_size_y = (space_rect.get_position().y - center_win_pos.y).abs() / if !windows.is_empty() {windows.len() as i32} else { 1 };
+        let step_size_x = (space_rect.get_position().x - center_win_pos.x).abs()
+            / if !windows.is_empty() {
+                windows.len() as i32
+            } else {
+                1
+            };
+        let step_size_y = (space_rect.get_position().y - center_win_pos.y).abs()
+            / if !windows.is_empty() {
+                windows.len() as i32
+            } else {
+                1
+            };
 
         windows
             .iter()
@@ -152,9 +161,8 @@ impl Layout for Floating {
             .enumerate()
             .map(|(index, win)| {
                 let pos = Position {
-                    x: center_win_pos.x
-                        - (index as i32 * step_size_x),
-                        y: center_win_pos.y - (index as i32 * step_size_y),
+                    x: center_win_pos.x - (index as i32 * step_size_x),
+                    y: center_win_pos.y - (index as i32 * step_size_y),
                 };
                 let size = Size {
                     width: win_size_x,
@@ -162,7 +170,7 @@ impl Layout for Floating {
                 };
                 (win.window(), Rect::new(pos, size))
             })
-        .collect::<Vec<(Window, Rect)>>()
+            .collect::<Vec<(Window, Rect)>>()
     }
 
     fn resize_window(
@@ -340,4 +348,3 @@ impl Layout for Floating {
         }
     }
 }
-

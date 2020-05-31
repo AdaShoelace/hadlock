@@ -1,3 +1,4 @@
+#![allow(clippy::match_single_binding)]
 use {
     crate::models::internal_action,
     crate::models::{monitor::Monitor, windowwrapper::WindowWrapper, workspace::Workspace},

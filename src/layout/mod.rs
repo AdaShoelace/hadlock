@@ -34,7 +34,6 @@ pub fn layout_from_tag(tag: LayoutTag) -> Box<dyn Layout> {
 }
 
 pub trait Layout: std::fmt::Debug + std::fmt::Display {
-    
     fn get_type(&self) -> LayoutTag;
 
     fn place_window(
