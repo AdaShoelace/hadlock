@@ -1,0 +1,30 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install dependencies
+      run: |
+          sudo apt update
+          sudo apt install libxinerama-dev
+          sudo apt install libdbus-1-dev
+    - name: rustfmt
+      run: cargo fmt -- --check
+    #- name: clippy
+    #  run: cargo clippy
+    - name: Build
+      run: cargo build
+    - name: Run tests
+      run: cargo test --verbose
