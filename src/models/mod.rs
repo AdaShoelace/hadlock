@@ -7,8 +7,8 @@ pub mod window_type;
 pub mod windowwrapper;
 pub mod workspace;
 
-use std::cell::RefCell;
 use serde::{Deserialize, Serialize};
+use std::cell::RefCell;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum WindowState {

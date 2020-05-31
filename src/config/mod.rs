@@ -7,18 +7,20 @@ use serde::{Deserialize, Serialize};
 
 use config_model::*;
 
-lazy_static! { pub static ref CONFIG: Config =  loader::load_config(); }
+lazy_static! {
+    pub static ref CONFIG: Config = loader::load_config();
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum Axis {
     Horizontal,
-    Vertical
+    Vertical,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum Key {
     Letter(String),
-    Number
+    Number,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
@@ -37,7 +39,7 @@ pub enum KeyEffect {
     SwapMaster,
     ToggleMonocle,
     ToggleMaximize,
-    Custom(Command)
+    Custom(Command),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
@@ -45,15 +47,14 @@ pub struct KeyAction {
     #[serde(rename = "modKey")]
     pub mod_key: Option<String>,
     pub key: Key,
-    pub effect: KeyEffect
+    pub effect: KeyEffect,
 }
-
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum ExecTime {
     Pre,
     Post,
-    Now
+    Now,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]

@@ -20,10 +20,10 @@ jobs:
           sudo apt update
           sudo apt install libxinerama-dev
           sudo apt install libdbus-1-dev
-    #- name: rustfmt
-    #  run: cargo fmt -- --check
-    #- name: clippy
-    #  run: cargo clippy
+    - name: rustfmt
+      run: cargo fmt -- --check
+    - name: clippy
+      run: cargo clippy
     - name: Build
       run: cargo build
     - name: Run tests

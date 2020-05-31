@@ -25,7 +25,8 @@ pub(super) fn load_config() -> Config {
     let path = Path::new(path);
 
     if path.exists() && path.is_file() {
-        let mut file = fs::File::open(path).unwrap_or_else(|_| panic!("Failed to open file: {:?}", path));
+        let mut file =
+            fs::File::open(path).unwrap_or_else(|_| panic!("Failed to open file: {:?}", path));
         let mut file_content = String::new();
         file.read_to_string(&mut file_content)
             .unwrap_or_else(|_| panic!("Failed to read file content: {:?}", path));
