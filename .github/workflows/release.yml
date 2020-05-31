@@ -1,14 +1,9 @@
-name: Rust
+name: Release
 
 on:
   push:
-    branches:
-      - master
     tags:
       - 'v*'
-  pull_request:
-    branches:
-      - master
 
 jobs:
   build:
@@ -38,5 +33,3 @@ jobs:
         asset_name: Hadlock
         tag: ${{ github.ref }}
         overwrite: true
-
-
