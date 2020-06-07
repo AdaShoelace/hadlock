@@ -24,30 +24,31 @@ impl Reactor<State> for HdlReactor {
         //debug!("{:#?}", state);
 
         state.monitors.values().for_each(|mon| {
-            let handle_state = *mon.handle_state.borrow();
-            match handle_state {
-                HandleState::Focus => {
-                    debug!("Setting current monitor to: {}", state.current_monitor);
-                    self.lib.update_desktops(mon.current_ws, None);
-                    if *mon.mouse_follow.borrow() {
-                        if let Some((win, _)) = mon.get_newest() {
-                            state.lib.center_cursor(*win);
-                        } else {
-                            state.lib.move_cursor(Position {
-                                x: mon.screen.x + mon.screen.width / 2,
-                                y: mon.screen.y + mon.screen.height / 2,
-                            });
+            for handle_state in mon.handle_state.borrow().iter() {
+                match handle_state {
+                    HandleState::Focus => {
+                        debug!("Setting current monitor to: {}", state.current_monitor);
+                        self.lib.update_desktops(mon.current_ws, None);
+                        if *mon.mouse_follow.borrow() {
+                            if let Some((win, _)) = mon.get_newest() {
+                                state.lib.center_cursor(*win);
+                            } else {
+                                state.lib.move_cursor(Position {
+                                    x: mon.screen.x + mon.screen.width / 2,
+                                    y: mon.screen.y + mon.screen.height / 2,
+                                });
+                            }
+                            mon.mouse_follow.replace(false);
                         }
-                        mon.mouse_follow.replace(false);
                     }
-                    mon.handle_state.replace(HandleState::Handled);
+                    HandleState::UpdateLayout => {
+                        debug!("layout shall be updated");
+                        let _ = self.tx.send(InternalAction::UpdateLayout);
+                    }
+                    _ => (),
                 }
-                HandleState::UpdateLayout => {
-                    debug!("layout shall be updated");
-                    let _ = self.tx.send(InternalAction::UpdateLayout);
-                }
-                _ => (),
             }
+            mon.handle_state.replace(vec![].into());
 
             mon.workspaces.iter().for_each(|(_key, ws)| {
                 //debug!("ws {} has len: {}", key, ws.clients.len());
@@ -161,7 +162,7 @@ impl Reactor<State> for HdlReactor {
                             _ => (),
                         });
                     if set_handled {
-                        val.handle_state.replace(HandleState::Handled.into());
+                        val.handle_state.replace(vec![].into());
                     }
                 });
                 self.lib.flush();

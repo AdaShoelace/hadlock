@@ -27,7 +27,7 @@ impl Reducer<action::EnterNotify> for State {
                     .get_mut(&self.current_monitor)
                     .unwrap()
                     .handle_state
-                    .replace(HandleState::Focus);
+                    .replace(HandleState::Focus.into());
             }
         }
 
