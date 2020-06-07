@@ -20,7 +20,7 @@ pub struct Monitor {
     pub dock_area: DockArea,
     pub current_ws: u32,
     pub mouse_follow: RefCell<bool>,
-    pub handle_state: RefCell<HandleState>,
+    pub handle_state: RefCell<Vec<HandleState>>,
 }
 
 impl Monitor {
@@ -39,7 +39,7 @@ impl Monitor {
             dock_area: Default::default(),
             current_ws,
             mouse_follow: RefCell::new(false),
-            handle_state: RefCell::new(HandleState::Handled),
+            handle_state: RefCell::new(vec![].into()),
         }
     }
 

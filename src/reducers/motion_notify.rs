@@ -36,7 +36,7 @@ impl Reducer<action::MotionNotify> for State {
                 .monitors
                 .get_mut(&self.current_monitor)
                 .expect("MotionNotify - monitor - get_mut - change handle state");
-            mon.handle_state.replace(HandleState::Focus);
+            mon.handle_state.replace(HandleState::Focus.into());
             mon.mouse_follow.replace(false);
         }
 
