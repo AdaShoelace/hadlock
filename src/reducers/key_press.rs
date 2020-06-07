@@ -259,7 +259,7 @@ fn managed_client(
                     debug!("Something went wrong calling handle_key_effect in root");
                 }
             }
-            _ => debug!("nope"),
+            _ => {}//debug!("nope"),
         }
     }
     Some(())
