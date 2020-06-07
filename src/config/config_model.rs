@@ -1,11 +1,9 @@
 use super::KeyAction;
-use crate::layout::LayoutTag;
 use crate::xlibwrapper::util::{
     keysym_lookup::{into_mod, ModMask},
     Color,
 };
 use crate::layout::LayoutTag;
-use x11_dl::xlib::Mod4Mask;
 use serde::{self, Deserialize, Serialize, Deserializer, de};
 use std::collections::BTreeMap;
 use x11_dl::xlib::Mod4Mask;

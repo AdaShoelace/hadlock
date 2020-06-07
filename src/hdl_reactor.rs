@@ -30,10 +30,14 @@ impl Reactor<State> for HdlReactor {
                     debug!("Setting current monitor to: {}", state.current_monitor);
                     self.lib.update_desktops(mon.current_ws, None);
                     if *mon.mouse_follow.borrow() {
-                        state.lib.move_cursor(Position {
-                            x: mon.screen.x + mon.screen.width / 2,
-                            y: mon.screen.y + mon.screen.height / 2,
-                        });
+                        if let Some((win, _)) = mon.get_newest() {
+                            state.lib.center_cursor(*win);
+                        } else {
+                            state.lib.move_cursor(Position {
+                                x: mon.screen.x + mon.screen.width / 2,
+                                y: mon.screen.y + mon.screen.height / 2,
+                            });
+                        }
                         mon.mouse_follow.replace(false);
                     }
                     mon.handle_state.replace(HandleState::Handled);
