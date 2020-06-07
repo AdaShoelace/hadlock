@@ -61,7 +61,7 @@ impl Reactor<State> for HdlReactor {
                     }
                     let mut set_handled = false;
                     let handle_state = val.handle_state.clone();
-                    //debug!("window: {}, handle_state: {:?}", *key, handle_state);
+                    debug!("window: {}, handle_state: {:?}", *key, handle_state);
                     handle_state
                         .into_inner()
                         .iter()
