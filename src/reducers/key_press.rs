@@ -33,7 +33,7 @@ impl Reducer<action::KeyPress> for State {
             .lib
             .keycode_to_key_sym(action.keycode as u8)
             .expect("failed to convert action.keycode to KeySym");
-        debug!("KeyCode to string: {:?}", into_hdl_keysym(&sym));
+        //debug!("KeyCode to string: {:?}", into_hdl_keysym(&sym));
 
         // Valid key presses must either include super or be one of the XF86 symbols.
         if !super_is_pressed && !sym.starts_with("XF86") {
@@ -135,7 +135,7 @@ fn handle_key_effect(
             mon.swap_window(state.focus_w, |mon, ww| wm::toggle_maximize(mon, ww));
         }
         KeyEffect::CirculateLayout => {
-            debug!("should print layout type");
+            //debug!("should print layout type");
             circulate_layout(state);
             wm::reorder(state);
         }
@@ -206,7 +206,7 @@ fn managed_client(
     has_mod: bool,
     ws_keys: Vec<u8>,
 ) -> Option<()> {
-    debug!("Windows exists: KeyPress");
+    //debug!("Windows exists: KeyPress");
     let keycode = action.keycode as u8;
 
     for key_action in CONFIG.key_bindings.iter() {
@@ -219,7 +219,7 @@ fn managed_client(
                 if into_mod(mk) == (action.state & into_mod(mk))
                     && state.lib.str_to_keycode(key) == Some(action.keycode as u8)
                 {
-                    debug!("Effect: {:?}", effect);
+                    //debug!("Effect: {:?}", effect);
                     if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
                         debug!("Something went wrong calling handle_key_effect in root");
                     }
@@ -231,7 +231,7 @@ fn managed_client(
                 effect,
             } if !has_mod => {
                 if state.lib.str_to_keycode(key) == Some(action.keycode as u8) {
-                    debug!("Effect: {:?}", effect);
+                    //debug!("Effect: {:?}", effect);
                     if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
                         debug!("Something went wrong calling handle_key_effect in root");
                     }
@@ -243,7 +243,7 @@ fn managed_client(
                 effect,
             } if has_mod && ws_keys.contains(&keycode) => {
                 if into_mod(mk) == (action.state & into_mod(mk)) {
-                    debug!("Effect: {:?}", effect);
+                    //debug!("Effect: {:?}", effect);
                     if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
                         debug!("Something went wrong calling handle_key_effect in root");
                     }
@@ -254,7 +254,7 @@ fn managed_client(
                 key: Key::Number,
                 effect,
             } if !has_mod && ws_keys.contains(&keycode) => {
-                debug!("Effect: {:?}", effect);
+                //debug!("Effect: {:?}", effect);
                 if handle_key_effect(state, &action, effect, &ws_keys).is_none() {
                     debug!("Something went wrong calling handle_key_effect in root");
                 }
