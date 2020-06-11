@@ -19,7 +19,7 @@ env_logger = "0.7.0"
 lazy_static = "1.3.0"
 bitflags = "1.1.0"
 x11 = {version = "*", features = ["xlib", "xinerama"]}
-x11-dl = "2.18.3"
+x11-dl = "2.8.0"
 nix = "0.15"
 fern = "0.4.1"
 chrono = "0.4.10"
