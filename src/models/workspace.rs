@@ -13,16 +13,18 @@ pub struct Workspace {
     pub tag: u32,
     pub clients: IndexMap<Window, WindowWrapper>,
     pub layout: Box<dyn Layout>,
+    pub focus_w: Window,
     available_layouts: Vec<LayoutTag>,
     current_tag: LayoutTag,
 }
 
 impl Workspace {
-    pub fn new(tag: u32) -> Self {
+    pub fn new(tag: u32, focus_w: Window) -> Self {
         Self {
             tag,
             clients: Default::default(),
             layout: layout::layout_from_tag(CONFIG.default_layout),
+            focus_w,
             available_layouts: vec![LayoutTag::Floating, LayoutTag::ColumnMaster],
             current_tag: CONFIG.default_layout,
         }

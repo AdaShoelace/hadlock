@@ -123,12 +123,12 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
         });
         let mon = state.monitors.get_mut(&get_mon_by_ws(state, ws)?)?;
 
-        let newest = match mon.get_newest() {
+        let newest = /*match mon.get_newest() {
             Some((win, _)) => *win,
             None => {
                 return Some(());
             }
-        };
+        };*/ mon.get_current_ws().unwrap().focus_w;
 
         mon.swap_window(newest, |_mon, ww| WindowWrapper {
             handle_state: {
@@ -145,6 +145,7 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
         });
         state.focus_w = newest;
         state.current_monitor = mon.id;
+        state.ws_switch = true;
         return Some(());
     }
 
@@ -156,21 +157,15 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     if mon.contains_ws(ws) {
         let mut new_ws = mon.remove_ws(ws)?;
         new_ws.append_handle_state(vec![HandleState::Map]);
-        mon.add_ws(new_ws);
-        if let Some((win, _)) = mon.get_newest() {
-            if let Some(client) = mon.get_client(*win) {
-                client.handle_state.replace_with(|old| {
-                    let mut handle_state = vec![HandleState::Focus];
-                    old.append(&mut handle_state);
-                    old.to_vec()
-                        .into_iter()
-                        .filter(|hs| *hs != HandleState::Unfocus)
-                        .collect::<Vec<HandleState>>()
-                });
-            }
+        let win = new_ws.focus_w;
+        debug!("new_ws clients: {:?}", new_ws.clients.keys().collect::<Vec<&Window>>());
+        if let Some(client) = new_ws.clients.get_mut(&win) {
+            client.append_handle_state(HandleState::Focus.into());
         }
+        mon.add_ws(new_ws);
+        debug!("new_ws.focus_w: 0x{:x}", win);
     } else {
-        mon.add_ws(Workspace::new(ws));
+        mon.add_ws(Workspace::new(ws, state.lib.get_root()));
     }
 
     state.current_monitor = mon.id;
@@ -180,6 +175,7 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     mon.current_ws = ws;
     mon.handle_state.replace(HandleState::Focus.into());
     mon.mouse_follow.replace(true);
+    state.ws_switch = true;
     Some(())
 }
 
@@ -281,7 +277,7 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
     } else {
         let prev_ws = mon.current_ws;
         mon.current_ws = ws;
-        mon.add_ws(Workspace::new(ws));
+        mon.add_ws(Workspace::new(ws, state.lib.get_root()));
         let windows = mon.place_window(w);
         let (current_state, handle_state) =
             if windows.len() == 1 && mon.get_current_layout()? != LayoutTag::Floating {
