@@ -66,7 +66,9 @@ impl Reactor<State> for HdlReactor {
                     }
                     let mut set_handled = false;
                     let handle_state = val.handle_state.clone();
-                    debug!("window: {}, handle_state: {:?}", *key, handle_state);
+                    if !handle_state.borrow().is_empty() {
+                        debug!("window: 0x{:x}, handle_state: {:?}", *key, handle_state);
+                    }
                     handle_state
                         .into_inner()
                         .iter()
@@ -109,6 +111,7 @@ impl Reactor<State> for HdlReactor {
                             }
                             HandleState::Focus => {
                                 self.set_focus(*key, &val);
+                                debug!("reactor, ws::focus_w: 0x{:x}", ws.focus_w);
                                 set_handled = true;
                             }
                             HandleState::Unfocus => {
@@ -273,6 +276,6 @@ impl HdlReactor {
         if self.lib.kill_client(w) {
             self.lib.update_net_client_list(clients);
         }
-        info!("Top level windows: {}", self.lib.top_level_window_count());
+        // info!("Top level windows: {}", self.lib.top_level_window_count());
     }
 }

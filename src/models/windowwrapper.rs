@@ -175,6 +175,7 @@ impl WindowWrapper {
         self.handle_state.replace_with(|old| {
             let mut handle_state = handle_states;
             old.append(&mut handle_state);
+            old.dedup();
             old.to_vec()
         });
     }
