@@ -113,9 +113,8 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
 
     if ws == mon.current_ws {
         mon.handle_state.replace(HandleState::Focus.into());
-        mon.mouse_follow.replace(true);
-
         let mon = state.monitors.get_mut(&state.current_monitor)?;
+        mon.mouse_follow.replace(true);
 
         mon.swap_ws(mon.current_ws, |_mon, mut ws| {
             ws.append_handle_state(vec![HandleState::Unfocus]);
@@ -162,6 +161,7 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
         if let Some(client) = new_ws.clients.get_mut(&win) {
             client.append_handle_state(HandleState::Focus.into());
         }
+        state.focus_w = new_ws.focus_w;
         mon.add_ws(new_ws);
         debug!("new_ws.focus_w: 0x{:x}", win);
     } else {
@@ -175,6 +175,7 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     mon.current_ws = ws;
     mon.handle_state.replace(HandleState::Focus.into());
     mon.mouse_follow.replace(true);
+    state.latest_cursor_pos = state.lib.pointer_pos(state.lib.get_root());
     state.ws_switch = true;
     Some(())
 }

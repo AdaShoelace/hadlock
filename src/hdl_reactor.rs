@@ -30,8 +30,8 @@ impl Reactor<State> for HdlReactor {
                         debug!("Setting current monitor to: {}", state.current_monitor);
                         self.lib.update_desktops(mon.current_ws, None);
                         if *mon.mouse_follow.borrow() {
-                            if let Some((win, _)) = mon.get_newest() {
-                                state.lib.center_cursor(*win);
+                            if let Some(win) = mon.get_client(state.focus_w) {
+                                state.lib.center_cursor(win.window());
                             } else {
                                 state.lib.move_cursor(Position {
                                     x: mon.screen.x + mon.screen.width / 2,
