@@ -155,7 +155,7 @@ pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
             match action {
                 internal_action::InternalAction::Focus => {
                     //debug!("Motion dispatch focus");
-                    if let Some(win) = xlib.window_under_pointer() {
+                    if let Some(_win) = xlib.window_under_pointer() {
                         //store.dispatch(action::Focus { win })
                     }
                 }

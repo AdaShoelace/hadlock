@@ -20,7 +20,7 @@ use {
 impl Reducer<action::ClientMessageRequest> for State {
     // Full credit for this solution goes to lex148
     fn reduce(&mut self, action: action::ClientMessageRequest) {
-        let name = self.lib.xatom().get_name(action.message_type);
+        let _name = self.lib.xatom().get_name(action.message_type);
 
         // debug!("client message: {}", name);
 

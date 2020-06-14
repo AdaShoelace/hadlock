@@ -443,7 +443,7 @@ mod test {
 
     #[test]
     fn toggle_maximize_to_maximized() {
-        let ws = Workspace::new(1);
+        let ws = Workspace::new(1, 0);
         let mon = Monitor::new(1, SCREEN_1, ws);
 
         let original = WindowWrapper::new(12, Rect::from(WIN_GEOM), false);

@@ -284,9 +284,9 @@ mod test {
 
     fn setup_mon(amount_ws: u32) -> Monitor {
         let screen = Screen::new(ROOT, 1920, 1080, 0, 0);
-        let mut mon = Monitor::new(0, screen, Workspace::new(0));
+        let mut mon = Monitor::new(0, screen, Workspace::new(0, 0));
         for i in 0..(amount_ws - 1) {
-            mon.add_ws(Workspace::new(i + 1))
+            mon.add_ws(Workspace::new(i + 1, 0))
         }
         mon
     }
