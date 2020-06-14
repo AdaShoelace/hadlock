@@ -318,10 +318,11 @@ fn root(
 }
 
 fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
+    debug!("state focus_w: 0x{:x}, root: 0x{:x}", state.focus_w, state.lib.get_root());
     let mon = state.monitors.get_mut(&state.current_monitor)?;
-    if mon.get_current_layout()? != LayoutTag::Floating {
+    if mon.get_current_layout().expect("shift layout failed") != LayoutTag::Floating {
         let (newest, _) = mon.get_newest()?;
-        if state.focus_w != *newest {
+        if mon.get_current_ws().unwrap().focus_w != *newest {
             match direction {
                 Direction::North => {
                     if let Some(ww) = mon.get_previous(state.focus_w) {
@@ -352,6 +353,8 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
                     .tx
                     .send(internal_action::InternalAction::FocusSpecific(ww.window()));
             }
+        } else if state.focus_w == *newest && direction != Direction::East {
+            debug!("window is newest but direction is: {:?}", direction);
         }
         return Some(());
     }
