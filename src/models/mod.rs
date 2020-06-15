@@ -30,7 +30,6 @@ pub enum Direction {
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum HandleState {
     New,
-    Handled,
     Map,
     Unmap,
     Focus,

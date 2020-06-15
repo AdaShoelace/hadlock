@@ -19,6 +19,15 @@ use {
 impl Reducer<action::EnterNotify> for State {
     fn reduce(&mut self, action: action::EnterNotify) {
         //debug!("EnterNotify");
+
+        if self.latest_cursor_pos == self.lib.pointer_pos(self.lib.get_root()) {
+            return;
+        }
+
+        if self.ws_switch {
+            self.ws_switch = false;
+            return;
+        }
         let window_mon = wm::get_mon_by_window(&self, action.win);
         if let Some(mon_id) = window_mon {
             if mon_id != self.current_monitor {
@@ -27,7 +36,7 @@ impl Reducer<action::EnterNotify> for State {
                     .get_mut(&self.current_monitor)
                     .unwrap()
                     .handle_state
-                    .replace(HandleState::Focus);
+                    .replace(HandleState::Focus.into());
             }
         }
 
@@ -55,5 +64,11 @@ impl Reducer<action::EnterNotify> for State {
         {
             w.handle_state = HandleState::Focus.into();
         }
+        self.monitors
+            .get_mut(&self.current_monitor)
+            .unwrap()
+            .get_current_ws_mut()
+            .unwrap()
+            .focus_w = self.focus_w;
     }
 }

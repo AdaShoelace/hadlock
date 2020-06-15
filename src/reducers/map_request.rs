@@ -128,6 +128,7 @@ impl Reducer<action::MapRequest> for State {
                             ww.append_handle_state(vec![HandleState::Focus]);
                             self.focus_w = action.win;
                             mon.add_window(action.win, ww);
+                            mon.get_current_ws_mut().unwrap().focus_w = self.focus_w;
                         }
                     }
                 };
