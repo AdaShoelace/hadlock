@@ -20,25 +20,34 @@ use {
 impl Reducer<action::ClientMessageRequest> for State {
     // Full credit for this solution goes to lex148
     fn reduce(&mut self, action: action::ClientMessageRequest) {
-        let name = self.lib.xatom().get_name(action.message_type);
+        let _name = self.lib.xatom().get_name(action.message_type);
 
-        debug!("client message: {}", name);
+        // debug!("client message: {}", name);
 
         let data_zero = *action
             .data
             .get(0)
             .expect("client_message_request: cleanupt");
-        debug!("data_zero: {:?}", data_zero);
+        // debug!("data_zero: {:?}", data_zero);
         let data_one = *action
             .data
             .get(1)
             .expect("client_message_request: cleanupt");
-        debug!("data_one: {:?}", data_one);
+        // debug!("data_one: {:?}", data_one);
         let data_two = *action
             .data
             .get(2)
             .expect("client_message_request: cleanupt");
-        debug!("data_two: {:?}", data_two);
+        // debug!("data_two: {:?}", data_two);
+
+        if action.message_type == self.lib.xatom().NetWMState {
+            if data_zero == self.lib.xatom().NetWMStateHidden as i64
+                || data_one == self.lib.xatom().NetWMStateHidden as i64
+                || data_two == self.lib.xatom().NetWMStateHidden as i64
+            {
+                debug!("window: 0x{:x} sent a hidden message", action.win);
+            }
+        }
 
         if action.message_type == self.lib.xatom().NetCurrentDesktop {
             wm::set_current_ws(self, data_zero as u32);

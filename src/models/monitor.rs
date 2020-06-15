@@ -20,7 +20,7 @@ pub struct Monitor {
     pub dock_area: DockArea,
     pub current_ws: u32,
     pub mouse_follow: RefCell<bool>,
-    pub handle_state: RefCell<HandleState>,
+    pub handle_state: RefCell<Vec<HandleState>>,
 }
 
 impl Monitor {
@@ -38,8 +38,8 @@ impl Monitor {
             workspaces,
             dock_area: Default::default(),
             current_ws,
-            mouse_follow: RefCell::new(false),
-            handle_state: RefCell::new(HandleState::Handled),
+            mouse_follow: RefCell::new(true),
+            handle_state: RefCell::new(vec![].into()),
         }
     }
 
@@ -284,9 +284,9 @@ mod test {
 
     fn setup_mon(amount_ws: u32) -> Monitor {
         let screen = Screen::new(ROOT, 1920, 1080, 0, 0);
-        let mut mon = Monitor::new(0, screen, Workspace::new(0));
+        let mut mon = Monitor::new(0, screen, Workspace::new(0, 0));
         for i in 0..(amount_ws - 1) {
-            mon.add_ws(Workspace::new(i + 1))
+            mon.add_ws(Workspace::new(i + 1, 0))
         }
         mon
     }
