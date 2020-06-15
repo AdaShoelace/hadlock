@@ -259,7 +259,7 @@ fn managed_client(
                     debug!("Something went wrong calling handle_key_effect in root");
                 }
             }
-            _ => {}//debug!("nope"),
+            _ => {} //debug!("nope"),
         }
     }
     Some(())
@@ -318,7 +318,11 @@ fn root(
 }
 
 fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
-    debug!("state focus_w: 0x{:x}, root: 0x{:x}", state.focus_w, state.lib.get_root());
+    debug!(
+        "state focus_w: 0x{:x}, root: 0x{:x}",
+        state.focus_w,
+        state.lib.get_root()
+    );
     let mon = state.monitors.get_mut(&state.current_monitor)?;
     if mon.get_current_layout().expect("shift layout failed") != LayoutTag::Floating {
         let (newest, _) = mon.get_newest()?;

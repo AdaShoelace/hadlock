@@ -101,7 +101,7 @@ pub fn get_mon_by_window(state: &State, w: Window) -> Option<MonitorId> {
 pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;
     if mon.id == state.current_monitor && ws == mon.current_ws {
-        return Some(())
+        return Some(());
     }
 
     mon.swap_ws(mon.current_ws, |_mon, mut ws| {
@@ -160,7 +160,10 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
         let mut new_ws = mon.remove_ws(ws)?;
         new_ws.append_handle_state(vec![HandleState::Map]);
         let win = new_ws.focus_w;
-        debug!("new_ws clients: {:?}", new_ws.clients.keys().collect::<Vec<&Window>>());
+        debug!(
+            "new_ws clients: {:?}",
+            new_ws.clients.keys().collect::<Vec<&Window>>()
+        );
         if let Some(client) = new_ws.clients.get_mut(&win) {
             client.append_handle_state(HandleState::Focus.into());
         }
@@ -379,7 +382,7 @@ pub fn point_is_inside(_state: &State, screen: &Screen, x: i32, y: i32) -> bool 
 pub fn state_contains_window(state: &State, win: Window) -> Option<(MonitorId, u32)> {
     for mon in state.monitors.values() {
         if mon.contains_window(win) {
-            return Some((mon.id, mon.get_ws_by_window(win).unwrap()))
+            return Some((mon.id, mon.get_ws_by_window(win).unwrap()));
         }
     }
     None

@@ -41,7 +41,7 @@ impl Reducer<action::ClientMessageRequest> for State {
         // debug!("data_two: {:?}", data_two);
 
         if action.message_type == self.lib.xatom().NetWMState {
-            if data_zero == self.lib.xatom().NetWMStateHidden as i64 
+            if data_zero == self.lib.xatom().NetWMStateHidden as i64
                 || data_one == self.lib.xatom().NetWMStateHidden as i64
                 || data_two == self.lib.xatom().NetWMStateHidden as i64
             {
