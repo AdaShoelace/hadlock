@@ -143,6 +143,7 @@ mod test {
     fn circulate_layout() {
         let mut ws = Workspace {
             tag: 0,
+            focus_w: 0,
             clients: Default::default(),
             layout: layout::layout_from_tag(LayoutTag::Floating),
             available_layouts: vec![LayoutTag::Floating, LayoutTag::ColumnMaster],
