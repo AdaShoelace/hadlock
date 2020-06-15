@@ -2,7 +2,7 @@
 use {
     crate::models::internal_action,
     crate::models::{monitor::Monitor, windowwrapper::WindowWrapper, workspace::Workspace},
-    crate::xlibwrapper::{xlibmodels::*, DisplayServer, util::Position},
+    crate::xlibwrapper::{util::Position, xlibmodels::*, DisplayServer},
     derivative::*,
     std::collections::HashMap,
     std::rc::Rc,
@@ -52,7 +52,7 @@ impl State {
             focus_w,
             monitors,
             current_monitor: 0,
-            latest_cursor_pos: Position::new(0,0),
+            latest_cursor_pos: Position::new(0, 0),
             ws_switch: false,
             drag_start_pos: (0, 0),
             drag_start_frame_pos: (0, 0),
