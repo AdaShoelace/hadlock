@@ -174,7 +174,7 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     }
     mon.current_ws = ws;
     mon.handle_state.replace(HandleState::Focus.into());
-    mon.mouse_follow.replace(true);
+    mon.mouse_follow.replace(false);
     state.latest_cursor_pos = state.lib.pointer_pos(state.lib.get_root());
     state.ws_switch = true;
     Some(())

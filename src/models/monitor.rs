@@ -38,7 +38,7 @@ impl Monitor {
             workspaces,
             dock_area: Default::default(),
             current_ws,
-            mouse_follow: RefCell::new(false),
+            mouse_follow: RefCell::new(true),
             handle_state: RefCell::new(vec![].into()),
         }
     }
