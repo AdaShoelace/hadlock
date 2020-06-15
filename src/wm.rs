@@ -373,6 +373,15 @@ pub fn point_is_inside(_state: &State, screen: &Screen, x: i32, y: i32) -> bool 
     inside_height && inside_width
 }
 
+pub fn state_contains_window(state: &State, win: Window) -> Option<(MonitorId, u32)> {
+    for mon in state.monitors.values() {
+        if mon.contains_window(win) {
+            return Some((mon.id, mon.get_ws_by_window(win).unwrap()))
+        }
+    }
+    None
+}
+
 #[allow(dead_code)]
 pub fn get_monitor_by_mouse(state: &State) -> MonitorId {
     let mon_vec = state
