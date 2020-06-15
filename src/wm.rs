@@ -100,6 +100,9 @@ pub fn get_mon_by_window(state: &State, w: Window) -> Option<MonitorId> {
 
 pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;
+    if mon.id == state.current_monitor && ws == mon.current_ws {
+        return Some(())
+    }
 
     mon.swap_ws(mon.current_ws, |_mon, mut ws| {
         ws.append_handle_state(vec![HandleState::Unfocus]);
