@@ -3,7 +3,7 @@ use {
     crate::{
         config::CONFIG,
         layout::*,
-        models::{rect::*, window_type::WindowType, windowwrapper::*, HandleState},
+        models::{rect::*, window_type::WindowType, windowwrapper::*},
         state::State,
         xlibwrapper::action,
         xlibwrapper::core::*,
@@ -16,7 +16,7 @@ use {
 };
 
 impl Reducer<action::LeaveNotify> for State {
-    fn reduce(&mut self, action: action::LeaveNotify) {
+    fn reduce(&mut self, _action: action::LeaveNotify) {
         //debug!("LeaveNotify");
 
         let mon = self
@@ -26,10 +26,6 @@ impl Reducer<action::LeaveNotify> for State {
 
         if mon.get_current_layout() != Some(LayoutTag::Floating) {
             return;
-        }
-
-        if let Some(w) = mon.get_client_mut(action.win) {
-            w.handle_state = HandleState::Unfocus.into();
         }
     }
 }

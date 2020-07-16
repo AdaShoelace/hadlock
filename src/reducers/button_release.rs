@@ -3,7 +3,7 @@ use {
     crate::{
         config::CONFIG,
         layout::LayoutTag,
-        models::{rect::*, window_type::WindowType, windowwrapper::*, HandleState},
+        models::{rect::*, window_type::WindowType, windowwrapper::*},
         state::State,
         wm,
         xlibwrapper::action,
@@ -39,14 +39,12 @@ impl Reducer<action::ButtonRelease> for State {
                         win,
                         WindowWrapper {
                             window_rect: rect,
-                            handle_state: vec![HandleState::Move, HandleState::Resize].into(),
                             ..action_ww
                         },
                     );
                 } else {
                     current_mon.swap_window(win, |_mon, ww| WindowWrapper {
                         window_rect: rect,
-                        handle_state: vec![HandleState::Move, HandleState::Resize].into(),
                         ..ww
                     });
                 }

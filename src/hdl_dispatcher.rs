@@ -1,3 +1,4 @@
+#![allow(unused)]
 use {
     crate::hdl_reactor::HdlReactor,
     crate::models::internal_action,
@@ -13,7 +14,7 @@ use {
 pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
     let (tx, rx) = channel::<internal_action::InternalAction>();
     let state = State::new(xlib.clone(), tx.clone());
-    let mut store = Store::new(state, HdlReactor::new(xlib.clone(), tx));
+    let mut store = Store::new(state.clone(), HdlReactor::new(xlib.clone(), tx, state));
 
     //setup
     xlib.grab_server();
@@ -46,7 +47,7 @@ pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
                     win_changes: window_changes,
                     value_mask: event.value_mask,
                     parent: event.parent,
-                })
+                });
             }
             xlib::MapRequest => {
                 let event = xlib::XMapRequestEvent::from(xevent);
@@ -57,11 +58,11 @@ pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
                 store.dispatch(action::MapRequest {
                     win: event.window,
                     parent: event.parent,
-                })
+                });
             }
             xlib::UnmapNotify => {
                 let event = xlib::XUnmapEvent::from(xevent);
-                store.dispatch(action::UnmapNotify { win: event.window })
+                store.dispatch(action::UnmapNotify { win: event.window });
             }
             xlib::ButtonPress => {
                 let event = xlib::XButtonEvent::from(xevent);
@@ -83,7 +84,7 @@ pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
                     x_root: event.x_root as u32,
                     y_root: event.y_root as u32,
                     state: event.state as u32,
-                })
+                });
             }
             xlib::KeyPress => {
                 let event = xlib::XKeyEvent::from(xevent);
@@ -91,7 +92,7 @@ pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
                     win: event.window,
                     state: event.state,
                     keycode: event.keycode,
-                })
+                });
             }
             /*xlib::KeyRelease => {
             let event = xlib::XKeyEvent::from(xevent);
@@ -107,18 +108,18 @@ pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
                     x_root: event.x_root,
                     y_root: event.y_root,
                     state: event.state,
-                })
+                });
             }
             xlib::EnterNotify => {
                 let event = xlib::XCrossingEvent::from(xevent);
                 store.dispatch(action::EnterNotify {
                     win: event.window,
                     sub_win: event.subwindow,
-                })
+                });
             }
             xlib::LeaveNotify => {
                 let event = xlib::XCrossingEvent::from(xevent);
-                store.dispatch(action::LeaveNotify { win: event.window })
+                store.dispatch(action::LeaveNotify { win: event.window });
             }
             /*xlib::Expose => {
             let event = xlib::XExposeEvent::from(xevent);
@@ -126,7 +127,7 @@ pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
             },*/
             xlib::DestroyNotify => {
                 let event = xlib::XDestroyWindowEvent::from(xevent);
-                store.dispatch(action::Destroy { win: event.window })
+                store.dispatch(action::Destroy { win: event.window });
             }
             xlib::PropertyNotify => {
                 let event = xlib::XPropertyEvent::from(xevent);
@@ -148,7 +149,9 @@ pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
                     ],
                 });
             }
-            _ => store.dispatch(action::UnknownEvent),
+            _ => {
+                store.dispatch(action::UnknownEvent);
+            }
         }
 
         if let Ok(action) = rx.try_recv() {
@@ -160,11 +163,11 @@ pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
                     }
                 }
                 internal_action::InternalAction::FocusSpecific(win) => {
-                    store.dispatch(action::Focus { win })
+                    store.dispatch(action::Focus { win });
                 }
                 internal_action::InternalAction::UpdateLayout => {
                     debug!("UpdateLayout");
-                    store.dispatch(action::UpdateLayout)
+                    store.dispatch(action::UpdateLayout);
                 }
                 _ => (),
             }

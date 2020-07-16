@@ -4,11 +4,11 @@ use indexmap::IndexMap;
 use crate::{
     config::*,
     layout::{self, column_master, floating, Layout, LayoutTag},
-    models::{windowwrapper::WindowWrapper, HandleState},
+    models::windowwrapper::WindowWrapper,
     xlibwrapper::xlibmodels::Window,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Workspace {
     pub tag: u32,
     pub clients: IndexMap<Window, WindowWrapper>,
@@ -119,10 +119,11 @@ impl Workspace {
         }
     }
 
-    pub fn append_handle_state(&mut self, handle_states: Vec<HandleState>) {
-        self.clients.values_mut().for_each(|client| {
-            client.append_handle_state(handle_states.clone());
-        });
+    pub fn apply_to_all<F>(&mut self, f: F)
+    where
+        F: Fn(&mut WindowWrapper),
+    {
+        self.clients.values_mut().for_each(f)
     }
 }
 

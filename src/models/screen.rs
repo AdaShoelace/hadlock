@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use crate::xlibwrapper::xlibmodels::WindowAttributes as WinAttr;
 use std::convert::From;
 use x11_dl::xinerama::XineramaScreenInfo as XSInfo;

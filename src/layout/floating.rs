@@ -1,4 +1,3 @@
-#![allow(dead_code, unused_variables)]
 use super::*;
 use crate::{
     config::*,
@@ -11,19 +10,9 @@ use crate::{
     },
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Floating {
     pub layout_type: LayoutTag,
-}
-
-impl Floating {
-    fn get_size(ww: &WindowWrapper, size: (Size, Size)) -> Size {
-        if ww.is_decorated() {
-            size.0
-        } else {
-            size.1
-        }
-    }
 }
 
 impl Default for Floating {
@@ -173,33 +162,6 @@ impl Layout for Floating {
             .collect::<Vec<(Window, Rect)>>()
     }
 
-    fn resize_window(
-        &self,
-        ww: &WindowWrapper,
-        w: Window,
-        width: i32,
-        height: i32,
-    ) -> (Size, Size) {
-        println!("width: {}", width);
-
-        println!("is window decorated: {}", ww.is_decorated());
-        if let Some(dec_rect) = ww.get_dec_rect() {
-            let dec_size = Size { width, height };
-            let window_size = Size {
-                width,
-                height: height - CONFIG.decoration_height,
-            };
-            (dec_size, window_size)
-        } else {
-            let dec_size = Size {
-                width: 0,
-                height: 0,
-            };
-            let window_size = Size { width, height };
-            (dec_size, window_size)
-        }
-    }
-
     fn maximize(
         &self,
         screen: &Screen,
@@ -210,22 +172,19 @@ impl Layout for Floating {
         let pos = self.move_window(screen, dock_area, w, true, screen.x, screen.y);
         match dock_area.as_rect(&screen) {
             Some(dock) => {
-                let size = Floating::get_size(
-                    &ww,
-                    self.resize_window(
-                        &ww,
-                        w,
-                        screen.width,
-                        screen.height - dock.get_size().height,
-                    ),
-                );
+                let size = 
+                    Size {
+                        width: screen.width,
+                        height: screen.height - dock.get_size().height
+                    };
                 (pos.0, size)
             }
             None => {
-                let size = Floating::get_size(
-                    &ww,
-                    self.resize_window(&ww, w, screen.width, screen.height),
-                );
+                let size = 
+                    Size {
+                        width: screen.width,
+                        height: screen.height
+                    };
                 (pos.0, size)
             }
         }
@@ -238,9 +197,8 @@ impl Layout for Floating {
         ww: &WindowWrapper,
         w: Window,
     ) -> (Position, Size) {
-        // TODO: implement for decorated windows
         let pos = self.move_window(screen, dock_area, w, false, screen.x, screen.y);
-        let size = Floating::get_size(&ww, self.resize_window(&ww, w, screen.width, screen.height));
+        let size = Size { width: screen.width, height: screen.height };
         (pos.0, size)
     }
 
@@ -261,12 +219,10 @@ impl Layout for Floating {
                 let pos = self
                     .move_window(&screen, &dock_area, w, true, screen.x, screen.y)
                     .0;
-                let size = Size {
+                let mut size = Size {
                     width: screen.width - 2 * CONFIG.border_width,
                     height: (screen.height) / 2 - 2 * CONFIG.border_width,
                 };
-                let mut size =
-                    Floating::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     size.height -= dock.get_size().height / 2
                 }
@@ -286,12 +242,10 @@ impl Layout for Floating {
                         screen.y,
                     )
                     .0;
-                let size = Size {
+                let mut size = Size {
                     width: (screen.width) / 2 - 2 * CONFIG.border_width,
                     height: screen.height - CONFIG.border_width,
                 };
-                let mut size =
-                    Floating::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     size.height -= dock.get_size().height;
                 }
@@ -304,12 +258,10 @@ impl Layout for Floating {
                 let pos = self
                     .move_window(&screen, &dock_area, w, true, screen.x, screen.y)
                     .0;
-                let size = Size {
+                let mut size = Size {
                     width: (screen.width) / 2 - 2 * CONFIG.border_width,
                     height: (screen.height) - CONFIG.border_width,
                 };
-                let mut size =
-                    Floating::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     size.height -= dock.get_size().height;
                 }
@@ -329,12 +281,10 @@ impl Layout for Floating {
                         screen.height / 2 - CONFIG.border_width,
                     )
                     .0;
-                let size = Size {
+                let mut size = Size {
                     width: screen.width - 2 * CONFIG.border_width,
                     height: (screen.height) / 2 - 2 * CONFIG.border_width,
                 };
-                let mut size =
-                    Floating::get_size(&ww, self.resize_window(&ww, w, size.width, size.height));
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     let offset = dock.get_size().height / 2;
                     size.height -= offset;

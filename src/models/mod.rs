@@ -8,7 +8,6 @@ pub mod windowwrapper;
 pub mod workspace;
 
 use serde::{Deserialize, Serialize};
-use std::cell::RefCell;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum WindowState {
@@ -17,6 +16,7 @@ pub enum WindowState {
     Monocle,
     Free,
     Tiled,
+    Destroy
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
@@ -25,35 +25,4 @@ pub enum Direction {
     West,
     East,
     South,
-}
-
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum HandleState {
-    New,
-    Map,
-    Unmap,
-    Focus,
-    Unfocus,
-    Destroy,
-    Move,
-    Center,
-    Shift,
-    Resize,
-    Maximize,
-    MaximizeRestore,
-    Monocle,
-    MonocleRestore,
-    UpdateLayout,
-}
-
-impl From<HandleState> for Vec<HandleState> {
-    fn from(w: HandleState) -> Vec<HandleState> {
-        vec![w]
-    }
-}
-
-impl From<HandleState> for RefCell<Vec<HandleState>> {
-    fn from(w: HandleState) -> RefCell<Vec<HandleState>> {
-        RefCell::new(vec![w])
-    }
 }
