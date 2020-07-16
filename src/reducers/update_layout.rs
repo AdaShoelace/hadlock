@@ -4,8 +4,7 @@ use {
         config::CONFIG,
         layout::LayoutTag,
         models::{
-            monitor::Monitor, rect::*, window_type::WindowType, windowwrapper::*, HandleState,
-            WindowState,
+            monitor::Monitor, rect::*, window_type::WindowType, windowwrapper::*, WindowState,
         },
         state::State,
         wm,

@@ -26,6 +26,23 @@ impl std::fmt::Display for LayoutTag {
     }
 }
 
+pub trait LayoutClone {
+    fn clone_layout(&self) -> Box<dyn Layout>;
+}
+
+impl <T> LayoutClone for T
+where T: Layout + Clone + 'static {
+    fn clone_layout(&self) -> Box<dyn Layout> {
+        Box::new(self.clone())
+    }
+}
+
+impl Clone for Box<dyn Layout> {
+    fn clone(&self) -> Box<dyn Layout> {
+        self.clone_layout()
+    }
+}
+
 pub fn layout_from_tag(tag: LayoutTag) -> Box<dyn Layout> {
     match tag {
         LayoutTag::Floating => Box::new(floating::Floating::default()),
@@ -33,7 +50,7 @@ pub fn layout_from_tag(tag: LayoutTag) -> Box<dyn Layout> {
     }
 }
 
-pub trait Layout: std::fmt::Debug + std::fmt::Display {
+pub trait Layout: std::fmt::Debug + std::fmt::Display + LayoutClone {
     fn get_type(&self) -> LayoutTag;
 
     fn place_window(
@@ -76,16 +93,6 @@ pub trait Layout: std::fmt::Debug + std::fmt::Display {
         windows: Vec<WindowWrapper>,
     ) -> Vec<(Window, Rect)> {
         unimplemented!()
-    }
-
-    fn resize_window(
-        &self,
-        ww: &WindowWrapper,
-        w: Window,
-        width: i32,
-        height: i32,
-    ) -> (Size, Size) {
-        unimplemented!();
     }
 
     fn maximize(

@@ -4,8 +4,7 @@ use {
         config::CONFIG,
         layout::LayoutTag,
         models::{
-            monitor::Monitor, rect::*, window_type::WindowType, windowwrapper::*, HandleState,
-            WindowState,
+            monitor::Monitor, rect::*, window_type::WindowType, windowwrapper::*, WindowState,
         },
         state::State,
         wm,
@@ -50,98 +49,76 @@ impl Reducer<action::MapRequest> for State {
             .get_mut(&self.current_monitor)
             .expect("MapRequest: get_client_mut");
 
-        if mon.contains_window(action.win) {
-            let ww = match mon.remove_window(action.win) {
-                Some(ww) => ww,
-                None => {
-                    //let class = self.lib.get_class_hint(action.win);
-                    //debug!("{:?} not in ws: {}", class, mon.current_ws);
-                    return;
-                }
-            };
-            mon.add_window(
-                action.win,
-                WindowWrapper {
-                    handle_state: HandleState::Map.into(),
-                    ..ww
-                },
-            );
-        } else {
-            if mon.contains_window(action.parent) {
-                self.lib.map_window(action.win);
-                self.lib.take_focus(action.win);
-                return;
-            }
-            let windows = mon.place_window(action.win);
-            //debug!("Place in map_request: {:?}", windows);
-            debug!(
-                "Windows in mon before place_window: {:?}",
-                mon.get_current_ws()
-                    .unwrap()
-                    .clients
-                    .keys()
-                    .collect::<Vec<&Window>>()
-            );
-            let window_amount = windows.len();
-            //let _ = windows.into_iter().for_each(|(win, rect)| {
-            for (win, rect) in windows.into_iter() {
-                match mon.remove_window(win) {
-                    Some(ww) => {
-                        let handle_state = if ww.current_state == WindowState::Maximized
-                            || ww.current_state == WindowState::Monocle
-                        {
-                            vec![
-                                HandleState::MaximizeRestore,
-                                HandleState::Move,
-                                HandleState::Resize,
-                                HandleState::Unfocus,
-                            ]
-                        } else {
-                            vec![HandleState::Move, HandleState::Resize, HandleState::Unfocus]
-                        };
-                        let ww = WindowWrapper {
-                            window_rect: rect,
-                            current_state: WindowState::Free,
-                            handle_state: handle_state.into(),
-                            ..ww
-                        };
-                        mon.add_window(win, ww);
-                    }
-                    None => {
-                        if win == action.win {
-                            debug!("Mapping window not already in mon");
-                            let mut ww = {
-                                if window_amount == 1
-                                    && mon.get_current_layout().unwrap() != LayoutTag::Floating
-                                {
-                                    let mut ww = WindowWrapper::new(action.win, rect, false);
-                                    ww.previous_state = WindowState::Maximized;
-                                    ww.current_state = WindowState::Maximized;
-                                    ww.handle_state
-                                        .replace(vec![HandleState::New, HandleState::Maximize]);
-                                    ww
-                                } else {
-                                    WindowWrapper::new(action.win, rect, false)
-                                }
-                            };
-
-                            ww.append_handle_state(vec![HandleState::Focus]);
-                            self.focus_w = action.win;
-                            mon.add_window(action.win, ww);
-                            mon.get_current_ws_mut().unwrap().focus_w = self.focus_w;
-                        }
-                    }
-                };
-            } //);
-            debug!("Windows in mon after place_window:\n");
+        if mon.contains_window(action.parent) {
+            self.lib.map_window(action.win);
+            self.lib.take_focus(action.win);
+            return;
+        }
+        let windows = mon.place_window(action.win);
+        debug!(
+            "Windows in mon before place_window: {:?}",
             mon.get_current_ws()
                 .unwrap()
                 .clients
-                .iter()
-                .for_each(|(key, val)| {
-                    debug!("{} : {:?}", key, val.handle_state);
-                });
-        }
+                .keys()
+                .collect::<Vec<&Window>>()
+        );
+        let window_amount = windows.len();
+        for (win, rect) in windows.into_iter() {
+            match mon.remove_window(win) {
+                Some(ww) => {
+                    if ww.current_state == WindowState::Maximized
+                        || ww.current_state == WindowState::Monocle
+                    {
+                        mon.add_window(
+                            win,
+                            WindowWrapper {
+                                window_rect: rect,
+                                previous_state: ww.current_state,
+                                current_state: WindowState::Free,
+                                ..ww
+                            },
+                        )
+                    } else {
+                        mon.add_window(
+                            win,
+                            WindowWrapper {
+                                window_rect: rect,
+                                current_state: WindowState::Free,
+                                ..ww
+                            },
+                        );
+                    };
+                }
+                None => {
+                    if win == action.win {
+                        debug!("Mapping window not already in mon");
+                        let ww = if window_amount == 1
+                            && mon.get_current_layout().unwrap() != LayoutTag::Floating
+                        {
+                            let mut ww = WindowWrapper::new(action.win, rect, false);
+                            ww.previous_state = WindowState::Maximized;
+                            ww.current_state = WindowState::Maximized;
+                            ww
+                        } else {
+                            WindowWrapper::new(action.win, rect, false)
+                        };
+
+                        self.focus_w = action.win;
+                        mon.add_window(action.win, ww);
+                        mon.get_current_ws_mut().unwrap().focus_w = self.focus_w;
+                    }
+                }
+            };
+        } //);
+        debug!("Windows in mon after place_window:\n");
+        mon.get_current_ws()
+            .unwrap()
+            .clients
+            .iter()
+            .for_each(|(key,_)| {
+                debug!("{}", key);
+            });
     }
 }
 
@@ -179,23 +156,19 @@ fn handle_transient_window(state: &mut State, action: &action::MapRequest) {
         }
         None => return,
     };
-    let ww = WindowWrapper::new(
-        action.win,
-        Rect::new(
-            pos,
-            Size {
-                width: trans_size.width as i32,
-                height: trans_size.height as i32,
-            },
-        ),
-        true,
-    );
     mon.add_window(
-        ww.window(),
-        WindowWrapper {
-            handle_state: HandleState::New.into(),
-            ..ww
-        },
+        action.win,
+        WindowWrapper::new(
+            action.win,
+            Rect::new(
+                pos,
+                Size {
+                    width: trans_size.width as i32,
+                    height: trans_size.height as i32,
+                },
+            ),
+            true,
+        ),
     );
 }
 

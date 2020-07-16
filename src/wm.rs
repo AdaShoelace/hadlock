@@ -1,9 +1,6 @@
 use crate::{
     layout::LayoutTag,
-    models::{
-        monitor::Monitor, rect::*, screen::*, windowwrapper::*, workspace::*, HandleState,
-        WindowState,
-    },
+    models::{monitor::Monitor, rect::*, screen::*, windowwrapper::*, workspace::*, WindowState},
     state::State,
     xlibwrapper::xlibmodels::*,
 };
@@ -27,7 +24,6 @@ pub fn toggle_maximize(mon: &Monitor, ww: WindowWrapper) -> WindowWrapper {
             window_rect: Rect::new(ww.restore_position, ww.restore_size),
             previous_state: ww.current_state,
             current_state: ww.previous_state,
-            handle_state: vec![HandleState::MaximizeRestore, HandleState::Focus].into(),
             ..ww
         },
         _ => {
@@ -38,7 +34,6 @@ pub fn toggle_maximize(mon: &Monitor, ww: WindowWrapper) -> WindowWrapper {
                 window_rect: Rect::new(pos, size),
                 previous_state: ww.current_state,
                 current_state: WindowState::Maximized,
-                handle_state: HandleState::Maximize.into(),
                 ..ww
             }
         }
@@ -52,7 +47,6 @@ pub fn toggle_monocle(mon: &Monitor, ww: WindowWrapper) -> WindowWrapper {
             window_rect: Rect::new(ww.restore_position, ww.restore_size),
             previous_state: ww.current_state,
             current_state: ww.previous_state,
-            handle_state: HandleState::MonocleRestore.into(),
             ..ww
         },
         _ => {
@@ -63,7 +57,6 @@ pub fn toggle_monocle(mon: &Monitor, ww: WindowWrapper) -> WindowWrapper {
                 window_rect: Rect::new(pos, size),
                 previous_state: ww.current_state,
                 current_state: WindowState::Monocle,
-                handle_state: HandleState::Monocle.into(),
                 ..ww
             }
         }
@@ -104,69 +97,40 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
         return Some(());
     }
 
-    mon.swap_ws(mon.current_ws, |_mon, mut ws| {
-        ws.append_handle_state(vec![HandleState::Unfocus]);
-        ws
-    });
-
     let mon = match get_mon_by_ws(state, ws) {
         Some(mon) => state.monitors.get_mut(&mon)?,
         None => state.monitors.get_mut(&state.current_monitor)?,
     };
 
     if ws == mon.current_ws {
-        mon.handle_state.replace(HandleState::Focus.into());
         let mon = state.monitors.get_mut(&state.current_monitor)?;
         mon.mouse_follow.replace(true);
 
-        mon.swap_ws(mon.current_ws, |_mon, mut ws| {
-            ws.append_handle_state(vec![HandleState::Unfocus]);
-            ws
-        });
         let mon = state.monitors.get_mut(&get_mon_by_ws(state, ws)?)?;
 
-        let newest = /*match mon.get_newest() {
-            Some((win, _)) => *win,
-            None => {
-                return Some(());
-            }
-        };*/ mon.get_current_ws().unwrap().focus_w;
+        let newest = mon.get_current_ws().unwrap().focus_w;
 
-        mon.swap_window(newest, |_mon, ww| WindowWrapper {
-            handle_state: {
-                let old = ww.handle_state.into_inner();
-                let mut old = old
-                    .into_iter()
-                    .filter(|hs| *hs != HandleState::Unfocus)
-                    .collect::<Vec<HandleState>>();
-                let mut appendage = vec![HandleState::Focus];
-                old.append(&mut appendage);
-                old.into()
-            },
-            ..ww
-        });
         state.focus_w = newest;
         state.current_monitor = mon.id;
         state.ws_switch = true;
         return Some(());
     }
-
-    mon.swap_ws(mon.current_ws, |_mon, mut ws| {
-        ws.append_handle_state(vec![HandleState::Unmap, HandleState::Unfocus]);
+    let pos = state.scratchpad;
+    mon.swap_ws(mon.current_ws, |_, mut ws| {
+        ws.apply_to_all(|ww| ww.set_position(pos));
         ws
     });
 
     if mon.contains_ws(ws) {
         let mut new_ws = mon.remove_ws(ws)?;
-        new_ws.append_handle_state(vec![HandleState::Map]);
+        new_ws.apply_to_all(|ww| {
+            ww.set_position(ww.get_restore_position());
+        });
         let win = new_ws.focus_w;
         debug!(
             "new_ws clients: {:?}",
             new_ws.clients.keys().collect::<Vec<&Window>>()
         );
-        if let Some(client) = new_ws.clients.get_mut(&win) {
-            client.append_handle_state(HandleState::Focus.into());
-        }
         state.focus_w = new_ws.focus_w;
         mon.add_ws(new_ws);
         debug!("new_ws.focus_w: 0x{:x}", win);
@@ -179,7 +143,7 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
         mon.remove_ws(mon.current_ws);
     }
     mon.current_ws = ws;
-    mon.handle_state.replace(HandleState::Focus.into());
+    state.current_monitor = mon.id;
     mon.mouse_follow.replace(false);
     state.latest_cursor_pos = state.lib.pointer_pos(state.lib.get_root());
     state.ws_switch = true;
@@ -205,16 +169,12 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         debug!("is current");
         let prev_ws = mon.current_ws;
         mon.current_ws = ws;
-        state.lib.unmap_window(w);
         let windows = mon.place_window(w);
-        let (current_state, handle_state) =
+        let current_state =
             if windows.len() == 1 && mon.get_current_layout()? != LayoutTag::Floating {
-                (
-                    WindowState::Maximized,
-                    vec![HandleState::Maximize, HandleState::Map],
-                )
+                WindowState::Maximized
             } else {
-                (WindowState::Free, HandleState::Map.into())
+                WindowState::Free
             };
         mon.add_window(w, ww.clone());
         for (win, rect) in windows.into_iter() {
@@ -226,14 +186,12 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
                 window_rect: rect,
                 previous_state: WindowState::Free,
                 current_state,
-                handle_state: handle_state.clone().into(),
                 toc: if win == w { new_ww.toc } else { ww.toc },
                 ..ww
             });
             if win == w {
                 mon.swap_window(new_win, |_mon, win_wrap| WindowWrapper {
                     current_state,
-                    handle_state: handle_state.clone().into(),
                     toc: ww.toc,
                     ..win_wrap
                 });
@@ -248,14 +206,11 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         mon.current_ws = ws;
         mon.add_window(w, ww.clone());
         let windows = mon.place_window(w);
-        let (current_state, handle_state) =
+        let current_state =
             if windows.len() == 1 && mon.get_current_layout()? != LayoutTag::Floating {
-                (
-                    WindowState::Maximized,
-                    vec![HandleState::Maximize, HandleState::Map],
-                )
+                WindowState::Maximized
             } else {
-                (WindowState::Free, HandleState::Map.into())
+                WindowState::Free
             };
         for (win, rect) in windows.into_iter() {
             let (new_win, new_ww) = mon.get_newest().clone().unwrap();
@@ -266,7 +221,6 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
                 window_rect: rect,
                 previous_state: WindowState::Free,
                 current_state,
-                handle_state: handle_state.clone().into(),
                 toc: if win == w { new_ww.toc } else { ww.toc },
                 ..ww
             });
@@ -278,22 +232,25 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
                 });
             }
         }
-
+        mon.get_current_ws_mut().unwrap().focus_w = *mon.get_newest().unwrap().0;
         mon.current_ws = prev_ws;
-        state.lib.unmap_window(w);
+        if let (Some(newest), Some(ws)) = (
+            mon.get_newest().map(|(newest, _)| newest).copied(),
+            mon.get_current_ws_mut(),
+        ) {
+            debug!("heeeey you!");
+            ws.focus_w = newest;
+        }
     } else {
         let prev_ws = mon.current_ws;
         mon.current_ws = ws;
         mon.add_ws(Workspace::new(ws, state.lib.get_root()));
         let windows = mon.place_window(w);
-        let (current_state, handle_state) =
+        let current_state =
             if windows.len() == 1 && mon.get_current_layout()? != LayoutTag::Floating {
-                (
-                    WindowState::Maximized,
-                    vec![HandleState::Maximize, HandleState::Map],
-                )
+                WindowState::Maximized
             } else {
-                (WindowState::Free, vec![HandleState::Map])
+                WindowState::Free
             };
 
         windows.into_iter().for_each(|(win, rect)| {
@@ -302,14 +259,19 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
                 previous_state: WindowState::Free,
                 current_state,
                 window_rect: rect,
-                handle_state: handle_state.clone().into(),
                 ..ww
             };
-            debug!("handle_states: {:?}", new_ww.handle_state);
             mon.add_window(win, new_ww);
         });
+        mon.get_current_ws_mut().unwrap().focus_w = *mon.get_newest().unwrap().0;
         mon.current_ws = prev_ws;
-        state.lib.unmap_window(w);
+        if let (Some(newest), Some(ws)) = (
+            mon.get_newest().map(|(newest, _)| newest).copied(),
+            mon.get_current_ws_mut(),
+        ) {
+            debug!("hola compadre");
+            ws.focus_w = newest;
+        }
     }
 
     Some(())
@@ -333,42 +295,23 @@ pub fn reorder(state: &mut State) -> Option<()> {
 
     let rects = mon.reorder(state.focus_w, &windows);
 
-    let (current_state, handle_state) = if mon.get_current_layout()? == LayoutTag::Floating {
-        (
-            WindowState::Free,
-            vec![HandleState::Move, HandleState::Resize],
-        )
+    let current_state = if mon.get_current_layout()? == LayoutTag::Floating {
+        WindowState::Free
     } else if rects.len() == 1 {
-        (WindowState::Maximized, vec![HandleState::Maximize])
+        WindowState::Maximized
     } else {
-        (
-            WindowState::Tiled,
-            vec![HandleState::Move, HandleState::Resize],
-        )
+        WindowState::Tiled
     };
 
     for (win, rect) in rects {
         mon.swap_window(win, |_mon, ww| WindowWrapper {
             window_rect: rect,
             current_state,
-            handle_state: handle_state.clone().into(),
             ..ww
         });
     }
     debug!("return from reorder");
     Some(())
-}
-
-#[allow(dead_code)]
-pub fn pointer_is_inside(state: &State, screen: &Screen) -> bool {
-    let pointer_pos = state.lib.pointer_pos(state.focus_w);
-    //debug!("pointer pos: {:?}", pointer_pos);
-    let inside_height =
-        pointer_pos.y >= screen.y && pointer_pos.y <= screen.y + screen.height as i32;
-
-    let inside_width = pointer_pos.x >= screen.x && pointer_pos.x <= screen.x + screen.width as i32;
-
-    inside_height && inside_width
 }
 
 pub fn point_is_inside(_state: &State, screen: &Screen, x: i32, y: i32) -> bool {
@@ -377,29 +320,6 @@ pub fn point_is_inside(_state: &State, screen: &Screen, x: i32, y: i32) -> bool 
     let inside_width = x >= screen.x && x <= screen.x + screen.width as i32;
 
     inside_height && inside_width
-}
-
-pub fn state_contains_window(state: &State, win: Window) -> Option<(MonitorId, u32)> {
-    for mon in state.monitors.values() {
-        if mon.contains_window(win) {
-            return Some((mon.id, mon.get_ws_by_window(win).unwrap()));
-        }
-    }
-    None
-}
-
-#[allow(dead_code)]
-pub fn get_monitor_by_mouse(state: &State) -> MonitorId {
-    let mon_vec = state
-        .monitors
-        .iter()
-        .filter(|(_key, mon)| pointer_is_inside(state, &mon.screen))
-        .map(|(key, _mon)| *key)
-        .collect::<Vec<u32>>();
-    match mon_vec.get(0) {
-        Some(mon_id) => *mon_id,
-        None => state.current_monitor,
-    }
 }
 
 pub fn get_monitor_by_point(state: &State, x: i32, y: i32) -> MonitorId {

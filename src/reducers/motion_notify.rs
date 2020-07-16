@@ -3,7 +3,7 @@ use {
     crate::{
         config::CONFIG,
         layout::LayoutTag,
-        models::{rect::*, window_type::WindowType, windowwrapper::*, HandleState, WindowState},
+        models::{rect::*, window_type::WindowType, windowwrapper::*, WindowState},
         state::State,
         wm,
         xlibwrapper::action,
@@ -25,9 +25,6 @@ impl Reducer<action::MotionNotify> for State {
         if self.current_monitor != actual_mon {
             if let Some(mon) = self.monitors.get_mut(&old_mon) {
                 mon.mouse_follow.replace(false);
-                if let Some(client) = mon.get_client(self.focus_w) {
-                    client.handle_state.replace(HandleState::Unfocus.into());
-                }
             }
 
             self.current_monitor = actual_mon;
@@ -36,7 +33,6 @@ impl Reducer<action::MotionNotify> for State {
                 .monitors
                 .get_mut(&self.current_monitor)
                 .expect("MotionNotify - monitor - get_mut - change handle state");
-            mon.handle_state.replace(HandleState::Focus.into());
             mon.mouse_follow.replace(false);
         }
 
@@ -68,19 +64,17 @@ impl Reducer<action::MotionNotify> for State {
                 return;
             }
 
-            if action.win != self.lib.get_root() {
-                let ww = self
-                    .monitors
-                    .get_mut(&old_mon)
-                    .expect("MotionNotify - old_mon - get_mut")
-                    .remove_window(action.win)
-                    .expect("Trying to remove window in motion_notify");
+            let ww = self
+                .monitors
+                .get_mut(&old_mon)
+                .expect("MotionNotify - old_mon - get_mut")
+                .remove_window(action.win)
+                .expect("Trying to remove window in motion_notify");
 
-                self.monitors
-                    .get_mut(&actual_mon)
-                    .expect("MotionNotify - old_mon - get_mut")
-                    .add_window(action.win, ww);
-            }
+            self.monitors
+                .get_mut(&actual_mon)
+                .expect("MotionNotify - old_mon - get_mut")
+                .add_window(action.win, ww);
 
             let (pos, _) = self
                 .monitors
@@ -95,7 +89,7 @@ impl Reducer<action::MotionNotify> for State {
                 .expect("motion_notify some window");
             if w.current_state != WindowState::Monocle {
                 w.set_position(pos);
-                w.handle_state = HandleState::Move.into();
+                w.set_window_state(WindowState::Free);
             }
             return;
         }

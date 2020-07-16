@@ -1,6 +1,6 @@
 use super::{
     dockarea::DockArea, rect::Rect, screen::Screen, windowwrapper::WindowWrapper,
-    workspace::Workspace, Direction, HandleState,
+    workspace::Workspace, Direction,
 };
 use crate::{
     layout::LayoutTag,
@@ -12,7 +12,7 @@ use crate::{
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Monitor {
     pub id: MonitorId,
     pub screen: Screen,
@@ -20,7 +20,6 @@ pub struct Monitor {
     pub dock_area: DockArea,
     pub current_ws: u32,
     pub mouse_follow: RefCell<bool>,
-    pub handle_state: RefCell<Vec<HandleState>>,
 }
 
 impl Monitor {
@@ -39,7 +38,6 @@ impl Monitor {
             dock_area: Default::default(),
             current_ws,
             mouse_follow: RefCell::new(true),
-            handle_state: RefCell::new(vec![].into()),
         }
     }
 
@@ -171,13 +169,6 @@ impl Monitor {
         Some(())
     }
 
-    pub fn get_current_windows(&self) -> Vec<Window> {
-        match self.get_current_ws() {
-            Some(ws) => ws.clients.keys().copied().collect::<Vec<Window>>(),
-            None => vec![],
-        }
-    }
-
     pub fn get_client_keys(&self) -> Vec<Window> {
         self.workspaces
             .values()
@@ -223,17 +214,6 @@ impl Monitor {
             .expect("Monitor: reorder")
             .layout
             .reorder(focus, &screen, &dock_area, windows.to_vec())
-    }
-
-    pub fn resize_window(&mut self, w: Window, width: i32, height: i32) -> (Size, Size) {
-        let ww = self
-            .get_client(w)
-            .expect("monitor: resize_window 1")
-            .clone();
-        self.get_current_ws_mut()
-            .expect("monitor: resize_window 2")
-            .layout
-            .resize_window(&ww, w, width, height)
     }
 
     pub fn maximize(&self, w: Window, ww: &WindowWrapper) -> (Position, Size) {
