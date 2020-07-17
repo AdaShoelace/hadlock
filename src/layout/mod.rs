@@ -102,7 +102,25 @@ pub trait Layout: std::fmt::Debug + std::fmt::Display + LayoutClone {
         ww: &WindowWrapper,
         w: Window,
     ) -> (Position, Size) {
-        unimplemented!();
+        let pos = self.move_window(screen, dock_area, w, true, screen.x, screen.y);
+        match dock_area.as_rect(&screen) {
+            Some(dock) => {
+                let size = 
+                    Size {
+                        width: screen.width,
+                        height: screen.height - dock.get_size().height
+                    };
+                (pos.0, size)
+            }
+            None => {
+                let size = 
+                    Size {
+                        width: screen.width,
+                        height: screen.height
+                    };
+                (pos.0, size)
+            }
+        }
     }
 
     fn monocle(
@@ -112,7 +130,9 @@ pub trait Layout: std::fmt::Debug + std::fmt::Display + LayoutClone {
         ww: &WindowWrapper,
         w: Window,
     ) -> (Position, Size) {
-        unimplemented!();
+        let pos = self.move_window(screen, dock_area, w, false, screen.x, screen.y);
+        let size = Size { width: screen.width, height: screen.height };
+        (pos.0, size)
     }
 
     fn shift_window(
