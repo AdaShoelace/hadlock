@@ -139,7 +139,7 @@ impl XlibWrapper {
             for mod_key in mod_masks_vec() {
                 for key in &key_list {
                     if let Some(key_sym) = keysym_lookup::into_keysym(&key) {
-                        self.grab_keys(self.get_root(), key_sym, CONFIG.super_key | mod_key);
+                        self.grab_keys(self.get_root(), key_sym, CONFIG.mod_key | mod_key);
                     }
                 }
             }
