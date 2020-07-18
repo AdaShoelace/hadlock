@@ -105,6 +105,9 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     if ws == mon.current_ws {
         let mon = state.monitors.get_mut(&state.current_monitor)?;
         mon.mouse_follow.replace(true);
+        
+        let curr_ws = mon.get_current_ws_mut()?;
+        curr_ws.focus_w = curr_ws.get_newest().map(|(win, _)| *win).unwrap_or(state.lib.get_root());
 
         let mon = state.monitors.get_mut(&get_mon_by_ws(state, ws)?)?;
 
@@ -197,7 +200,15 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
                 });
             }
         }
+        mon.get_current_ws_mut().unwrap().focus_w = *mon.get_newest().unwrap().0;
         mon.current_ws = prev_ws;
+        if let (Some(newest), Some(ws)) = (
+            mon.get_newest().map(|(newest, _)| newest).copied(),
+            mon.get_current_ws_mut(),
+        ) {
+            debug!("heeeey you!");
+            ws.focus_w = newest;
+        }
         return Some(());
     }
 
@@ -266,7 +277,7 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         mon.get_current_ws_mut().unwrap().focus_w = *mon.get_newest().unwrap().0;
         mon.current_ws = prev_ws;
         if let (Some(newest), Some(ws)) = (
-            mon.get_newest().map(|(newest, _)| newest).copied(),
+            mon.get_newest().map(|(newest, _)| *newest),
             mon.get_current_ws_mut(),
         ) {
             debug!("hola compadre");
