@@ -101,7 +101,7 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
         Some(mon) => state.monitors.get_mut(&mon)?,
         None => state.monitors.get_mut(&state.current_monitor)?,
     };
-
+    debug!("Mon: {} current_ws: {}", mon.id, mon.current_ws);
     if ws == mon.current_ws {
         let mon = state.monitors.get_mut(&state.current_monitor)?;
         mon.mouse_follow.replace(true);
@@ -139,7 +139,7 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     }
 
     state.current_monitor = mon.id;
-    if mon.workspaces.get(&mon.current_ws)?.clients.is_empty() {
+    if mon.workspaces.get(&mon.current_ws)?.clients.is_empty() && !mon.workspaces.is_empty() {
         mon.remove_ws(mon.current_ws);
     }
     mon.current_ws = ws;
