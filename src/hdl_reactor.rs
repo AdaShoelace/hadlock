@@ -48,7 +48,7 @@ impl Reactor<State> for HdlReactor {
                     _ => (),
                 }
             }
-            mon.handle_state.replace(vec![].into());
+            mon.handle_state.replace(vec![]);
 
             mon.workspaces.iter().for_each(|(_key, ws)| {
                 //debug!("ws {} has len: {}", key, ws.clients.len());
@@ -165,7 +165,7 @@ impl Reactor<State> for HdlReactor {
                             _ => (),
                         });
                     if set_handled {
-                        val.handle_state.replace(vec![].into());
+                        val.handle_state.replace(vec![]);
                     }
                 });
                 self.lib.flush();
