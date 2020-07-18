@@ -379,6 +379,7 @@ pub fn point_is_inside(_state: &State, screen: &Screen, x: i32, y: i32) -> bool 
     inside_height && inside_width
 }
 
+#[allow(dead_code)]
 pub fn state_contains_window(state: &State, win: Window) -> Option<(MonitorId, u32)> {
     for mon in state.monitors.values() {
         if mon.contains_window(win) {
