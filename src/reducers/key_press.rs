@@ -58,6 +58,7 @@ impl Reducer<action::KeyPress> for State {
 
         match mon.get_client(self.focus_w) {
             Some(_) => {
+                debug!("managed client");
                 managed_client(self, action, has_mod, ws_keys);
             }
             None if action.win == self.lib.get_root() => {
@@ -83,6 +84,8 @@ fn handle_key_effect(
                 .get_client_mut(state.focus_w)?;
 
             ww.set_window_state(WindowState::Destroy);
+            state.focus_w = *state.monitors.get(&state.current_monitor).unwrap().get_newest().unwrap().0;
+            debug!("destroy window");
         }
         KeyEffect::OpenTerm => {
             spawn_process(CONFIG.term.as_str(), vec![]);

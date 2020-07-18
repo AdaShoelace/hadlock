@@ -3,10 +3,10 @@ use {
     crate::models::{internal_action::InternalAction, windowwrapper::*, WindowState},
     crate::state::*,
     crate::{
+        wm,
         xlibwrapper::xlibmodels::*,
         xlibwrapper::DisplayServer,
         xlibwrapper::{masks::*, util::*},
-        wm
     },
     reducer::*,
     std::rc::Rc,
@@ -119,24 +119,25 @@ impl Reactor<State> for HdlReactor {
                                 self.lib.center_cursor(window);
                                 self.set_focus(window, ww);
                             }
-                            (_, WindowState::Destroy) => {
-                                self.kill_window(
-                                    window,
-                                    state.clients().keys().map(|w| *w).collect::<Vec<Window>>(),
-                                );
-                                let mon_id = wm::get_mon_by_window(&state, window).expect("How can it still give a monitor?");
-                                let mon = state.monitors.get(&mon_id).unwrap();
-                                if let Some(ww) = mon.get_previous(window) {
-                                    let _ =
-                                        self.tx.send(InternalAction::FocusSpecific(ww.window()));
-                                }
-
-                                if mon.get_newest().is_none() {
-                                    let _ = self.tx.send(InternalAction::Focus);
-                                }
-                            }
                             _ => {}
                         }
+                    }
+                }
+                if ww.current_state == WindowState::Destroy {
+                    debug!("killing window: {}", window);
+                    self.kill_window(
+                        window,
+                        state.clients().keys().map(|w| *w).collect::<Vec<Window>>(),
+                    );
+                    let mon_id = wm::get_mon_by_window(&state, window)
+                        .expect("How can it still give a monitor?");
+                    let mon = state.monitors.get(&mon_id).unwrap();
+                    if let Some(ww) = mon.get_previous(window) {
+                        let _ = self.tx.send(InternalAction::FocusSpecific(ww.window()));
+                    }
+
+                    if mon.get_newest().is_none() {
+                        let _ = self.tx.send(InternalAction::Focus);
                     }
                 }
             }
