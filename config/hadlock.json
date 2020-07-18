@@ -1,5 +1,5 @@
 {
-	"superKey" : "Super",
+	"modKey" : "Super",
 	"borderWidth": 2,
 	"borderColor":	{
 		"Custom": "#480222"
