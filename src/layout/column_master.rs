@@ -11,20 +11,12 @@ use crate::{
     },
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ColumnMaster {
     pub layout_type: LayoutTag,
 }
 
 impl ColumnMaster {
-    fn get_size(ww: &WindowWrapper, size: (Size, Size)) -> Size {
-        if ww.is_decorated() {
-            size.0
-        } else {
-            size.1
-        }
-    }
-
     fn column_maximize(
         &self,
         w: Window,
@@ -218,78 +210,6 @@ impl Layout for ColumnMaster {
         }
     }
 
-    fn resize_window(
-        &self,
-        ww: &WindowWrapper,
-        w: Window,
-        width: i32,
-        height: i32,
-    ) -> (Size, Size) {
-        println!("width: {}", width);
-
-        println!("is window decorated: {}", ww.is_decorated());
-        if let Some(dec_rect) = ww.get_dec_rect() {
-            let dec_size = Size { width, height };
-            let window_size = Size {
-                width,
-                height: height - CONFIG.decoration_height,
-            };
-            (dec_size, window_size)
-        } else {
-            let dec_size = Size {
-                width: 0,
-                height: 0,
-            };
-            let window_size = Size { width, height };
-            (dec_size, window_size)
-        }
-    }
-
-    fn maximize(
-        &self,
-        screen: &Screen,
-        dock_area: &DockArea,
-        ww: &WindowWrapper,
-        w: Window,
-    ) -> (Position, Size) {
-        let pos = self.move_window(screen, dock_area, w, true, screen.x, screen.y);
-        match dock_area.as_rect(&screen) {
-            Some(dock) => {
-                let size = ColumnMaster::get_size(
-                    &ww,
-                    self.resize_window(
-                        &ww,
-                        w,
-                        screen.width,
-                        screen.height - dock.get_size().height,
-                    ),
-                );
-                (pos.0, size)
-            }
-            None => {
-                let size = ColumnMaster::get_size(
-                    &ww,
-                    self.resize_window(&ww, w, screen.width, screen.height),
-                );
-                (pos.0, size)
-            }
-        }
-    }
-
-    fn monocle(
-        &self,
-        screen: &Screen,
-        dock_area: &DockArea,
-        ww: &WindowWrapper,
-        w: Window,
-    ) -> (Position, Size) {
-        // TODO: implement for decorated windows
-        let pos = self.move_window(screen, dock_area, w, false, screen.x, screen.y);
-        let size =
-            ColumnMaster::get_size(&ww, self.resize_window(&ww, w, screen.width, screen.height));
-        (pos.0, size)
-    }
-
     fn shift_window(
         &self,
         screen: &Screen,
@@ -311,10 +231,7 @@ impl Layout for ColumnMaster {
                     width: screen.width - 2 * CONFIG.border_width,
                     height: (screen.height) / 2 - 2 * CONFIG.border_width,
                 };
-                let mut size = ColumnMaster::get_size(
-                    &ww,
-                    self.resize_window(&ww, w, size.width, size.height),
-                );
+                let mut size = ww.get_size();
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     size.height -= dock.get_size().height / 2
                 }
@@ -338,10 +255,7 @@ impl Layout for ColumnMaster {
                     width: (screen.width) / 2 - 2 * CONFIG.border_width,
                     height: screen.height - CONFIG.border_width,
                 };
-                let mut size = ColumnMaster::get_size(
-                    &ww,
-                    self.resize_window(&ww, w, size.width, size.height),
-                );
+                let mut size = ww.get_size();
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     size.height -= dock.get_size().height;
                 }
@@ -358,10 +272,7 @@ impl Layout for ColumnMaster {
                     width: (screen.width) / 2 - 2 * CONFIG.border_width,
                     height: (screen.height) - CONFIG.border_width,
                 };
-                let mut size = ColumnMaster::get_size(
-                    &ww,
-                    self.resize_window(&ww, w, size.width, size.height),
-                );
+                let mut size = ww.get_size();
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     size.height -= dock.get_size().height;
                 }
@@ -385,10 +296,7 @@ impl Layout for ColumnMaster {
                     width: screen.width - 2 * CONFIG.border_width,
                     height: (screen.height) / 2 - 2 * CONFIG.border_width,
                 };
-                let mut size = ColumnMaster::get_size(
-                    &ww,
-                    self.resize_window(&ww, w, size.width, size.height),
-                );
+                let mut size = ww.get_size();
                 if let Some(dock) = dock_area.as_rect(&screen) {
                     let offset = dock.get_size().height / 2;
                     size.height -= offset;

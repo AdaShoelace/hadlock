@@ -6,7 +6,7 @@ use {
         layout::LayoutTag,
         models::{
             internal_action, rect::*, window_type::WindowType, windowwrapper::*, Direction,
-            HandleState, WindowState,
+            WindowState,
         },
         state::State,
         wm,
@@ -58,6 +58,7 @@ impl Reducer<action::KeyPress> for State {
 
         match mon.get_client(self.focus_w) {
             Some(_) => {
+                debug!("managed client");
                 managed_client(self, action, has_mod, ws_keys);
             }
             None if action.win == self.lib.get_root() => {
@@ -82,7 +83,15 @@ fn handle_key_effect(
                 .get_mut(&state.current_monitor)?
                 .get_client_mut(state.focus_w)?;
 
-            ww.handle_state.replace(HandleState::Destroy.into());
+            ww.set_window_state(WindowState::Destroy);
+            state.focus_w = *state
+                .monitors
+                .get(&state.current_monitor)
+                .unwrap()
+                .get_newest()
+                .unwrap()
+                .0;
+            debug!("destroy window");
         }
         KeyEffect::OpenTerm => {
             spawn_process(CONFIG.term.as_str(), vec![]);
@@ -101,19 +110,21 @@ fn handle_key_effect(
             if resize {
                 let mon = state.monitors.get_mut(&state.current_monitor)?;
                 if *axis == Axis::Horizontal {
-                    let (_dec_size, size) =
-                        mon.resize_window(state.focus_w, old_size.width + (delta), old_size.height);
+                    let size = Size {
+                        width: old_size.width + (delta),
+                        height: old_size.height,
+                    };
                     mon.swap_window(state.focus_w, |_, ww| WindowWrapper {
                         window_rect: Rect::new(ww.get_position(), size),
-                        handle_state: HandleState::Resize.into(),
                         ..ww
                     });
                 } else {
-                    let (_dec_size, size) =
-                        mon.resize_window(state.focus_w, old_size.width, old_size.height + (delta));
+                    let size = Size {
+                        width: old_size.width,
+                        height: old_size.height + (delta),
+                    };
                     mon.swap_window(state.focus_w, |_mon, ww| WindowWrapper {
                         window_rect: Rect::new(ww.get_position(), size),
-                        handle_state: HandleState::Resize.into(),
                         ..ww
                     });
                 }
@@ -178,7 +189,6 @@ fn handle_key_effect(
                     window_rect: rect,
                     previous_state: ww.current_state,
                     current_state: WindowState::Free,
-                    handle_state: HandleState::Center.into(),
                     ..ww
                 });
             }
@@ -371,7 +381,6 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
         mon.swap_window(win.window(), |_, ww| WindowWrapper {
             previous_state: ww.current_state,
             current_state: WindowState::Snapped,
-            handle_state: HandleState::Shift.into(),
             ..win
         });
     }
@@ -391,14 +400,9 @@ fn swap_master(state: &mut State) -> Option<()> {
                 tmp_toc = ww.toc;
                 client_toc
             },
-            handle_state: HandleState::Unfocus.into(),
             ..ww
         })?;
-        mon.swap_window(win, |_mon, ww| WindowWrapper {
-            toc: tmp_toc,
-            handle_state: HandleState::Focus.into(),
-            ..ww
-        })?;
+        mon.swap_window(win, |_mon, ww| WindowWrapper { toc: tmp_toc, ..ww })?;
         wm::reorder(state);
     }
     Some(())

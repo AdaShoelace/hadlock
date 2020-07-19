@@ -1,22 +1,15 @@
-#![allow(unused_imports)]
-use {
-    crate::{
-        config::CONFIG,
-        models::{rect::*, window_type::WindowType, windowwrapper::*},
-        state::State,
-        xlibwrapper::action,
-        xlibwrapper::core::*,
-        xlibwrapper::util::*,
-        xlibwrapper::xlibmodels::*,
-    },
-    reducer::*,
-    std::cell::RefCell,
-    std::rc::Rc,
-};
+use crate::{models::internal_action::InternalAction, state::State, wm, xlibwrapper::action};
+use reducer::*;
 
 impl Reducer<action::UnmapNotify> for State {
-    fn reduce(&mut self, _action: action::UnmapNotify) {
+    fn reduce(&mut self, action: action::UnmapNotify) {
         //debug!("UnmapNotify");
-        //self.lib.unmap_window(action.win);
+        let mon_id = wm::get_mon_by_window(&self, action.win).unwrap_or(self.current_monitor);
+        let mon = self
+            .monitors
+            .get_mut(&mon_id)
+            .expect("No monitor was found?!");
+        mon.remove_window(action.win);
+        let _ = self.tx.send(InternalAction::UpdateLayout);
     }
 }

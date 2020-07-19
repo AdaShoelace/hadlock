@@ -3,7 +3,8 @@ use {
     crate::{
         config::CONFIG,
         models::{
-            monitor::Monitor, rect::*, window_type::WindowType, windowwrapper::*, HandleState,
+            internal_action::InternalAction, monitor::Monitor, rect::*, window_type::WindowType,
+            windowwrapper::*,
         },
         state::State,
         wm,
@@ -47,6 +48,14 @@ impl Reducer<action::ClientMessageRequest> for State {
                 || data_two == self.lib.xatom().NetWMStateHidden as i64
             {
                 debug!("window: 0x{:x} sent a hidden message", action.win);
+                let mon_id =
+                    wm::get_mon_by_window(&self, action.win).unwrap_or(self.current_monitor);
+                let mon = self
+                    .monitors
+                    .get_mut(&mon_id)
+                    .expect("No monitor was found?!");
+                mon.remove_window(action.win);
+                let _ = self.tx.send(InternalAction::UpdateLayout);
             }
         }
 
