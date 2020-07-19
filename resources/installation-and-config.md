@@ -1,3 +1,22 @@
+## Installation
+build with `cargo build --release` and put the binary in a directory in your `$PATH` eg `/usr/local/bin`  
+Create `/usr/share/xsessions/hadlock.desktop` containing:  
+
+```
+[Desktop Entry]
+Encoding=UTF-8
+Name=Hadlock
+Exec=hadlock ~/.config/hadlock/hadlock.ron
+Comment=Hadlock - a wm for x
+Type=Application
+
+```
+
+
+## Configuration
+The config file is written is json and should be placed in `~/.config/hadlock`  
+
+```ron
 (
     modKey: "Super",
     borderWidth: 2,
@@ -150,7 +169,7 @@
                 program: "feh",
                 args: [
                 "--bg-scale",
-                "/home/pierre/Programming/rust/hobby/hadlock/resources/triangles.jpg"
+                "~/Pictures/triangles.jpg"
                 ]
             ),
             (
@@ -158,9 +177,15 @@
                 program: "polybar",
                 args: [
 				"-q",
-                "--config=/home/pierre/Programming/rust/hobby/hadlock/config/polyconf",
+                "--config=~/.config/polybar/polyconf",
                 "DisplayPort-1"
                 ]
             ),
         ]
         )
+
+```
+
+## Keybindings  
+Fully customizable  
+See example config
