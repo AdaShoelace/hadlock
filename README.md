@@ -12,15 +12,15 @@ It is written completely in rust with an architecture heavily inspired by redux.
 --- 
 
 ## Content
-- ####[Feature examples](./resources/layout-examples.md)
+- [Feature examples](./resources/layout-examples.md)
 
-- ####[Progress](./resources/progress.md)
+- [Progress](./resources/progress.md)
 
-- ####[Planned features](./resources/planned-features.md)
+- [Planned features](./resources/planned-features.md)
 
-- ####[Installation & configuration](./resources/installation-and-config.md)
+- [Installation & configuration](./resources/installation-and-config.md)
 
-- ####[Testing](./resources/testing.md)
+- [Testing](./resources/testing.md)
 
 ---  
 
