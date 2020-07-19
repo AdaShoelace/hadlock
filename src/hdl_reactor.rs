@@ -38,7 +38,6 @@ impl Reactor<State> for HdlReactor {
                 }
                 mon.mouse_follow.replace(false);
             }
-
         }
 
         let mon = state.monitors.get(&state.current_monitor).ok_or("oops")?;
@@ -52,7 +51,6 @@ impl Reactor<State> for HdlReactor {
         {
             self.lib.update_desktops(mon.current_ws, None);
         }
-
 
         let num_of_clients = state.clients().len();
         for ww in state.clients().values() {
@@ -124,7 +122,6 @@ impl Reactor<State> for HdlReactor {
 
                             _ => {}
                         }
-
                     }
                 }
                 if ww.current_state == WindowState::Destroy {
