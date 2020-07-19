@@ -1,14 +1,14 @@
 ### Gaps
-![](./resources/gaps.jpg)
+![](/resources/gaps.jpg)
 ### Multimonitor
-![](./resources/multimonitor.gif)
+![](/resources/multimonitor.gif)
 ---
 ## Layouts  
 ### Floating  
 ---
-![](../hadlock-floating.jpg)
+![](/resources/hadlock-floating.jpg)
 ---
 ### Master pane layout  
 ---
-![](../master_pane.jpg)
+![](/resources/master_pane.jpg)
 ---
