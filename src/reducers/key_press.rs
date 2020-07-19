@@ -102,12 +102,12 @@ fn handle_key_effect(
                 .get(&state.current_monitor)?
                 .get_current_layout()?
                 == LayoutTag::Floating;
-            let old_size = state
+            let client = state
                 .monitors
                 .get(&state.current_monitor)?
-                .get_client(state.focus_w)?
-                .get_size();
-            if resize {
+                .get_client(state.focus_w)?;
+            let old_size = client.get_size();
+            if resize || client.is_trans {
                 let mon = state.monitors.get_mut(&state.current_monitor)?;
                 if *axis == Axis::Horizontal {
                     let size = Size {
