@@ -7,7 +7,7 @@ It is written completely in rust with an architecture heavily inspired by redux.
 
 
 
-![](./resources/hdl-demo.gif)
+![](./resources/demo-2.gif)
 
 --- 
 
