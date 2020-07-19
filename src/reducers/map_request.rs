@@ -116,7 +116,7 @@ impl Reducer<action::MapRequest> for State {
             .unwrap()
             .clients
             .iter()
-            .for_each(|(key,_)| {
+            .for_each(|(key, _)| {
                 debug!("{}", key);
             });
     }

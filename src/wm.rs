@@ -105,9 +105,12 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     if ws == mon.current_ws {
         let mon = state.monitors.get_mut(&state.current_monitor)?;
         mon.mouse_follow.replace(true);
-        
+
         let curr_ws = mon.get_current_ws_mut()?;
-        curr_ws.focus_w = curr_ws.get_newest().map(|(win, _)| *win).unwrap_or(state.lib.get_root());
+        curr_ws.focus_w = curr_ws
+            .get_newest()
+            .map(|(win, _)| *win)
+            .unwrap_or(state.lib.get_root());
 
         let mon = state.monitors.get_mut(&get_mon_by_ws(state, ws)?)?;
 

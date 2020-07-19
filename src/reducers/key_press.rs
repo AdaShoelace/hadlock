@@ -84,7 +84,13 @@ fn handle_key_effect(
                 .get_client_mut(state.focus_w)?;
 
             ww.set_window_state(WindowState::Destroy);
-            state.focus_w = *state.monitors.get(&state.current_monitor).unwrap().get_newest().unwrap().0;
+            state.focus_w = *state
+                .monitors
+                .get(&state.current_monitor)
+                .unwrap()
+                .get_newest()
+                .unwrap()
+                .0;
             debug!("destroy window");
         }
         KeyEffect::OpenTerm => {

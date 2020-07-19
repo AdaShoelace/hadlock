@@ -30,8 +30,10 @@ pub trait LayoutClone {
     fn clone_layout(&self) -> Box<dyn Layout>;
 }
 
-impl <T> LayoutClone for T
-where T: Layout + Clone + 'static {
+impl<T> LayoutClone for T
+where
+    T: Layout + Clone + 'static,
+{
     fn clone_layout(&self) -> Box<dyn Layout> {
         Box::new(self.clone())
     }
@@ -105,19 +107,17 @@ pub trait Layout: std::fmt::Debug + std::fmt::Display + LayoutClone {
         let pos = self.move_window(screen, dock_area, w, true, screen.x, screen.y);
         match dock_area.as_rect(&screen) {
             Some(dock) => {
-                let size = 
-                    Size {
-                        width: screen.width,
-                        height: screen.height - dock.get_size().height
-                    };
+                let size = Size {
+                    width: screen.width,
+                    height: screen.height - dock.get_size().height,
+                };
                 (pos.0, size)
             }
             None => {
-                let size = 
-                    Size {
-                        width: screen.width,
-                        height: screen.height
-                    };
+                let size = Size {
+                    width: screen.width,
+                    height: screen.height,
+                };
                 (pos.0, size)
             }
         }
@@ -131,7 +131,10 @@ pub trait Layout: std::fmt::Debug + std::fmt::Display + LayoutClone {
         w: Window,
     ) -> (Position, Size) {
         let pos = self.move_window(screen, dock_area, w, false, screen.x, screen.y);
-        let size = Size { width: screen.width, height: screen.height };
+        let size = Size {
+            width: screen.width,
+            height: screen.height,
+        };
         (pos.0, size)
     }
 
