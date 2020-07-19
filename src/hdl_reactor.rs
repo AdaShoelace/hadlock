@@ -38,6 +38,7 @@ impl Reactor<State> for HdlReactor {
                 }
                 mon.mouse_follow.replace(false);
             }
+
         }
 
         let mon = state.monitors.get(&state.current_monitor).ok_or("oops")?;
@@ -51,6 +52,7 @@ impl Reactor<State> for HdlReactor {
         {
             self.lib.update_desktops(mon.current_ws, None);
         }
+
 
         let num_of_clients = state.clients().len();
         for ww in state.clients().values() {
@@ -119,8 +121,10 @@ impl Reactor<State> for HdlReactor {
                                 self.lib.center_cursor(window);
                                 self.set_focus(window, ww);
                             }
+
                             _ => {}
                         }
+
                     }
                 }
                 if ww.current_state == WindowState::Destroy {
@@ -174,7 +178,7 @@ impl HdlReactor {
         buttons.iter().for_each(|button| {
             self.lib.grab_button(
                 *button,
-                CONFIG.super_key,
+                CONFIG.mod_key,
                 w,
                 false,
                 (ButtonPressMask | ButtonReleaseMask | ButtonMotionMask) as u32,
@@ -210,7 +214,7 @@ impl HdlReactor {
         for mod_key in mod_masks_vec() {
             for key in &key_list {
                 if let Some(key_sym) = keysym_lookup::into_keysym(&key) {
-                    self.lib.grab_keys(w, key_sym, CONFIG.super_key | mod_key);
+                    self.lib.grab_keys(w, key_sym, CONFIG.mod_key | mod_key);
                 }
             }
         }

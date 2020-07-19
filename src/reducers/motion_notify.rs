@@ -59,7 +59,7 @@ impl Reducer<action::MotionNotify> for State {
 
         let new_pos = calculcate_destination(self, &action);
 
-        if (action.state & (Button1Mask | CONFIG.super_key)) == Button1Mask | CONFIG.super_key {
+        if (action.state & (Button1Mask | CONFIG.mod_key)) == Button1Mask | CONFIG.mod_key {
             if action.win == self.lib.get_root() {
                 return;
             }
