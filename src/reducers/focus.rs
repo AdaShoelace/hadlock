@@ -2,9 +2,7 @@
 use {
     crate::{
         config::CONFIG,
-        models::{
-            monitor::Monitor, rect::*, window_type::WindowType, windowwrapper::*, HandleState,
-        },
+        models::{monitor::Monitor, rect::*, window_type::WindowType, windowwrapper::*},
         state::State,
         wm,
         xlibwrapper::action,
@@ -30,7 +28,7 @@ impl Reducer<action::Focus> for State {
                 .expect("Focus - get_monitor");
 
             //unset focus
-            if self.focus_w != self.lib.get_root() {
+            /*if self.focus_w != self.lib.get_root() {
                 let mut old_focus = match curr_mon.remove_window(self.focus_w) {
                     Some(win) => win,
                     None => return,
@@ -40,19 +38,19 @@ impl Reducer<action::Focus> for State {
                     ..old_focus
                 };
                 curr_mon.add_window(self.focus_w, old_focus);
-            }
+            }*/
 
             //set focus
-            let mut new_focus = match curr_mon.remove_window(action.win) {
+            let new_focus = match curr_mon.remove_window(action.win) {
                 Some(win) => win,
                 None => return,
             };
             self.focus_w = action.win;
 
-            new_focus = WindowWrapper {
+            /*new_focus = WindowWrapper {
                 handle_state: HandleState::Focus.into(),
                 ..new_focus
-            };
+            };*/
             curr_mon.get_current_ws_mut().unwrap().focus_w = self.focus_w;
             curr_mon.add_window(self.focus_w, new_focus);
         }

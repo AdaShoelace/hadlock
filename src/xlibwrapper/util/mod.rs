@@ -26,6 +26,28 @@ impl Position {
     }
 }
 
+impl std::ops::Add for Position {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
+    }
+}
+
+impl std::ops::Sub for Position {
+    type Output = Position;
+
+    fn sub(self, other: Position) -> Self {
+        Position {
+            x: self.x - other.x,
+            y: self.y - other.y,
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Size {
     pub width: i32,
@@ -44,6 +66,28 @@ impl From<Screen> for (Position, Size) {
                 height: screen.height,
             },
         )
+    }
+}
+
+impl std::ops::Add for Size {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Self {
+            width: self.width + other.width,
+            height: self.height + other.height,
+        }
+    }
+}
+
+impl std::ops::Sub for Size {
+    type Output = Size;
+
+    fn sub(self, other: Size) -> Self {
+        Size {
+            width: self.width - other.width,
+            height: self.height - other.height,
+        }
     }
 }
 

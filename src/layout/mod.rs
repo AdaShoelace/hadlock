@@ -26,6 +26,25 @@ impl std::fmt::Display for LayoutTag {
     }
 }
 
+pub trait LayoutClone {
+    fn clone_layout(&self) -> Box<dyn Layout>;
+}
+
+impl<T> LayoutClone for T
+where
+    T: Layout + Clone + 'static,
+{
+    fn clone_layout(&self) -> Box<dyn Layout> {
+        Box::new(self.clone())
+    }
+}
+
+impl Clone for Box<dyn Layout> {
+    fn clone(&self) -> Box<dyn Layout> {
+        self.clone_layout()
+    }
+}
+
 pub fn layout_from_tag(tag: LayoutTag) -> Box<dyn Layout> {
     match tag {
         LayoutTag::Floating => Box::new(floating::Floating::default()),
@@ -33,7 +52,7 @@ pub fn layout_from_tag(tag: LayoutTag) -> Box<dyn Layout> {
     }
 }
 
-pub trait Layout: std::fmt::Debug + std::fmt::Display {
+pub trait Layout: std::fmt::Debug + std::fmt::Display + LayoutClone {
     fn get_type(&self) -> LayoutTag;
 
     fn place_window(
@@ -78,16 +97,6 @@ pub trait Layout: std::fmt::Debug + std::fmt::Display {
         unimplemented!()
     }
 
-    fn resize_window(
-        &self,
-        ww: &WindowWrapper,
-        w: Window,
-        width: i32,
-        height: i32,
-    ) -> (Size, Size) {
-        unimplemented!();
-    }
-
     fn maximize(
         &self,
         screen: &Screen,
@@ -95,7 +104,23 @@ pub trait Layout: std::fmt::Debug + std::fmt::Display {
         ww: &WindowWrapper,
         w: Window,
     ) -> (Position, Size) {
-        unimplemented!();
+        let pos = self.move_window(screen, dock_area, w, true, screen.x, screen.y);
+        match dock_area.as_rect(&screen) {
+            Some(dock) => {
+                let size = Size {
+                    width: screen.width,
+                    height: screen.height - dock.get_size().height,
+                };
+                (pos.0, size)
+            }
+            None => {
+                let size = Size {
+                    width: screen.width,
+                    height: screen.height,
+                };
+                (pos.0, size)
+            }
+        }
     }
 
     fn monocle(
@@ -105,7 +130,12 @@ pub trait Layout: std::fmt::Debug + std::fmt::Display {
         ww: &WindowWrapper,
         w: Window,
     ) -> (Position, Size) {
-        unimplemented!();
+        let pos = self.move_window(screen, dock_area, w, false, screen.x, screen.y);
+        let size = Size {
+            width: screen.width,
+            height: screen.height,
+        };
+        (pos.0, size)
     }
 
     fn shift_window(

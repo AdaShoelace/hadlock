@@ -1,4 +1,3 @@
-#![allow(unused_variables, dead_code)]
 use crate::xlibwrapper::util::*;
 use crate::xlibwrapper::xlibmodels::Geometry;
 

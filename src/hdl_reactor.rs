@@ -1,8 +1,9 @@
 use {
     crate::config::{Key, CONFIG},
-    crate::models::{internal_action::InternalAction, windowwrapper::*, HandleState, WindowState},
+    crate::models::{internal_action::InternalAction, windowwrapper::*, WindowState},
     crate::state::*,
     crate::{
+        wm,
         xlibwrapper::xlibmodels::*,
         xlibwrapper::DisplayServer,
         xlibwrapper::{masks::*, util::*},
@@ -15,167 +16,147 @@ use {
 pub struct HdlReactor {
     lib: Box<Rc<dyn DisplayServer>>,
     tx: Sender<InternalAction>,
+    prev_state: State,
 }
 
 impl Reactor<State> for HdlReactor {
-    type Output = ();
+    type Error = Box<dyn std::error::Error>;
 
-    fn react(&self, state: &State) {
-        //debug!("{:#?}", state);
+    fn react(&mut self, state: &State) -> Result<(), Self::Error> {
+        // Monitors
+        if self.prev_state.current_monitor != state.current_monitor {
+            let mon = state.monitors.get(&state.current_monitor).ok_or("oops")?;
+            self.lib.update_desktops(mon.current_ws, None);
+            if *mon.mouse_follow.borrow() {
+                if let Some(win) = mon.get_client(state.focus_w) {
+                    state.lib.center_cursor(win.window());
+                } else {
+                    state.lib.move_cursor(Position {
+                        x: mon.screen.x + mon.screen.width / 2,
+                        y: mon.screen.y + mon.screen.height / 2,
+                    });
+                }
+                mon.mouse_follow.replace(false);
+            }
 
-        state.monitors.values().for_each(|mon| {
-            for handle_state in mon.handle_state.borrow().iter() {
-                match handle_state {
-                    HandleState::Focus => {
-                        debug!("Setting current monitor to: {}", state.current_monitor);
-                        self.lib.update_desktops(mon.current_ws, None);
-                        if *mon.mouse_follow.borrow() {
-                            if let Some(win) = mon.get_client(state.focus_w) {
-                                state.lib.center_cursor(win.window());
-                            } else {
-                                state.lib.move_cursor(Position {
-                                    x: mon.screen.x + mon.screen.width / 2,
-                                    y: mon.screen.y + mon.screen.height / 2,
-                                });
+        }
+
+        let mon = state.monitors.get(&state.current_monitor).ok_or("oops")?;
+        if self
+            .prev_state
+            .monitors
+            .get(&self.prev_state.current_monitor)
+            .unwrap()
+            .current_ws
+            != mon.current_ws
+        {
+            self.lib.update_desktops(mon.current_ws, None);
+        }
+
+
+        let num_of_clients = state.clients().len();
+        for ww in state.clients().values() {
+            let window = ww.window();
+            if !self.prev_state.clients().contains_key(&window) {
+                self.lib.add_to_save_set(window);
+                self.lib.add_to_root_net_client_list(window);
+                if ww.current_state != WindowState::Maximized
+                    || ww.current_state != WindowState::Monocle
+                {
+                    self.lib.set_border_width(window, 0);
+                } else {
+                    self.lib
+                        .set_border_width(window, CONFIG.border_width as u32);
+                }
+                self.lib.set_border_color(window, CONFIG.background_color);
+                self.lib.move_window(window, ww.get_position());
+                self.lib.resize_window(window, ww.get_size());
+                self.subscribe_to_events(window);
+                self.lib.map_window(window);
+                self.set_focus(ww.window(), ww);
+            } else {
+                if let Some(c) = self.prev_state.clients().get(&ww.window()) {
+                    if window == state.focus_w && window != self.prev_state.focus_w {
+                        self.set_focus(ww.window(), ww);
+                        self.lib.flush();
+                    } else if window != state.focus_w {
+                        self.unset_focus(window, ww);
+                    }
+                    if c.get_position() != ww.get_position() {
+                        self.lib.move_window(window, ww.get_position());
+                    }
+
+                    if c.get_size() != ww.get_size() {
+                        self.lib.resize_window(window, ww.get_size());
+                    }
+
+                    if ww.is_trans {
+                        self.lib.raise_window(window);
+                    }
+
+                    if self
+                        .prev_state
+                        .clients()
+                        .get(&window)
+                        .unwrap()
+                        .current_state
+                        != ww.current_state
+                    {
+                        match (ww.previous_state, ww.current_state) {
+                            (_, WindowState::Maximized) | (_, WindowState::Monocle) => {
+                                self.lib.set_border_width(window, 0);
+                                self.lib.raise_window(window);
                             }
-                            mon.mouse_follow.replace(false);
+                            (WindowState::Maximized, current) | (WindowState::Monocle, current)
+                                if current != WindowState::Maximized
+                                    || current != WindowState::Monocle =>
+                            {
+                                if num_of_clients > 1 {
+                                    self.lib
+                                        .set_border_width(window, CONFIG.border_width as u32);
+                                    self.lib.set_border_color(window, CONFIG.background_color);
+                                }
+                            }
+                            (_, WindowState::Snapped) => {
+                                self.lib.center_cursor(window);
+                                self.set_focus(window, ww);
+                            }
+
+                            _ => {}
                         }
+
                     }
-                    HandleState::UpdateLayout => {
-                        debug!("layout shall be updated");
-                        let _ = self.tx.send(InternalAction::UpdateLayout);
+                }
+                if ww.current_state == WindowState::Destroy {
+                    debug!("killing window: {}", window);
+                    self.kill_window(
+                        window,
+                        state.clients().keys().map(|w| *w).collect::<Vec<Window>>(),
+                    );
+                    let mon_id = wm::get_mon_by_window(&state, window)
+                        .expect("How can it still give a monitor?");
+                    let mon = state.monitors.get(&mon_id).unwrap();
+                    if let Some(ww) = mon.get_previous(window) {
+                        let _ = self.tx.send(InternalAction::FocusSpecific(ww.window()));
                     }
-                    _ => (),
+
+                    if mon.get_newest().is_none() {
+                        let _ = self.tx.send(InternalAction::Focus);
+                    }
                 }
             }
-            mon.handle_state.replace(vec![]);
-
-            mon.workspaces.iter().for_each(|(_key, ws)| {
-                //debug!("ws {} has len: {}", key, ws.clients.len());
-                ws.clients.iter().for_each(|(key, val)| {
-                    if mon.id != state.current_monitor {
-                        val.handle_state.replace_with(|old| {
-                            let mut handle_state = vec![HandleState::Unfocus];
-                            old.append(&mut handle_state);
-                            old.to_vec()
-                        });
-                    }
-
-                    if val.is_trans {
-                        self.lib.raise_window(*key);
-                    }
-                    let mut set_handled = false;
-                    let handle_state = val.handle_state.clone();
-                    if !handle_state.borrow().is_empty() {
-                        debug!("window: 0x{:x}, handle_state: {:?}", *key, handle_state);
-                    }
-                    handle_state
-                        .into_inner()
-                        .iter()
-                        .for_each(|handle_state| match handle_state {
-                            HandleState::New => {
-                                self.lib.add_to_save_set(*key);
-                                self.lib.add_to_root_net_client_list(*key);
-                                self.lib.set_border_width(*key, CONFIG.border_width as u32);
-                                self.lib.set_border_color(*key, CONFIG.background_color);
-                                self.lib.move_window(*key, val.get_position());
-                                self.lib.resize_window(*key, val.get_size());
-                                self.subscribe_to_events(*key);
-                                self.lib.map_window(*key);
-                                set_handled = true;
-                            }
-                            HandleState::Map => {
-                                self.lib.move_window(*key, val.get_position());
-                                self.lib.resize_window(*key, val.get_size());
-                                self.lib.map_window(*key);
-                                set_handled = true;
-                            }
-                            HandleState::Unmap => {
-                                self.lib.unmap_window(*key);
-                                set_handled = true;
-                            }
-                            HandleState::Move => {
-                                self.lib.move_window(*key, val.get_position());
-                                set_handled = true;
-                            }
-                            HandleState::Center => {
-                                self.lib.move_window(*key, val.get_position());
-                                self.lib.resize_window(*key, val.get_size());
-                                self.lib.raise_window(*key);
-                                self.set_focus(*key, val);
-                                set_handled = true;
-                            }
-                            HandleState::Resize => {
-                                self.lib.resize_window(*key, val.get_size());
-                                set_handled = true;
-                            }
-                            HandleState::Focus => {
-                                self.set_focus(*key, &val);
-                                debug!("reactor, ws::focus_w: 0x{:x}", ws.focus_w);
-                                set_handled = true;
-                            }
-                            HandleState::Unfocus => {
-                                self.unset_focus(*key, &val);
-                                debug!("Unfocusing: {}", key);
-                                set_handled = true;
-                                //let _ = self.tx.send(InternalAction::Focus);
-                            }
-                            HandleState::Shift => {
-                                self.lib.move_window(*key, val.get_position());
-                                self.lib.resize_window(*key, val.get_size());
-                                self.lib.center_cursor(*key);
-                                self.set_focus(*key, val);
-                                set_handled = true;
-                            }
-                            HandleState::Maximize | HandleState::Monocle => {
-                                debug!("Maximise: {}", key);
-                                self.lib.move_window(*key, val.get_position());
-                                self.lib.resize_window(*key, val.get_size());
-                                self.set_focus(*key, &val);
-                                self.lib.set_border_width(*key, 0);
-                                self.lib.raise_window(*key);
-                                set_handled = true;
-                            }
-                            HandleState::MaximizeRestore | HandleState::MonocleRestore => {
-                                self.lib.move_window(*key, val.get_position());
-                                self.lib.resize_window(*key, val.get_size());
-                                if ws.clients.len() > 1 {
-                                    self.lib.set_border_width(*key, CONFIG.border_width as u32);
-                                    self.lib.set_border_color(*key, CONFIG.background_color);
-                                }
-                                set_handled = true;
-                            }
-                            HandleState::Destroy => {
-                                let windows = state
-                                    .monitors
-                                    .get(&state.current_monitor)
-                                    .expect("HdlReactor - Destroy")
-                                    .get_current_windows();
-                                self.kill_window(*key, windows);
-
-                                if let Some(ww) = mon.get_previous(*key) {
-                                    let _ =
-                                        self.tx.send(InternalAction::FocusSpecific(ww.window()));
-                                }
-
-                                if mon.get_newest().is_none() {
-                                    let _ = self.tx.send(InternalAction::Focus);
-                                }
-                            }
-                            _ => (),
-                        });
-                    if set_handled {
-                        val.handle_state.replace(vec![]);
-                    }
-                });
-                self.lib.flush();
-            });
-        });
+        }
+        self.prev_state = state.clone();
+        Ok(())
     }
 }
 impl HdlReactor {
-    pub fn new(lib: Box<Rc<dyn DisplayServer>>, tx: Sender<InternalAction>) -> Self {
-        Self { lib, tx }
+    pub fn new(lib: Box<Rc<dyn DisplayServer>>, tx: Sender<InternalAction>, state: State) -> Self {
+        Self {
+            lib,
+            tx,
+            prev_state: state,
+        }
     }
 
     fn subscribe_to_events(&self, w: Window) {
@@ -255,6 +236,7 @@ impl HdlReactor {
         }
         self.lib.set_border_color(focus, CONFIG.border_color);
         self.lib.sync(false);
+        debug!("focusing: {:0x}", focus);
     }
 
     pub fn unset_focus(&self, w: Window, ww: &WindowWrapper) {
