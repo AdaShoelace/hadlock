@@ -255,7 +255,7 @@ impl std::fmt::Display for Monitor {
 mod test {
     use crate::models::{
         monitor::Monitor, rect::*, screen::Screen, windowwrapper::*, workspace::Workspace,
-        HandleState, WindowState,
+        WindowState,
     };
     use crate::xlibwrapper::util::*;
     use std::time::Instant;
@@ -483,13 +483,11 @@ mod test {
 
         let tested = WindowWrapper {
             current_state: WindowState::Maximized,
-            handle_state: HandleState::Move.into(),
             ..base_ww
         };
 
         mon.swap_window(1, |_mon, ww| WindowWrapper {
             current_state: WindowState::Maximized,
-            handle_state: HandleState::Move.into(),
             ..ww
         });
 
@@ -515,13 +513,11 @@ mod test {
         let tested = WindowWrapper {
             window: 10,
             current_state: WindowState::Maximized,
-            handle_state: HandleState::Move.into(),
             ..base_ww
         };
 
         mon.swap_window(10, |_mon, ww| WindowWrapper {
             current_state: WindowState::Maximized,
-            handle_state: HandleState::Move.into(),
             ..ww
         });
 
