@@ -30,7 +30,7 @@ pub(super) fn load_config() -> Config {
         let mut file_content = String::new();
         file.read_to_string(&mut file_content)
             .unwrap_or_else(|_| panic!("Failed to read file content: {:?}", path));
-        match serde_json::from_str(&file_content) {
+        match ron::de::from_str(&file_content) {
             Ok(config) => config,
             Err(err) => {
                 error!("{}", err);
