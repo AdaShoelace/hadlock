@@ -2,7 +2,10 @@
 use {
     crate::{
         config::CONFIG,
-        models::{monitor::Monitor, rect::*, window_type::WindowType, windowwrapper::*, internal_action::InternalAction},
+        models::{
+            internal_action::InternalAction, monitor::Monitor, rect::*, window_type::WindowType,
+            windowwrapper::*,
+        },
         state::State,
         wm,
         xlibwrapper::action,

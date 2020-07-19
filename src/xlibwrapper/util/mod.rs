@@ -47,8 +47,6 @@ impl std::ops::Sub for Position {
         }
     }
 }
-    
-
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Size {

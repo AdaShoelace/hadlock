@@ -16,7 +16,7 @@ pub enum WindowState {
     Monocle,
     Free,
     Tiled,
-    Destroy
+    Destroy,
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]

@@ -46,9 +46,12 @@ impl State {
             debug!("Monitor on start: {}", mon_count);
             monitors
         };
-        let scratchpad = lib.get_screens().iter().fold(Position::new(0, 0), |ret_pos, s| {
-            ret_pos + Position::new(s.x + s.width, s.y)
-        });
+        let scratchpad = lib
+            .get_screens()
+            .iter()
+            .fold(Position::new(0, 0), |ret_pos, s| {
+                ret_pos + Position::new(s.x + s.width, s.y)
+            });
         Self {
             lib,
             tx,
@@ -64,7 +67,7 @@ impl State {
             drag_start_frame_size: (0, 0),
         }
     }
-    
+
     #[allow(dead_code)]
     pub fn workspaces(&self) -> HashMap<u32, &Workspace> {
         self.monitors
@@ -80,7 +83,8 @@ impl State {
     }
 
     pub fn clients(&self) -> HashMap<Window, &WindowWrapper> {
-        let client_vec = self.monitors
+        let client_vec = self
+            .monitors
             .values()
             .map(|mon| &mon.workspaces)
             .flatten()
