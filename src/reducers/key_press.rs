@@ -26,8 +26,8 @@ use {
 
 impl Reducer<action::KeyPress> for State {
     fn reduce(&mut self, action: action::KeyPress) {
-        let has_mod = action.state & !CONFIG.super_key != 0;
-        let super_is_pressed = action.state & CONFIG.super_key == CONFIG.super_key;
+        let has_mod = action.state & !CONFIG.mod_key != 0;
+        let mod_is_pressed = action.state & CONFIG.mod_key == CONFIG.mod_key;
 
         let sym = self
             .lib
@@ -35,8 +35,8 @@ impl Reducer<action::KeyPress> for State {
             .expect("failed to convert action.keycode to KeySym");
         //debug!("KeyCode to string: {:?}", into_hdl_keysym(&sym));
 
-        // Valid key presses must either include super or be one of the XF86 symbols.
-        if !super_is_pressed && !sym.starts_with("XF86") {
+        // Valid key presses must either include mod_key or be one of the XF86 symbols.
+        if !mod_is_pressed && !sym.starts_with("XF86") {
             return;
         }
 

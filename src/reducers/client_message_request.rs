@@ -15,6 +15,7 @@ use {
     std::rc::Rc,
 };
 
+#[allow(clippy::collapsible_if)]
 impl Reducer<action::ClientMessageRequest> for State {
     // Full credit for this solution goes to lex148
     fn reduce(&mut self, action: action::ClientMessageRequest) {

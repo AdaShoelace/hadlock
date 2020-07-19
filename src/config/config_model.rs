@@ -10,8 +10,8 @@ use x11_dl::xlib::Mod4Mask;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
-    #[serde(rename = "superKey", deserialize_with = "super_deserialize")]
-    pub super_key: ModMask,
+    #[serde(rename = "modKey", deserialize_with = "mod_key_deserialize")]
+    pub mod_key: ModMask,
 
     #[serde(rename = "decorate", default = "default_decorate")]
     pub decorate: bool,
@@ -62,7 +62,7 @@ pub struct Config {
     pub commands: Vec<super::Command>,
 }
 
-fn super_deserialize<'de, D>(desierializer: D) -> Result<ModMask, D::Error>
+fn mod_key_deserialize<'de, D>(desierializer: D) -> Result<ModMask, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -71,7 +71,7 @@ where
     let ret = into_mod(&s);
     if ret != 0 {
         debug!(
-            "ControlMask: {}, super_key: {}",
+            "ControlMask: {}, mod_key: {}",
             x11_dl::xlib::ControlMask,
             ret
         );
@@ -148,7 +148,7 @@ fn default_commands() -> Vec<super::Command> {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            super_key: Mod4Mask,
+            mod_key: Mod4Mask,
             decorate: default_decorate(),
             decoration_height: default_decoration_height(),
             border_width: default_border_width(),
