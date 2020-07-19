@@ -197,7 +197,7 @@ impl HdlReactor {
         buttons.iter().for_each(|button| {
             self.lib.grab_button(
                 *button,
-                CONFIG.super_key,
+                CONFIG.mod_key,
                 w,
                 false,
                 (ButtonPressMask | ButtonReleaseMask | ButtonMotionMask) as u32,
@@ -233,7 +233,7 @@ impl HdlReactor {
         for mod_key in mod_masks_vec() {
             for key in &key_list {
                 if let Some(key_sym) = keysym_lookup::into_keysym(&key) {
-                    self.lib.grab_keys(w, key_sym, CONFIG.super_key | mod_key);
+                    self.lib.grab_keys(w, key_sym, CONFIG.mod_key | mod_key);
                 }
             }
         }
