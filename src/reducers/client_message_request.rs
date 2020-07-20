@@ -1,22 +1,5 @@
-#![allow(unused_imports)]
-use {
-    crate::{
-        config::CONFIG,
-        models::{
-            internal_action::InternalAction, monitor::Monitor, rect::*, window_type::WindowType,
-            windowwrapper::*,
-        },
-        state::State,
-        wm,
-        xlibwrapper::action,
-        xlibwrapper::core::*,
-        xlibwrapper::util::*,
-        xlibwrapper::xlibmodels::*,
-    },
-    reducer::*,
-    std::cell::RefCell,
-    std::rc::Rc,
-};
+use crate::{layout::LayoutTag, state::State, wm, xlibwrapper::action};
+use reducer::*;
 
 #[allow(clippy::collapsible_if)]
 impl Reducer<action::ClientMessageRequest> for State {
@@ -55,7 +38,9 @@ impl Reducer<action::ClientMessageRequest> for State {
                     .get_mut(&mon_id)
                     .expect("No monitor was found?!");
                 mon.remove_window(action.win);
-                let _ = self.tx.send(InternalAction::UpdateLayout);
+                if mon.get_current_layout() != LayoutTag::Floating {
+                    wm::reorder(self);
+                }
             }
         }
 

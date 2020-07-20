@@ -1,19 +1,11 @@
-#![allow(unused_imports)]
 use {
     crate::{
-        config::CONFIG,
         layout::*,
-        models::{rect::*, window_type::WindowType, windowwrapper::*},
         state::State,
         wm,
         xlibwrapper::action,
-        xlibwrapper::core::*,
-        xlibwrapper::util::*,
-        xlibwrapper::xlibmodels::*,
     },
     reducer::*,
-    std::cell::RefCell,
-    std::rc::Rc,
 };
 
 impl Reducer<action::EnterNotify> for State {
@@ -41,7 +33,7 @@ impl Reducer<action::EnterNotify> for State {
             .expect("EnterNotify - monitor - get_mut");
 
         if action.win == self.lib.get_root()
-            && mon.get_current_layout() != Some(LayoutTag::Floating)
+            && mon.get_current_layout() != LayoutTag::Floating
         {
             return;
         }

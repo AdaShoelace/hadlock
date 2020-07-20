@@ -1,19 +1,11 @@
-#![allow(unused_imports)]
 use {
     crate::{
-        config::CONFIG,
-        models::{
-            internal_action::InternalAction, rect::*, window_type::WindowType, windowwrapper::*,
-        },
+        layout::LayoutTag,
         state::State,
+        wm,
         xlibwrapper::action,
-        xlibwrapper::core::*,
-        xlibwrapper::util::*,
-        xlibwrapper::xlibmodels::*,
     },
     reducer::*,
-    std::cell::RefCell,
-    std::rc::Rc,
 };
 
 impl Reducer<action::Destroy> for State {
@@ -29,7 +21,9 @@ impl Reducer<action::Destroy> for State {
             .expect("DestroyNotify - get_mut");
         if mon.contains_window(action.win) {
             mon.remove_window(action.win);
-            let _ = self.tx.send(InternalAction::UpdateLayout);
+            if mon.get_current_layout() != LayoutTag::Floating {
+                wm::reorder(self);
+            }
         }
     }
 }

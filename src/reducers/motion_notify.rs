@@ -1,20 +1,15 @@
-#![allow(unused_imports)]
 use {
     crate::{
         config::CONFIG,
         layout::LayoutTag,
-        models::{rect::*, window_type::WindowType, windowwrapper::*, WindowState},
+        models::WindowState,
         state::State,
         wm,
         xlibwrapper::action,
-        xlibwrapper::core::*,
         xlibwrapper::masks::*,
         xlibwrapper::util::*,
-        xlibwrapper::xlibmodels::*,
     },
-    reducer::*,
-    std::cell::RefCell,
-    std::rc::Rc,
+    reducer::Reducer,
 };
 
 impl Reducer<action::MotionNotify> for State {
@@ -40,8 +35,7 @@ impl Reducer<action::MotionNotify> for State {
             .monitors
             .get(&self.current_monitor)
             .expect("MotionNotify - monitor - get - check layout")
-            .get_current_layout()
-            .expect("MotionNotify - monitor - get_current_layout");
+            .get_current_layout();
 
         let is_trans = match self
             .monitors

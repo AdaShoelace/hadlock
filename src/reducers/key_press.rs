@@ -100,7 +100,7 @@ fn handle_key_effect(
             let resize = state
                 .monitors
                 .get(&state.current_monitor)?
-                .get_current_layout()?
+                .get_current_layout()
                 == LayoutTag::Floating;
             let client = state
                 .monitors
@@ -166,7 +166,7 @@ fn handle_key_effect(
                 if state
                     .monitors
                     .get(&state.current_monitor)?
-                    .get_current_layout()?
+                    .get_current_layout()
                     != LayoutTag::Floating
                 {
                     wm::reorder(state);
@@ -179,7 +179,7 @@ fn handle_key_effect(
         }
         KeyEffect::Center => {
             let mon = state.monitors.get_mut(&state.current_monitor)?;
-            if mon.get_current_layout()? != LayoutTag::Floating {
+            if mon.get_current_layout() != LayoutTag::Floating {
                 return Some(());
             }
             let windows = mon.place_window(state.focus_w);
@@ -197,7 +197,7 @@ fn handle_key_effect(
             let current_layout = state
                 .monitors
                 .get(&state.current_monitor)?
-                .get_current_layout()?;
+                .get_current_layout();
             if current_layout == LayoutTag::Floating {
                 wm::reorder(state);
             }
@@ -334,7 +334,7 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
         state.lib.get_root()
     );
     let mon = state.monitors.get_mut(&state.current_monitor)?;
-    if mon.get_current_layout().expect("shift layout failed") != LayoutTag::Floating {
+    if mon.get_current_layout() != LayoutTag::Floating {
         let (newest, _) = mon.get_newest()?;
         if mon.get_current_ws().unwrap().focus_w != *newest {
             match direction {

@@ -144,9 +144,11 @@ impl Monitor {
         self.workspaces.get(&self.current_ws)
     }
 
-    pub fn get_current_layout(&self) -> Option<LayoutTag> {
-        let ret = self.get_current_ws()?.get_current_layout();
-        Some(ret)
+    pub fn get_current_layout(&self) -> LayoutTag {
+        match self.get_current_ws() {
+            Some(ws) => ws.get_current_layout(),
+            None => panic!("How can monitor not have a workspace?!")
+        }
     }
 
     pub fn remove_ws(&mut self, ws: u32) -> Option<Workspace> {

@@ -165,10 +165,6 @@ pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
                 internal_action::InternalAction::FocusSpecific(win) => {
                     store.dispatch(action::Focus { win });
                 }
-                internal_action::InternalAction::UpdateLayout => {
-                    debug!("UpdateLayout");
-                    store.dispatch(action::UpdateLayout);
-                }
                 _ => (),
             }
         }

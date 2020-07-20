@@ -13,7 +13,7 @@ pub fn window_inside_screen(w_geom: &Geometry, screen: &Screen) -> bool {
 
 #[allow(clippy::collapsible_if)]
 pub fn toggle_maximize(mon: &Monitor, ww: WindowWrapper) -> WindowWrapper {
-    if mon.get_current_layout() != Some(LayoutTag::Floating) {
+    if mon.get_current_layout() != LayoutTag::Floating {
         if mon.get_current_ws().unwrap().clients.is_empty() {
             return ww;
         }
@@ -177,7 +177,7 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         mon.current_ws = ws;
         let windows = mon.place_window(w);
         let current_state =
-            if windows.len() == 1 && mon.get_current_layout()? != LayoutTag::Floating {
+            if windows.len() == 1 && mon.get_current_layout() != LayoutTag::Floating {
                 WindowState::Maximized
             } else {
                 WindowState::Free
@@ -221,7 +221,7 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         mon.add_window(w, ww.clone());
         let windows = mon.place_window(w);
         let current_state =
-            if windows.len() == 1 && mon.get_current_layout()? != LayoutTag::Floating {
+            if windows.len() == 1 && mon.get_current_layout() != LayoutTag::Floating {
                 WindowState::Maximized
             } else {
                 WindowState::Free
@@ -261,7 +261,7 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         mon.add_ws(Workspace::new(ws, state.lib.get_root()));
         let windows = mon.place_window(w);
         let current_state =
-            if windows.len() == 1 && mon.get_current_layout()? != LayoutTag::Floating {
+            if windows.len() == 1 && mon.get_current_layout() != LayoutTag::Floating {
                 WindowState::Maximized
             } else {
                 WindowState::Free
@@ -299,6 +299,7 @@ pub fn reorder(state: &mut State) -> Option<()> {
         .get_current_ws()?
         .clients
         .values()
+        .filter(|ww| !ww.is_trans)
         .cloned()
         .collect::<Vec<WindowWrapper>>();
 
@@ -309,7 +310,7 @@ pub fn reorder(state: &mut State) -> Option<()> {
 
     let rects = mon.reorder(state.focus_w, &windows);
 
-    let current_state = if mon.get_current_layout()? == LayoutTag::Floating {
+    let current_state = if mon.get_current_layout() == LayoutTag::Floating {
         WindowState::Free
     } else if rects.len() == 1 {
         WindowState::Maximized
