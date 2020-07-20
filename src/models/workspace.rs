@@ -34,7 +34,7 @@ impl Workspace {
         self.current_tag
     }
 
-    pub fn circulate_layout(&mut self) {
+    pub fn cycle_layout(&mut self) {
         let index = self
             .available_layouts
             .iter()
@@ -141,7 +141,7 @@ mod test {
     use crate::models::workspace::Workspace;
 
     #[test]
-    fn circulate_layout() {
+    fn cycle_layout() {
         let mut ws = Workspace {
             tag: 0,
             focus_w: 0,
@@ -151,7 +151,7 @@ mod test {
             current_tag: LayoutTag::Floating,
         };
 
-        ws.circulate_layout();
+        ws.cycle_layout();
         assert_eq!(LayoutTag::ColumnMaster, ws.layout.get_type())
     }
 }
