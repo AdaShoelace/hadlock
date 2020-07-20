@@ -4,7 +4,6 @@ mod client_message_request;
 mod configure_request;
 mod destroy;
 mod enter_notify;
-mod focus;
 mod key_press;
 mod leave_notify;
 mod map_request;

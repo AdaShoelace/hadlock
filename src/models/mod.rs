@@ -1,5 +1,4 @@
 pub mod dockarea;
-pub mod internal_action;
 pub mod monitor;
 pub mod rect;
 pub mod screen;

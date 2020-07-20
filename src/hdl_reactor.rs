@@ -1,21 +1,18 @@
 use {
     crate::config::{Key, CONFIG},
-    crate::models::{internal_action::InternalAction, windowwrapper::*, WindowState},
+    crate::models::{windowwrapper::*, WindowState},
     crate::state::*,
     crate::{
-        wm,
         xlibwrapper::xlibmodels::*,
         xlibwrapper::DisplayServer,
         xlibwrapper::{masks::*, util::*},
     },
     reducer::*,
     std::rc::Rc,
-    std::sync::mpsc::Sender,
 };
 
 pub struct HdlReactor {
     lib: Box<Rc<dyn DisplayServer>>,
-    tx: Sender<InternalAction>,
     prev_state: State,
 }
 
@@ -130,16 +127,6 @@ impl Reactor<State> for HdlReactor {
                         window,
                         state.clients().keys().map(|w| *w).collect::<Vec<Window>>(),
                     );
-                    let mon_id = wm::get_mon_by_window(&state, window)
-                        .expect("How can it still give a monitor?");
-                    let mon = state.monitors.get(&mon_id).unwrap();
-                    if let Some(ww) = mon.get_previous(window) {
-                        let _ = self.tx.send(InternalAction::FocusSpecific(ww.window()));
-                    }
-
-                    if mon.get_newest().is_none() {
-                        let _ = self.tx.send(InternalAction::Focus);
-                    }
                 }
             }
         }
@@ -148,10 +135,9 @@ impl Reactor<State> for HdlReactor {
     }
 }
 impl HdlReactor {
-    pub fn new(lib: Box<Rc<dyn DisplayServer>>, tx: Sender<InternalAction>, state: State) -> Self {
+    pub fn new(lib: Box<Rc<dyn DisplayServer>>, state: State) -> Self {
         Self {
             lib,
-            tx,
             prev_state: state,
         }
     }

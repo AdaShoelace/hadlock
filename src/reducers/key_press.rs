@@ -5,7 +5,7 @@ use {
         config::{Axis, Key, KeyAction, KeyEffect, CONFIG},
         layout::LayoutTag,
         models::{
-            internal_action, rect::*, window_type::WindowType, windowwrapper::*, Direction,
+            rect::*, window_type::WindowType, windowwrapper::*, Direction,
             WindowState,
         },
         state::State,
@@ -334,40 +334,43 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
         state.lib.get_root()
     );
     let mon = state.monitors.get_mut(&state.current_monitor)?;
-    if mon.get_current_layout() != LayoutTag::Floating {
-        let (newest, _) = mon.get_newest()?;
-        if mon.get_current_ws().unwrap().focus_w != *newest {
+    let previous = mon.get_previous(state.focus_w).map(|ww| ww.window());
+    let next = mon.get_next(state.focus_w).map(|ww| ww.window());
+    let current_layout = mon.get_current_layout();
+    if current_layout != LayoutTag::Floating {
+        let newest = mon.get_newest().map(|(win, _)| *win)?;
+
+        let current_ws = mon.get_current_ws_mut()?;
+        let ws_focus = current_ws.focus_w;
+
+        if ws_focus != newest {
             match direction {
                 Direction::North => {
-                    if let Some(ww) = mon.get_previous(state.focus_w) {
-                        let _ = state
-                            .tx
-                            .send(internal_action::InternalAction::FocusSpecific(ww.window()));
+                    if let Some(win) = previous {
+                        current_ws.focus_w = win;
+                        state.focus_w = win;
                     }
                 }
                 Direction::South => {
-                    if let Some(ww) = mon.get_next(state.focus_w) {
-                        let _ = state
-                            .tx
-                            .send(internal_action::InternalAction::FocusSpecific(ww.window()));
+                    if let Some(win) = next {
+                        current_ws.focus_w = win;
+                        state.focus_w = win;
                     }
                 }
                 Direction::West => {
-                    let _ = state
-                        .tx
-                        .send(internal_action::InternalAction::FocusSpecific(*newest));
+                    current_ws.focus_w = newest;
+                    state.focus_w = newest;
                 }
                 _ => (),
             }
         }
 
-        if state.focus_w == *newest && direction == Direction::East {
-            if let Some(ww) = mon.get_next(state.focus_w) {
-                let _ = state
-                    .tx
-                    .send(internal_action::InternalAction::FocusSpecific(ww.window()));
+        if state.focus_w == newest && direction == Direction::East {
+            if let Some(win) = next {
+                current_ws.focus_w = win;
+                state.focus_w = win;
             }
-        } else if state.focus_w == *newest && direction != Direction::East {
+        } else if state.focus_w == newest && direction != Direction::East {
             debug!("window is newest but direction is: {:?}", direction);
         }
         return Some(());

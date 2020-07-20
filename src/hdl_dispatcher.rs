@@ -1,7 +1,6 @@
 #![allow(unused)]
 use {
     crate::hdl_reactor::HdlReactor,
-    crate::models::internal_action,
     crate::state::State,
     crate::xlibwrapper::DisplayServer,
     crate::xlibwrapper::{action, xlibmodels::*},
@@ -12,9 +11,8 @@ use {
 };
 
 pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
-    let (tx, rx) = channel::<internal_action::InternalAction>();
-    let state = State::new(xlib.clone(), tx.clone());
-    let mut store = Store::new(state.clone(), HdlReactor::new(xlib.clone(), tx, state));
+    let state = State::new(xlib.clone());
+    let mut store = Store::new(state.clone(), HdlReactor::new(xlib.clone(), state));
 
     //setup
     xlib.grab_server();
@@ -151,21 +149,6 @@ pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
             }
             _ => {
                 store.dispatch(action::UnknownEvent);
-            }
-        }
-
-        if let Ok(action) = rx.try_recv() {
-            match action {
-                internal_action::InternalAction::Focus => {
-                    //debug!("Motion dispatch focus");
-                    if let Some(_win) = xlib.window_under_pointer() {
-                        //store.dispatch(action::Focus { win })
-                    }
-                }
-                internal_action::InternalAction::FocusSpecific(win) => {
-                    store.dispatch(action::Focus { win });
-                }
-                _ => (),
             }
         }
     }
