@@ -147,7 +147,7 @@ fn handle_key_effect(
         }
         KeyEffect::CirculateLayout => {
             //debug!("should print layout type");
-            circulate_layout(state);
+            cycle_layout(state);
             wm::reorder(state);
         }
         KeyEffect::ShiftWindow(direction) => {
@@ -411,10 +411,10 @@ fn swap_master(state: &mut State) -> Option<()> {
     Some(())
 }
 
-fn circulate_layout(state: &mut State) -> Option<()> {
+fn cycle_layout(state: &mut State) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;
     let ws = mon.get_current_ws_mut()?;
-    ws.circulate_layout();
+    ws.cycle_layout();
 
     let notify_res = Notification::new()
         .summary("Layout switched")
