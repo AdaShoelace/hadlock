@@ -1,4 +1,4 @@
-use crate::{models::internal_action::InternalAction, state::State, wm, xlibwrapper::action};
+use crate::{state::State, wm, xlibwrapper::action, layout::LayoutTag};
 use reducer::*;
 
 impl Reducer<action::UnmapNotify> for State {
@@ -10,6 +10,8 @@ impl Reducer<action::UnmapNotify> for State {
             .get_mut(&mon_id)
             .expect("No monitor was found?!");
         mon.remove_window(action.win);
-        let _ = self.tx.send(InternalAction::UpdateLayout);
+        if mon.get_current_layout() != LayoutTag::Floating {
+            wm::reorder(self);
+        }
     }
 }

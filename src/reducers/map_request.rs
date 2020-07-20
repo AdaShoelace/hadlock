@@ -94,7 +94,7 @@ impl Reducer<action::MapRequest> for State {
                     if win == action.win {
                         debug!("Mapping window not already in mon");
                         let ww = if window_amount == 1
-                            && mon.get_current_layout().unwrap() != LayoutTag::Floating
+                            && mon.get_current_layout() != LayoutTag::Floating
                         {
                             let mut ww = WindowWrapper::new(action.win, rect, false);
                             ww.previous_state = WindowState::Maximized;

@@ -12,4 +12,3 @@ mod motion_notify;
 mod property_notify;
 mod unknown;
 mod unmap_notify;
-mod update_layout;
