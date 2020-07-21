@@ -115,6 +115,7 @@ impl Reactor<State> for HdlReactor {
                                         .set_border_width(window, CONFIG.border_width as u32);
                                     self.lib.set_border_color(window, CONFIG.background_color);
                                 }
+                                self.set_focus(window, ww);
                             }
                             (_, WindowState::Snapped) => {
                                 self.lib.center_cursor(window);
