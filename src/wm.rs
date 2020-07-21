@@ -43,12 +43,14 @@ pub fn toggle_maximize(mon: &Monitor, ww: WindowWrapper) -> WindowWrapper {
 pub fn toggle_monocle(mon: &Monitor, ww: WindowWrapper) -> WindowWrapper {
     let ww_state = ww.current_state;
     match ww_state {
-        WindowState::Monocle => WindowWrapper {
-            window_rect: Rect::new(ww.restore_position, ww.restore_size),
-            previous_state: ww.current_state,
-            current_state: ww.previous_state,
-            ..ww
-        },
+        WindowState::Monocle => {
+            WindowWrapper {
+                window_rect: Rect::new(ww.restore_position, ww.restore_size),
+                previous_state: ww.current_state,
+                current_state: ww.previous_state,
+                ..ww
+            }
+        }
         _ => {
             let (pos, size) = mon.monocle(ww.window(), &ww);
             WindowWrapper {
@@ -114,23 +116,25 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
 
         let mon = state.monitors.get_mut(&get_mon_by_ws(state, ws)?)?;
 
-        let newest = mon.get_current_ws().unwrap().focus_w;
+        let newest = mon.get_current_ws()?.focus_w;
 
         state.focus_w = newest;
         state.current_monitor = mon.id;
         state.ws_switch = true;
         return Some(());
     }
-    let pos = state.scratchpad;
     mon.swap_ws(mon.current_ws, |_, mut ws| {
-        ws.apply_to_all(|ww| ww.set_position(pos));
+        ws.apply_to_all(|ww| {
+            ww.hidden = true;
+        });
         ws
     });
 
     if mon.contains_ws(ws) {
         let mut new_ws = mon.remove_ws(ws)?;
         new_ws.apply_to_all(|ww| {
-            ww.set_position(ww.get_restore_position());
+            ww.hidden = false;
+            ww.set_position(ww.get_position());
         });
         let win = new_ws.focus_w;
         debug!(
@@ -176,12 +180,12 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         let prev_ws = mon.current_ws;
         mon.current_ws = ws;
         let windows = mon.place_window(w);
-        let current_state =
-            if windows.len() == 1 && mon.get_current_layout() != LayoutTag::Floating {
-                WindowState::Maximized
-            } else {
-                WindowState::Free
-            };
+        let current_state = if windows.len() == 1 && mon.get_current_layout() != LayoutTag::Floating
+        {
+            WindowState::Maximized
+        } else {
+            WindowState::Free
+        };
         mon.add_window(w, ww.clone());
         for (win, rect) in windows.into_iter() {
             let (new_win, new_ww) = mon.get_newest()?;
@@ -220,12 +224,12 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         mon.current_ws = ws;
         mon.add_window(w, ww.clone());
         let windows = mon.place_window(w);
-        let current_state =
-            if windows.len() == 1 && mon.get_current_layout() != LayoutTag::Floating {
-                WindowState::Maximized
-            } else {
-                WindowState::Free
-            };
+        let current_state = if windows.len() == 1 && mon.get_current_layout() != LayoutTag::Floating
+        {
+            WindowState::Maximized
+        } else {
+            WindowState::Free
+        };
         for (win, rect) in windows.into_iter() {
             let (new_win, new_ww) = mon.get_newest().clone().unwrap();
             let new_win = *new_win;
@@ -260,12 +264,12 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
         mon.current_ws = ws;
         mon.add_ws(Workspace::new(ws, state.lib.get_root()));
         let windows = mon.place_window(w);
-        let current_state =
-            if windows.len() == 1 && mon.get_current_layout() != LayoutTag::Floating {
-                WindowState::Maximized
-            } else {
-                WindowState::Free
-            };
+        let current_state = if windows.len() == 1 && mon.get_current_layout() != LayoutTag::Floating
+        {
+            WindowState::Maximized
+        } else {
+            WindowState::Free
+        };
 
         windows.into_iter().for_each(|(win, rect)| {
             let new_ww = WindowWrapper {

@@ -88,7 +88,11 @@ impl Reactor<State> for HdlReactor {
                     if ww.is_trans {
                         self.lib.raise_window(window);
                     }
-
+                    if ww.hidden {
+                        self.lib.move_window(window, state.hide_space);
+                    } else {
+                        self.lib.move_window(window, ww.get_position());
+                    }
                     if self
                         .prev_state
                         .clients()

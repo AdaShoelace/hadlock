@@ -7,7 +7,7 @@ use std::time::Instant;
 pub struct WindowWrapper {
     pub window: Window,
     pub window_rect: Rect,
-    pub is_visible: bool,
+    pub hidden: bool,
     pub is_trans: bool,
     pub restore_position: Position,
     pub restore_size: Size,
@@ -22,7 +22,7 @@ impl WindowWrapper {
         Self {
             window,
             window_rect,
-            is_visible: true,
+            hidden: false,
             is_trans,
             restore_position: Position { x: 0, y: 0 },
             restore_size,
@@ -48,7 +48,6 @@ impl WindowWrapper {
     }
 
     pub fn set_position(&mut self, pos: Position) {
-        self.restore_position = self.get_position();
         self.window_rect = Rect::new(pos, self.window_rect.get_size())
     }
 
