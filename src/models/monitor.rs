@@ -147,7 +147,7 @@ impl Monitor {
     pub fn get_current_layout(&self) -> LayoutTag {
         match self.get_current_ws() {
             Some(ws) => ws.get_current_layout(),
-            None => panic!("How can monitor not have a workspace?!")
+            None => panic!("How can monitor not have a workspace?!"),
         }
     }
 
