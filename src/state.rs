@@ -15,7 +15,7 @@ pub struct State {
     pub windows: HashMap<Window, WindowWrapper>,
     pub focus_w: Window,
     pub monitors: HashMap<MonitorId, Monitor>,
-    pub scratchpad: Position,
+    pub hide_space: Position,
     pub current_monitor: MonitorId,
     pub latest_cursor_pos: Position,
     pub ws_switch: bool,
@@ -40,7 +40,7 @@ impl State {
             debug!("Monitor on start: {}", mon_count);
             monitors
         };
-        let scratchpad = lib
+        let hide_space = lib
             .get_screens()
             .iter()
             .fold(Position::new(0, 0), |ret_pos, s| {
@@ -51,7 +51,7 @@ impl State {
             windows: HashMap::default(),
             focus_w,
             monitors,
-            scratchpad,
+            hide_space,
             current_monitor: 0,
             latest_cursor_pos: Position::new(0, 0),
             ws_switch: false,

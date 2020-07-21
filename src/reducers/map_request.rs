@@ -110,14 +110,14 @@ impl Reducer<action::MapRequest> for State {
                     }
                 }
             };
-        } //);
-        debug!("Windows in mon after place_window:\n");
+        } 
+        debug!("Windows in mon after place_window:");
         mon.get_current_ws()
             .unwrap()
             .clients
             .iter()
-            .for_each(|(key, _)| {
-                debug!("{}", key);
+            .for_each(|(key, val)| {
+                debug!("Window: {}, restore_pos: {:?}", key, val.restore_position);
             });
     }
 }

@@ -82,6 +82,7 @@ impl Reducer<action::MotionNotify> for State {
                 .get_client_mut(action.win)
                 .expect("motion_notify some window");
             if w.current_state != WindowState::Monocle {
+                w.save_restore_position();
                 w.set_position(pos);
                 w.set_window_state(WindowState::Free);
             }
