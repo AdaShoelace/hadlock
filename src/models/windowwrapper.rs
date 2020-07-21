@@ -32,10 +32,6 @@ impl WindowWrapper {
         }
     }
 
-    pub fn get_window_state(&self) -> WindowState {
-        self.current_state
-    }
-
     pub fn set_window_state(&mut self, state: WindowState) {
         self.previous_state = self.current_state;
         self.current_state = state;
@@ -62,22 +58,6 @@ impl WindowWrapper {
 
     pub fn get_size(&self) -> Size {
         self.window_rect.get_size()
-    }
-
-    pub fn set_inner_rect(&mut self, rect: Rect) {
-        self.window_rect = rect;
-    }
-
-    /*
-     * Will set total size of window, so the outmost boundaries (excluding window borders)
-     */
-
-    pub fn get_width(&self) -> i32 {
-        self.window_rect.get_size().width
-    }
-
-    pub fn get_height(&self) -> i32 {
-        self.window_rect.get_size().height
     }
 
     pub fn get_position(&self) -> Position {
