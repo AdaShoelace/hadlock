@@ -4,10 +4,7 @@ use {
     crate::{
         config::{Axis, Key, KeyAction, KeyEffect, CONFIG},
         layout::LayoutTag,
-        models::{
-            rect::*, window_type::WindowType, windowwrapper::*, Direction,
-            WindowState,
-        },
+        models::{rect::*, window_type::WindowType, windowwrapper::*, Direction, WindowState},
         state::State,
         wm,
         xlibwrapper::action,

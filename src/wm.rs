@@ -43,14 +43,12 @@ pub fn toggle_maximize(mon: &Monitor, ww: WindowWrapper) -> WindowWrapper {
 pub fn toggle_monocle(mon: &Monitor, ww: WindowWrapper) -> WindowWrapper {
     let ww_state = ww.current_state;
     match ww_state {
-        WindowState::Monocle => {
-            WindowWrapper {
-                window_rect: Rect::new(ww.restore_position, ww.restore_size),
-                previous_state: ww.current_state,
-                current_state: ww.previous_state,
-                ..ww
-            }
-        }
+        WindowState::Monocle => WindowWrapper {
+            window_rect: Rect::new(ww.restore_position, ww.restore_size),
+            previous_state: ww.current_state,
+            current_state: ww.previous_state,
+            ..ww
+        },
         _ => {
             let (pos, size) = mon.monocle(ww.window(), &ww);
             WindowWrapper {

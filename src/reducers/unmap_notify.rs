@@ -1,4 +1,4 @@
-use crate::{state::State, wm, xlibwrapper::action, layout::LayoutTag};
+use crate::{layout::LayoutTag, state::State, wm, xlibwrapper::action};
 use reducer::*;
 
 impl Reducer<action::UnmapNotify> for State {

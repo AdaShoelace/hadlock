@@ -1,13 +1,7 @@
 use {
     crate::{
-        config::CONFIG,
-        layout::LayoutTag,
-        models::WindowState,
-        state::State,
-        wm,
-        xlibwrapper::action,
-        xlibwrapper::masks::*,
-        xlibwrapper::util::*,
+        config::CONFIG, layout::LayoutTag, models::WindowState, state::State, wm,
+        xlibwrapper::action, xlibwrapper::masks::*, xlibwrapper::util::*,
     },
     reducer::Reducer,
 };

@@ -110,7 +110,7 @@ impl Reducer<action::MapRequest> for State {
                     }
                 }
             };
-        } 
+        }
         debug!("Windows in mon after place_window:");
         mon.get_current_ws()
             .unwrap()
