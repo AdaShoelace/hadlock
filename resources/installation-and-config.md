@@ -14,7 +14,8 @@ Type=Application
 
 
 ## Configuration
-The config file is written is ron (Rust object notation) and should be placed in `~/.config/hadlock`  
+The config file is written is ron (Rust object notation) and should be placed in `~/.config/hadlock/hadlock.ron`  
+This config is just an example until a proper wiki has been created.  
 
 ```ron
 (
