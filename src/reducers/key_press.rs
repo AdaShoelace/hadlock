@@ -94,7 +94,8 @@ fn handle_key_effect(
             spawn_process(CONFIG.term.as_str(), vec![]);
         }
         KeyEffect::Resize(delta, axis) => {
-            let resize = state
+            wm::resize_window(state, state.focus_w, axis, *delta);
+            /*let resize = state
                 .monitors
                 .get(&state.current_monitor)?
                 .get_current_layout()
@@ -125,7 +126,7 @@ fn handle_key_effect(
                         ..ww
                     });
                 }
-            }
+            }*/
         }
         KeyEffect::Exit => state.lib.exit(),
         KeyEffect::ToggleMonocle => {

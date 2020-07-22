@@ -3,6 +3,7 @@
 pub mod column_master;
 pub mod floating;
 
+use crate::config::Axis;
 use crate::models::{
     dockarea::DockArea, rect::Rect, screen::Screen, windowwrapper::WindowWrapper, Direction,
 };
@@ -85,6 +86,39 @@ pub trait Layout: std::fmt::Debug + std::fmt::Display + LayoutClone {
         y: i32,
     ) -> (Position, Position) {
         unimplemented!();
+    }
+
+    fn resize(
+        &self,
+        win: Window,
+        axis: &Axis,
+        delta: i32,
+        windows: &[&WindowWrapper],
+    ) -> Vec<WindowWrapper> {
+        windows
+            .into_iter()
+            .map(|ww| {
+                if ww.window() == win {
+                    let old_size = ww.get_size();
+                    let size = match axis {
+                        Axis::Vertical => Size {
+                            width: old_size.width,
+                            height: old_size.height + delta,
+                        },
+                        Axis::Horizontal => Size {
+                            width: old_size.width + delta,
+                            height: old_size.height,
+                        },
+                    };
+                    WindowWrapper {
+                        window_rect: Rect::new(ww.get_position(), size),
+                        ..**ww
+                    }
+                } else {
+                    WindowWrapper { ..**ww }
+                }
+            })
+            .collect::<Vec<WindowWrapper>>()
     }
 
     fn reorder(

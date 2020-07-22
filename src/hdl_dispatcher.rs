@@ -14,7 +14,6 @@ pub fn run(xlib: Box<Rc<dyn DisplayServer>>, sender: Sender<bool>) {
     let state = State::new(xlib.clone());
     let mut store = Store::new(state.clone(), HdlReactor::new(xlib.clone(), state));
 
-    //setup
     xlib.grab_server();
     let _ = xlib.get_top_level_windows().iter().map(|w| {
         store.dispatch(action::MapRequest {

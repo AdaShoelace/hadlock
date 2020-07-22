@@ -190,6 +190,52 @@ impl Layout for ColumnMaster {
         )
     }
 
+    fn resize(
+        &self,
+        win: Window,
+        axis: &Axis,
+        delta: i32,
+        windows: &[&WindowWrapper],
+    ) -> Vec<WindowWrapper> {
+        // The new size always refer to master pane (left solo window)
+        // Only X-axis is to be respected
+
+        if windows.len() <= 1 || *axis == Axis::Vertical {
+            return vec![];
+        }
+
+        let mut windows = windows.to_vec();
+        let mut ret = vec![];
+        if let Some(master) = windows.pop() {
+            let size = master.get_size();
+            ret.push(WindowWrapper {
+                window_rect: Rect::new(
+                    master.get_position(),
+                    Size {
+                        width: size.width + delta,
+                        height: size.height,
+                    },
+                ),
+                ..*master
+            });
+        }
+        for ww in windows {
+            let pos = ww.get_position();
+            let size = ww.get_size();
+            ret.push(WindowWrapper {
+                window_rect: Rect::new(
+                    Position::new(pos.x + delta, pos.y),
+                    Size {
+                        width: size.width + (-delta),
+                        height: size.height,
+                    },
+                ),
+                ..*ww
+            });
+        }
+        ret
+    }
+
     fn reorder(
         &mut self,
         focus: Window,

@@ -1,4 +1,5 @@
 use crate::{
+    config::Axis,
     layout::LayoutTag,
     models::{monitor::Monitor, rect::*, screen::*, windowwrapper::*, workspace::*, WindowState},
     state::State,
@@ -89,6 +90,14 @@ pub fn get_mon_by_window(state: &State, w: Window) -> Option<MonitorId> {
     } else {
         Some(ret_vec.remove(0))
     }
+}
+
+pub fn resize_window(state: &mut State, w: Window, axis: &Axis, delta: i32) {
+    let mon = state.monitors.get_mut(&state.current_monitor).unwrap();
+    let windows = mon.resize_window(w, axis, delta);
+    windows.into_iter().for_each(|ww| {
+        mon.swap_window(ww.window(), |_, _| ww.clone());
+    });
 }
 
 pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
