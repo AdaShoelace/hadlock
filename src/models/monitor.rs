@@ -3,6 +3,7 @@ use super::{
     workspace::Workspace, Direction,
 };
 use crate::{
+    config::Axis,
     layout::LayoutTag,
     xlibwrapper::{
         util::{Position, Size},
@@ -207,6 +208,19 @@ impl Monitor {
             .expect("monitor: move_window")
             .layout
             .move_window(&screen, &dock_area, w, true, x, y)
+    }
+
+    pub fn resize_window(&mut self, w: Window, axis: &Axis, delta: i32) -> Vec<WindowWrapper> {
+        let windows = self
+            .get_current_ws()
+            .expect("Monitor has no current workspace?!")
+            .clients
+            .values()
+            .collect::<Vec<&WindowWrapper>>();
+        self.get_current_ws()
+            .expect("monitor: move_window")
+            .layout
+            .resize(w, axis, delta, windows.as_slice())
     }
 
     pub fn reorder(&mut self, focus: Window, windows: &[WindowWrapper]) -> Vec<(Window, Rect)> {
