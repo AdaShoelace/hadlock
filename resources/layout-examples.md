@@ -12,3 +12,5 @@
 ---
 ![](/resources/master_pane.jpg)
 ---
+**Resizing panes**  
+![](/resources/column_master_resize.gif)
