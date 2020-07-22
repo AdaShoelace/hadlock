@@ -124,7 +124,7 @@ impl Monitor {
     }
 
     pub fn contains_window(&self, w: Window) -> bool {
-        self.get_client_keys().contains(&&w)
+        self.get_client_keys().contains(&w)
     }
 
     pub fn contains_ws(&self, ws: u32) -> bool {
