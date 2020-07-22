@@ -81,13 +81,6 @@ fn handle_key_effect(
                 .get_client_mut(state.focus_w)?;
 
             ww.set_window_state(WindowState::Destroy);
-            state.focus_w = *state
-                .monitors
-                .get(&state.current_monitor)
-                .unwrap()
-                .get_newest()
-                .unwrap()
-                .0;
             debug!("destroy window");
         }
         KeyEffect::OpenTerm => {
@@ -95,38 +88,6 @@ fn handle_key_effect(
         }
         KeyEffect::Resize(delta, axis) => {
             wm::resize_window(state, state.focus_w, axis, *delta);
-            /*let resize = state
-                .monitors
-                .get(&state.current_monitor)?
-                .get_current_layout()
-                == LayoutTag::Floating;
-            let client = state
-                .monitors
-                .get(&state.current_monitor)?
-                .get_client(state.focus_w)?;
-            let old_size = client.get_size();
-            if resize || client.is_trans {
-                let mon = state.monitors.get_mut(&state.current_monitor)?;
-                if *axis == Axis::Horizontal {
-                    let size = Size {
-                        width: old_size.width + (delta),
-                        height: old_size.height,
-                    };
-                    mon.swap_window(state.focus_w, |_, ww| WindowWrapper {
-                        window_rect: Rect::new(ww.get_position(), size),
-                        ..ww
-                    });
-                } else {
-                    let size = Size {
-                        width: old_size.width,
-                        height: old_size.height + (delta),
-                    };
-                    mon.swap_window(state.focus_w, |_mon, ww| WindowWrapper {
-                        window_rect: Rect::new(ww.get_position(), size),
-                        ..ww
-                    });
-                }
-            }*/
         }
         KeyEffect::Exit => state.lib.exit(),
         KeyEffect::ToggleMonocle => {

@@ -53,6 +53,7 @@ impl Reactor<State> for HdlReactor {
         for ww in state.clients().values() {
             let window = ww.window();
             if !self.prev_state.clients().contains_key(&window) {
+                debug!("pointer pos on map: {:?}", state.latest_cursor_pos);
                 self.lib.add_to_save_set(window);
                 self.lib.add_to_root_net_client_list(window);
                 if ww.current_state != WindowState::Maximized
@@ -72,9 +73,10 @@ impl Reactor<State> for HdlReactor {
             } else {
                 if let Some(c) = self.prev_state.clients().get(&ww.window()) {
                     if window == state.focus_w && window != self.prev_state.focus_w {
-                        self.set_focus(ww.window(), ww);
+                        self.set_focus(window, ww);
                         self.lib.flush();
-                    } else if window != state.focus_w {
+                    }
+                    if window != state.focus_w {
                         self.unset_focus(window, ww);
                     }
                     if c.get_position() != ww.get_position() {

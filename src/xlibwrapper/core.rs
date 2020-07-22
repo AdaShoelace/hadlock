@@ -994,9 +994,6 @@ impl DisplayServer for XlibWrapper {
         unsafe {
             let mut event: xlib::XEvent = mem::uninitialized();
             (self.lib.XNextEvent)(self.display, &mut event);
-            //debug!("Event: {:?}", event);
-            //debug!("Event type: {:?}", event.get_type());
-            //debug!("Pending events: {}", (self.lib.XPending)(self.display));
             event
         }
     }

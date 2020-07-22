@@ -29,11 +29,11 @@ impl State {
         let focus_w = lib.get_root();
         let monitors = {
             let mut monitors = HashMap::default();
-            lib.get_screens().iter().enumerate().for_each(|(i, val)| {
+            lib.get_screens().into_iter().enumerate().for_each(|(i, val)| {
                 info!("Monitors in init: {}", i);
                 monitors.insert(
                     i as u32,
-                    Monitor::new(i as u32, val.clone(), Workspace::new(i as u32, focus_w)),
+                    Monitor::new(i as u32, val, Workspace::new(i as u32, focus_w)),
                 );
             });
             let mon_count = monitors.iter().count();
@@ -46,6 +46,7 @@ impl State {
             .fold(Position::new(0, 0), |ret_pos, s| {
                 ret_pos + Position::new(s.x + s.width, s.y)
             });
+        let latest_cursor_pos = lib.pointer_pos(lib.get_root());
         Self {
             lib,
             windows: HashMap::default(),
@@ -53,7 +54,7 @@ impl State {
             monitors,
             hide_space,
             current_monitor: 0,
-            latest_cursor_pos: Position::new(0, 0),
+            latest_cursor_pos,
             ws_switch: false,
             drag_start_pos: (0, 0),
             drag_start_frame_pos: (0, 0),
