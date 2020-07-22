@@ -10,7 +10,7 @@ impl Reducer<action::EnterNotify> for State {
         if self.latest_cursor_pos == self.lib.pointer_pos(self.lib.get_root()) {
             return;
         }
-        
+
         self.latest_cursor_pos = self.lib.pointer_pos(self.lib.get_root());
 
         if self.ws_switch {
