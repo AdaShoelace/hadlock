@@ -29,13 +29,16 @@ impl State {
         let focus_w = lib.get_root();
         let monitors = {
             let mut monitors = HashMap::default();
-            lib.get_screens().into_iter().enumerate().for_each(|(i, val)| {
-                info!("Monitors in init: {}", i);
-                monitors.insert(
-                    i as u32,
-                    Monitor::new(i as u32, val, Workspace::new(i as u32, focus_w)),
-                );
-            });
+            lib.get_screens()
+                .into_iter()
+                .enumerate()
+                .for_each(|(i, val)| {
+                    info!("Monitors in init: {}", i);
+                    monitors.insert(
+                        i as u32,
+                        Monitor::new(i as u32, val, Workspace::new(i as u32, focus_w)),
+                    );
+                });
             let mon_count = monitors.iter().count();
             debug!("Monitor on start: {}", mon_count);
             monitors
