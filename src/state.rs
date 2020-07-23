@@ -3,9 +3,9 @@ use {
     crate::xlibwrapper::{util::Position, xlibmodels::*, DisplayServer},
     derivative::*,
     std::cell::RefCell,
+    std::cell::RefCell,
     std::collections::HashMap,
     std::rc::Rc,
-    std::cell::RefCell
 };
 
 #[derive(Derivative)]
