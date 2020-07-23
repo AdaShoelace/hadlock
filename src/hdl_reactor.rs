@@ -24,8 +24,11 @@ impl Reactor<State> for HdlReactor {
         if self.prev_state.current_monitor != state.current_monitor {
             let mon = state.monitors.get(&state.current_monitor).ok_or("oops")?;
             self.lib.update_desktops(mon.current_ws, None);
-            if *mon.mouse_follow.borrow() {
+            if *state.mouse_follow.borrow() {
                 if let Some(win) = mon.get_client(state.focus_w) {
+                    state.lib.move_window(win.window(), win.get_position());
+                    state.lib.resize_window(win.window(), win.get_size());
+                    state.lib.flush();
                     state.lib.center_cursor(win.window());
                 } else {
                     state.lib.move_cursor(Position {
@@ -33,8 +36,8 @@ impl Reactor<State> for HdlReactor {
                         y: mon.screen.y + mon.screen.height / 2,
                     });
                 }
-                mon.mouse_follow.replace(false);
             }
+            state.mouse_follow.replace(false);
         }
 
         let mon = state.monitors.get(&state.current_monitor).ok_or("oops")?;
@@ -70,6 +73,9 @@ impl Reactor<State> for HdlReactor {
                 self.subscribe_to_events(window);
                 self.lib.map_window(window);
                 self.set_focus(ww.window(), ww);
+                if let Some(prev_focus) = self.prev_state.clients().get(&self.prev_state.focus_w) {
+                    self.unset_focus(prev_focus.window(), &prev_focus);
+                }
             } else {
                 if let Some(c) = self.prev_state.clients().get(&ww.window()) {
                     if window == state.focus_w && window != self.prev_state.focus_w {
