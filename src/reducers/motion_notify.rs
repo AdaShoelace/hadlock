@@ -12,17 +12,8 @@ impl Reducer<action::MotionNotify> for State {
         let old_mon = self.current_monitor;
 
         if self.current_monitor != actual_mon {
-            if let Some(mon) = self.monitors.get_mut(&old_mon) {
-                mon.mouse_follow.replace(false);
-            }
-
             self.current_monitor = actual_mon;
-
-            let mon = self
-                .monitors
-                .get_mut(&self.current_monitor)
-                .expect("MotionNotify - monitor - get_mut - change handle state");
-            mon.mouse_follow.replace(false);
+            self.mouse_follow.replace(false);
         }
 
         let layout = self
