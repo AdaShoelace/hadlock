@@ -244,7 +244,7 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
             mon.swap_window(win, |_mon, ww| WindowWrapper {
                 restore_position: rect.get_position(),
                 window_rect: rect,
-                previous_state: WindowState::Free,
+                previous_state: ww.previous_state,
                 current_state,
                 toc: if win == w { new_ww.toc } else { ww.toc },
                 ..ww
@@ -305,7 +305,6 @@ pub fn move_to_ws(state: &mut State, w: Window, ws: u32) -> Option<()> {
 pub fn reorder(state: &mut State) -> Option<()> {
     let mon = state.monitors.get_mut(&state.current_monitor)?;
     debug!("reorder focus: {}", state.focus_w);
-
     let windows = mon
         .get_current_ws()?
         .clients

@@ -131,6 +131,14 @@ fn handle_key_effect(
                     wm::reorder(state);
                 }
                 wm::set_current_ws(state, ws_num)?;
+                if state
+                    .monitors
+                    .get(&state.current_monitor)?
+                    .get_current_layout()
+                    != LayoutTag::Floating
+                {
+                    wm::reorder(state);
+                }
             }
         }
         KeyEffect::SwapMaster => {
