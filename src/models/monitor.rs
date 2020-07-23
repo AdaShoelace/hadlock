@@ -10,7 +10,6 @@ use crate::{
         xlibmodels::{MonitorId, Window},
     },
 };
-use std::cell::RefCell;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -20,7 +19,6 @@ pub struct Monitor {
     pub workspaces: HashMap<u32, Workspace>,
     pub dock_area: DockArea,
     pub current_ws: u32,
-    pub mouse_follow: RefCell<bool>,
 }
 
 impl Monitor {
@@ -38,7 +36,6 @@ impl Monitor {
             workspaces,
             dock_area: Default::default(),
             current_ws,
-            mouse_follow: RefCell::new(true),
         }
     }
 

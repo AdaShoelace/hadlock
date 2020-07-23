@@ -113,7 +113,6 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     debug!("Mon: {} current_ws: {}", mon.id, mon.current_ws);
     if ws == mon.current_ws {
         let mon = state.monitors.get_mut(&state.current_monitor)?;
-        mon.mouse_follow.replace(true);
 
         let curr_ws = mon.get_current_ws_mut()?;
         curr_ws.focus_w = curr_ws
@@ -127,7 +126,6 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
 
         state.focus_w = newest;
         state.current_monitor = mon.id;
-        state.ws_switch = true;
         return Some(());
     }
     mon.swap_ws(mon.current_ws, |_, mut ws| {
@@ -161,9 +159,7 @@ pub fn set_current_ws(state: &mut State, ws: u32) -> Option<()> {
     }
     mon.current_ws = ws;
     state.current_monitor = mon.id;
-    mon.mouse_follow.replace(false);
     state.latest_cursor_pos = state.lib.pointer_pos(state.lib.get_root());
-    state.ws_switch = true;
     Some(())
 }
 

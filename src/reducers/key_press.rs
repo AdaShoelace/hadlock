@@ -116,6 +116,7 @@ fn handle_key_effect(
             if ws_keys.contains(&keycode) {
                 let ws_num = keycode_to_ws(keycode);
                 wm::set_current_ws(state, ws_num);
+                state.mouse_follow.replace(true);
             }
         }
         KeyEffect::MoveToWorkspace => {
@@ -139,6 +140,7 @@ fn handle_key_effect(
                 {
                     wm::reorder(state);
                 }
+                state.mouse_follow.replace(true);
             }
         }
         KeyEffect::SwapMaster => {
