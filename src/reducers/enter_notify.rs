@@ -13,10 +13,6 @@ impl Reducer<action::EnterNotify> for State {
 
         self.latest_cursor_pos = self.lib.pointer_pos(self.lib.get_root());
 
-        if self.ws_switch {
-            self.ws_switch = false;
-            return;
-        }
         let window_mon = wm::get_mon_by_window(&self, action.win);
         if let Some(mon_id) = window_mon {
             if mon_id != self.current_monitor {

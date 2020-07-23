@@ -2,8 +2,10 @@ use {
     crate::models::{monitor::Monitor, windowwrapper::WindowWrapper, workspace::Workspace},
     crate::xlibwrapper::{util::Position, xlibmodels::*, DisplayServer},
     derivative::*,
+    std::cell::RefCell,
     std::collections::HashMap,
     std::rc::Rc,
+    std::cell::RefCell
 };
 
 #[derive(Derivative)]
@@ -17,8 +19,8 @@ pub struct State {
     pub monitors: HashMap<MonitorId, Monitor>,
     pub hide_space: Position,
     pub current_monitor: MonitorId,
+    pub mouse_follow: RefCell<bool>,
     pub latest_cursor_pos: Position,
-    pub ws_switch: bool,
     pub drag_start_pos: (i32, i32),
     pub drag_start_frame_pos: (i32, i32),
     pub drag_start_frame_size: (u32, u32),
@@ -57,8 +59,8 @@ impl State {
             monitors,
             hide_space,
             current_monitor: 0,
+            mouse_follow: RefCell::new(false),
             latest_cursor_pos,
-            ws_switch: false,
             drag_start_pos: (0, 0),
             drag_start_frame_pos: (0, 0),
             drag_start_frame_size: (0, 0),
