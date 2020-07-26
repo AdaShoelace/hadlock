@@ -57,6 +57,10 @@ impl Reactor<State> for HdlReactor {
             let window = ww.window();
             if !self.prev_state.clients().contains_key(&window) {
                 debug!("pointer pos on map: {:?}", state.latest_cursor_pos);
+                debug!(
+                    "state.lib.pointer_pos on map: {:?}",
+                    state.lib.pointer_pos(state.lib.get_root())
+                );
                 self.lib.add_to_save_set(window);
                 self.lib.add_to_root_net_client_list(window);
                 if ww.current_state != WindowState::Maximized
@@ -72,15 +76,17 @@ impl Reactor<State> for HdlReactor {
                 self.lib.resize_window(window, ww.get_size());
                 self.subscribe_to_events(window);
                 self.lib.map_window(window);
+                self.lib.sync(false);
                 self.set_focus(ww.window(), ww);
                 if let Some(prev_focus) = self.prev_state.clients().get(&self.prev_state.focus_w) {
                     self.unset_focus(prev_focus.window(), &prev_focus);
+                    self.lib.sync(false);
                 }
             } else {
                 if let Some(c) = self.prev_state.clients().get(&ww.window()) {
                     if window == state.focus_w && window != self.prev_state.focus_w {
+                        self.lib.sync(false);
                         self.set_focus(window, ww);
-                        self.lib.flush();
                     }
                     if window != state.focus_w {
                         self.unset_focus(window, ww);
@@ -123,7 +129,10 @@ impl Reactor<State> for HdlReactor {
                                         .set_border_width(window, CONFIG.border_width as u32);
                                     self.lib.set_border_color(window, CONFIG.background_color);
                                 }
-                                self.set_focus(window, ww);
+                                use crate::layout::LayoutTag;
+                                if state.monitors.get(&state.current_monitor).unwrap().get_current_layout() == LayoutTag::Floating {
+                                    self.set_focus(window, ww);
+                                }
                             }
                             (_, WindowState::Snapped) => {
                                 self.lib.center_cursor(window);

@@ -6,7 +6,6 @@ use {
 impl Reducer<action::EnterNotify> for State {
     fn reduce(&mut self, action: action::EnterNotify) {
         // debug!("EnterNotify");
-
         if self.latest_cursor_pos == self.lib.pointer_pos(self.lib.get_root()) {
             return;
         }
