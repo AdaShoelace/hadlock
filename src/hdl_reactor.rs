@@ -130,7 +130,13 @@ impl Reactor<State> for HdlReactor {
                                     self.lib.set_border_color(window, CONFIG.background_color);
                                 }
                                 use crate::layout::LayoutTag;
-                                if state.monitors.get(&state.current_monitor).unwrap().get_current_layout() == LayoutTag::Floating {
+                                if state
+                                    .monitors
+                                    .get(&state.current_monitor)
+                                    .unwrap()
+                                    .get_current_layout()
+                                    == LayoutTag::Floating
+                                {
                                     self.set_focus(window, ww);
                                 }
                             }
