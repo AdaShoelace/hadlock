@@ -106,7 +106,11 @@ impl XlibWrapper {
         unsafe {
             let supported = self.xatom.net_supported();
             let supp_ptr: *const xlib::Atom = supported.as_ptr();
-            (self.lib.XInternAtom)(self.display, self.xatom.get_name(self.xatom.NetActiveWindow).as_ptr() as *const i8, to_c_bool(false));
+            (self.lib.XInternAtom)(
+                self.display,
+                self.xatom.get_name(self.xatom.NetActiveWindow).as_ptr() as *const i8,
+                to_c_bool(false),
+            );
             (self.lib.XInternAtom)(self.display, supp_ptr as *const i8, to_c_bool(false));
             let size = supported.len() as i32;
             (self.lib.XChangeProperty)(
