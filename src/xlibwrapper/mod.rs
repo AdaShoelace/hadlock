@@ -52,10 +52,6 @@ pub trait DisplayServer {
         unimplemented!()
     }
 
-    fn remove_focus(&self, _w: Window) {
-        unimplemented!()
-    }
-
     fn set_input_focus(&self, _w: Window) {
         unimplemented!()
     }
