@@ -58,7 +58,7 @@ impl XAtom {
         vec![
             self.NetActiveWindow,
             self.NetSupported,
-            //self.NetWMName,
+            self.NetWMName,
             self.NetWMState,
             //self.NetWMStateModal,
             //self.NetWMStateSticky,

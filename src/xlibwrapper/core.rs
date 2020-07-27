@@ -103,10 +103,11 @@ impl XlibWrapper {
             );
         }
         self.select_input(self.root, root_event_mask);
-
         unsafe {
             let supported = self.xatom.net_supported();
             let supp_ptr: *const xlib::Atom = supported.as_ptr();
+            (self.lib.XInternAtom)(self.display, self.xatom.get_name(self.xatom.NetActiveWindow).as_ptr() as *const i8, to_c_bool(false));
+            (self.lib.XInternAtom)(self.display, supp_ptr as *const i8, to_c_bool(false));
             let size = supported.len() as i32;
             (self.lib.XChangeProperty)(
                 self.display,
@@ -519,18 +520,6 @@ impl DisplayServer for XlibWrapper {
         }
     }
 
-    fn remove_focus(&self, _w: Window) {
-        unsafe {
-            (self.lib.XDeleteProperty)(self.display, self.root, self.xatom.NetActiveWindow);
-            /*(self.lib.XSetInputFocus)(
-            self.display,
-            self.root,
-            xlib::RevertToPointerRoot,
-            xlib::CurrentTime,
-            );*/
-        }
-    }
-
     fn set_input_focus(&self, w: Window) {
         unsafe {
             (self.lib.XSetInputFocus)(
@@ -562,6 +551,7 @@ impl DisplayServer for XlibWrapper {
                 1,
             );
             mem::forget(list);
+            self.flush();
         }
         //self.send_xevent_atom(w, self.xatom.WMTakeFocus);
         self.sync(false);
