@@ -75,7 +75,7 @@ impl Default for ColumnMaster {
     fn default() -> Self {
         Self {
             layout_type: LayoutTag::ColumnMaster,
-            offset: RefCell::new(0)
+            offset: RefCell::new(0),
         }
     }
 }
