@@ -199,12 +199,39 @@ impl Layout for ColumnMaster {
     ) -> Vec<WindowWrapper> {
         // The new size always refer to master pane (left solo window)
         // Only X-axis is to be respected
+        use std::collections::HashMap;
+        let trans = windows
+            .into_iter()
+            .filter(|ww| ww.is_trans)
+            .map(|ww| (ww.window(), *ww))
+            .collect::<HashMap<Window, &WindowWrapper>>();
+        if let Some(win) = trans.get(&win) {
+            let size = win.get_size();
+            let size = if *axis == Axis::Vertical {
+                Size {
+                    width: size.width,
+                    height: size.height + delta,
+                }
+            } else {
+                Size {
+                    width: size.width + delta,
+                    height: size.height,
+                }
+            };
+            return vec![WindowWrapper {
+                window_rect: Rect::new(win.get_position(), size),
+                ..**win
+            }];
+        }
 
         if windows.len() <= 1 || *axis == Axis::Vertical {
             return vec![];
         }
-
-        let mut windows = windows.to_vec();
+        let mut windows = windows
+            .into_iter()
+            .filter(|ww| !ww.is_trans)
+            .map(|ww| *ww)
+            .collect::<Vec<&WindowWrapper>>();
         let mut ret = vec![];
         if let Some(master) = windows.pop() {
             let size = master.get_size();
