@@ -10,9 +10,11 @@ use crate::{
         xlibmodels::*,
     },
 };
+use std::cell::RefCell;
 
 #[derive(Debug, Clone)]
 pub struct ColumnMaster {
+    offset: RefCell<i32>,
     pub layout_type: LayoutTag,
 }
 
@@ -73,6 +75,7 @@ impl Default for ColumnMaster {
     fn default() -> Self {
         Self {
             layout_type: LayoutTag::ColumnMaster,
+            offset: RefCell::new(0)
         }
     }
 }
@@ -110,15 +113,15 @@ impl Layout for ColumnMaster {
 
         let column_width = ((screen.width / 2) - 2 * CONFIG.border_width)
             - (CONFIG.outer_gap + (CONFIG.inner_gap / 2));
-        let column_x = (screen.x + screen.width / 2) + CONFIG.inner_gap;
-
+        let column_x = (screen.x + screen.width / 2) + CONFIG.inner_gap + *self.offset.borrow();
+        let offset = *self.offset.borrow();
         if windows.is_empty() {
             let (size, pos) = self.column_maximize(w, &screen, &dock_area);
             ret_vec.push((w, Rect::new(pos, size)));
             return ret_vec;
         } else {
             let size = Size {
-                width: column_width,
+                width: column_width + offset,
                 height: screen.height
                     - dock_height
                     - 2 * CONFIG.border_width
@@ -142,7 +145,7 @@ impl Layout for ColumnMaster {
                         + (CONFIG.inner_gap * index as i32),
                 };
                 let size = Size {
-                    width: column_width,
+                    width: column_width + (-offset),
                     height: self.column_height(&screen, &dock_area, &windows),
                 };
                 ret_vec.push((win.window(), Rect::new(pos, size)))
@@ -199,6 +202,7 @@ impl Layout for ColumnMaster {
     ) -> Vec<WindowWrapper> {
         // The new size always refer to master pane (left solo window)
         // Only X-axis is to be respected
+        *self.offset.borrow_mut() += delta;
         use std::collections::HashMap;
         let trans = windows
             .into_iter()
