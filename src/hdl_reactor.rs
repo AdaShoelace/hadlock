@@ -51,6 +51,12 @@ impl Reactor<State> for HdlReactor {
         {
             self.lib.update_desktops(mon.current_ws, None);
         }
+        
+        let (current_ws, previous_ws) = {
+            let c = mon.get_current_ws().unwrap();
+            let p = self.prev_state.monitors.get(&self.prev_state.current_monitor).unwrap().get_current_ws().unwrap();
+            (c,p)
+        };
 
         let num_of_clients = state.clients().len();
         for ww in state.clients().values() {
@@ -84,7 +90,8 @@ impl Reactor<State> for HdlReactor {
                 }
             } else {
                 if let Some(c) = self.prev_state.clients().get(&ww.window()) {
-                    if window == state.focus_w && window != self.prev_state.focus_w {
+                    if (window == state.focus_w && window != self.prev_state.focus_w)
+                        || (window == state.focus_w && current_ws != previous_ws){
                         self.lib.sync(false);
                         self.set_focus(window, ww);
                     }
