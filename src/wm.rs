@@ -309,9 +309,9 @@ pub fn reorder(state: &mut State) -> Option<()> {
         .cloned()
         .collect::<Vec<WindowWrapper>>();
 
-    if state.focus_w == state.lib.get_root() {
+    if state.focus_w == state.lib.get_root() && !windows.is_empty() {
         debug!("reorder focus is root");
-        return None;
+        state.focus_w = *mon.get_newest()?.0;
     }
 
     let rects = mon.reorder(state.focus_w, &windows);

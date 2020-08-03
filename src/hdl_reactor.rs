@@ -265,7 +265,7 @@ impl HdlReactor {
     }
 
     pub fn unset_focus(&self, w: Window, ww: &WindowWrapper) {
-        self.lib.ungrab_all_buttons(w);
+        // self.lib.ungrab_all_buttons(w);
         self.lib.sync(false);
         self.lib.set_border_color(w, CONFIG.background_color);
         self.lib.resize_window(w, ww.get_size());
