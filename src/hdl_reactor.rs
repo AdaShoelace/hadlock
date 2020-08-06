@@ -132,9 +132,9 @@ impl Reactor<State> for HdlReactor {
                         match (ww.previous_state, ww.current_state) {
                             (_, WindowState::Maximized) | (_, WindowState::Monocle) => {
                                 self.lib.set_border_width(window, 0);
+                                self.lib.sync(false);
                                 self.lib.raise_window(window);
                                 self.set_focus(window, ww);
-                                self.lib.sync(true);
                             }
                             (WindowState::Maximized, current) | (WindowState::Monocle, current)
                                 if current != WindowState::Maximized
