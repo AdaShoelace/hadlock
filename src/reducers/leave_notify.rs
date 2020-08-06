@@ -17,15 +17,14 @@ use {
 
 impl Reducer<action::LeaveNotify> for State {
     fn reduce(&mut self, _action: action::LeaveNotify) {
-        //debug!("LeaveNotify");
-
         let mon = self
             .monitors
             .get_mut(&self.current_monitor)
             .expect("LeaveNotify - monitor - get_mut");
 
-        if mon.get_current_layout() != LayoutTag::Floating {
+        if *self.ignore_enter_leave.borrow() && mon.get_current_layout() == LayoutTag::Floating {
             return;
         }
+        debug!("LeaveNotify");
     }
 }

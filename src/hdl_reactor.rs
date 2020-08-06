@@ -154,9 +154,13 @@ impl Reactor<State> for HdlReactor {
                                     self.set_focus(window, ww);
                                 }
                             }
-                            (_, WindowState::Snapped) => {
-                                self.lib.center_cursor(window);
+                            (_, WindowState::Snapped(_)) => {
                                 self.set_focus(window, ww);
+                                self.lib.flush();
+                                self.lib.center_cursor(window);
+                                debug!("setting ignore_enter_leave to false");
+                                state.ignore_enter_leave.replace(false);
+                                self.lib.sync(true);
                             }
 
                             _ => {}

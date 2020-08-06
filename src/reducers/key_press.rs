@@ -110,7 +110,72 @@ fn handle_key_effect(
             wm::reorder(state);
         }
         KeyEffect::ShiftWindow(direction) => {
-            shift_window(state, *direction);
+            let ww = state
+                .monitors
+                .get_mut(&state.current_monitor)?
+                .get_client(state.focus_w)?;
+
+            match (ww.current_state, direction) {
+                (WindowState::Snapped(Direction::North), Direction::East) => {
+                    shift_window(state, Direction::NorthEast);
+                }
+                (WindowState::Snapped(Direction::North), Direction::West) => {
+                    shift_window(state, Direction::NorthWest);
+                }
+
+                (WindowState::Snapped(Direction::NorthEast), Direction::West) => {
+                    shift_window(state, Direction::North);
+                }
+                (WindowState::Snapped(Direction::NorthEast), Direction::South) => {
+                    shift_window(state, Direction::East);
+                }
+
+                (WindowState::Snapped(Direction::East), Direction::North) => {
+                    shift_window(state, Direction::NorthEast);
+                }
+                (WindowState::Snapped(Direction::East), Direction::South) => {
+                    shift_window(state, Direction::SouthEast);
+                }
+
+                (WindowState::Snapped(Direction::SouthEast), Direction::North) => {
+                    shift_window(state, Direction::East);
+                }
+                (WindowState::Snapped(Direction::SouthEast), Direction::West) => {
+                    shift_window(state, Direction::South);
+                }
+
+                (WindowState::Snapped(Direction::South), Direction::West) => {
+                    shift_window(state, Direction::SouthWest);
+                }
+                (WindowState::Snapped(Direction::South), Direction::East) => {
+                    shift_window(state, Direction::SouthEast);
+                }
+
+                (WindowState::Snapped(Direction::SouthWest), Direction::East) => {
+                    shift_window(state, Direction::South);
+                }
+                (WindowState::Snapped(Direction::SouthWest), Direction::North) => {
+                    shift_window(state, Direction::West);
+                }
+
+                (WindowState::Snapped(Direction::West), Direction::North) => {
+                    shift_window(state, Direction::NorthWest);
+                }
+                (WindowState::Snapped(Direction::West), Direction::South) => {
+                    shift_window(state, Direction::SouthWest);
+                }
+
+                (WindowState::Snapped(Direction::NorthWest), Direction::East) => {
+                    shift_window(state, Direction::North);
+                }
+                (WindowState::Snapped(Direction::NorthWest), Direction::South) => {
+                    shift_window(state, Direction::West);
+                }
+                _ => {
+                    shift_window(state, *direction);
+                }
+            }
+            state.ignore_enter_leave.replace(true);
         }
         KeyEffect::ChangeCurrentWorkspace => {
             if ws_keys.contains(&keycode) {
@@ -352,7 +417,7 @@ fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
     for win in windows.into_iter() {
         mon.swap_window(win.window(), |_, ww| WindowWrapper {
             previous_state: ww.current_state,
-            current_state: WindowState::Snapped,
+            current_state: WindowState::Snapped(direction),
             ..win
         });
     }
