@@ -193,7 +193,14 @@ impl Layout for Floating {
             }
             Direction::NorthEast => {
                 let pos = self
-                    .move_window(&screen, &dock_area, w, true, screen.x + screen.width / 2, screen.y)
+                    .move_window(
+                        &screen,
+                        &dock_area,
+                        w,
+                        true,
+                        screen.x + screen.width / 2,
+                        screen.y,
+                    )
                     .0;
                 let mut size = Size {
                     width: (screen.width / 2) - 2 * CONFIG.border_width,
@@ -257,14 +264,7 @@ impl Layout for Floating {
             }
             Direction::South => {
                 let mut pos = self
-                    .move_window(
-                        &screen,
-                        &dock_area,
-                        w,
-                        true,
-                        screen.x,
-                        screen.height / 2,
-                    )
+                    .move_window(&screen, &dock_area, w, true, screen.x, screen.height / 2)
                     .0;
                 let mut size = Size {
                     width: screen.width - 2 * CONFIG.border_width,
@@ -282,14 +282,7 @@ impl Layout for Floating {
             }
             Direction::SouthWest => {
                 let mut pos = self
-                    .move_window(
-                        &screen,
-                        &dock_area,
-                        w,
-                        true,
-                        screen.x,
-                        screen.height / 2,
-                    )
+                    .move_window(&screen, &dock_area, w, true, screen.x, screen.height / 2)
                     .0;
                 let mut size = Size {
                     width: (screen.width / 2) - 2 * CONFIG.border_width,
