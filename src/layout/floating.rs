@@ -191,6 +191,22 @@ impl Layout for Floating {
                     ..ww.clone()
                 }]
             }
+            Direction::NorthEast => {
+                let pos = self
+                    .move_window(&screen, &dock_area, w, true, screen.x + screen.width / 2, screen.y)
+                    .0;
+                let mut size = Size {
+                    width: (screen.width / 2) - 2 * CONFIG.border_width,
+                    height: (screen.height) / 2 - 2 * CONFIG.border_width,
+                };
+                if let Some(dock) = dock_area.as_rect(&screen) {
+                    size.height -= dock.get_size().height / 2
+                }
+                vec![WindowWrapper {
+                    window_rect: Rect::new(pos, size),
+                    ..ww.clone()
+                }]
+            }
             Direction::East => {
                 let pos = self
                     .move_window(
@@ -214,6 +230,81 @@ impl Layout for Floating {
                     ..ww.clone()
                 }]
             }
+            Direction::SouthEast => {
+                let mut pos = self
+                    .move_window(
+                        &screen,
+                        &dock_area,
+                        w,
+                        true,
+                        screen.x + screen.width / 2,
+                        screen.height / 2,
+                    )
+                    .0;
+                let mut size = Size {
+                    width: (screen.width) / 2 - 2 * CONFIG.border_width,
+                    height: (screen.height) / 2 - 2 * CONFIG.border_width,
+                };
+                if let Some(dock) = dock_area.as_rect(&screen) {
+                    let offset = dock.get_size().height / 2;
+                    size.height -= offset;
+                    pos.y += offset as i32;
+                }
+                vec![WindowWrapper {
+                    window_rect: Rect::new(pos, size),
+                    ..ww.clone()
+                }]
+            }
+            Direction::South => {
+                let mut pos = self
+                    .move_window(
+                        &screen,
+                        &dock_area,
+                        w,
+                        true,
+                        screen.x,
+                        screen.height / 2,
+                    )
+                    .0;
+                let mut size = Size {
+                    width: screen.width - 2 * CONFIG.border_width,
+                    height: (screen.height) / 2 - 2 * CONFIG.border_width,
+                };
+                if let Some(dock) = dock_area.as_rect(&screen) {
+                    let offset = dock.get_size().height / 2;
+                    size.height -= offset;
+                    pos.y += offset as i32;
+                }
+                vec![WindowWrapper {
+                    window_rect: Rect::new(pos, size),
+                    ..ww.clone()
+                }]
+            }
+            Direction::SouthWest => {
+                let mut pos = self
+                    .move_window(
+                        &screen,
+                        &dock_area,
+                        w,
+                        true,
+                        screen.x,
+                        screen.height / 2,
+                    )
+                    .0;
+                let mut size = Size {
+                    width: (screen.width / 2) - 2 * CONFIG.border_width,
+                    height: (screen.height / 2) - 2 * CONFIG.border_width,
+                };
+                if let Some(dock) = dock_area.as_rect(&screen) {
+                    let offset = dock.get_size().height / 2;
+                    size.height -= offset;
+                    pos.y += offset as i32;
+                }
+                vec![WindowWrapper {
+                    window_rect: Rect::new(pos, size),
+                    ..ww.clone()
+                }]
+            }
             Direction::West => {
                 let pos = self
                     .move_window(&screen, &dock_area, w, true, screen.x, screen.y)
@@ -230,25 +321,16 @@ impl Layout for Floating {
                     ..ww.clone()
                 }]
             }
-            Direction::South => {
-                let mut pos = self
-                    .move_window(
-                        &screen,
-                        &dock_area,
-                        w,
-                        true,
-                        screen.x,
-                        screen.height / 2 - CONFIG.border_width,
-                    )
+            Direction::NorthWest => {
+                let pos = self
+                    .move_window(&screen, &dock_area, w, true, screen.x, screen.y)
                     .0;
                 let mut size = Size {
-                    width: screen.width - 2 * CONFIG.border_width,
+                    width: (screen.width / 2) - 2 * CONFIG.border_width,
                     height: (screen.height) / 2 - 2 * CONFIG.border_width,
                 };
                 if let Some(dock) = dock_area.as_rect(&screen) {
-                    let offset = dock.get_size().height / 2;
-                    size.height -= offset;
-                    pos.y += offset as i32;
+                    size.height -= dock.get_size().height / 2
                 }
                 vec![WindowWrapper {
                     window_rect: Rect::new(pos, size),

@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum WindowState {
-    Snapped,
+    Snapped(Direction),
     Maximized,
     Monocle,
     Free,
@@ -21,7 +21,11 @@ pub enum WindowState {
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Direction {
     North,
-    West,
+    NorthEast,
     East,
+    SouthEast,
     South,
+    SouthWest,
+    West,
+    NorthWest,
 }
