@@ -8,6 +8,7 @@ It is written completely in rust with an architecture heavily inspired by redux.
 
 
 ![](./resources/demo-2.gif)
+![](./resources/hadlock-demo-2.gif)
 
 --- 
 
