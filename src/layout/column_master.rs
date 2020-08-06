@@ -384,7 +384,7 @@ impl Layout for ColumnMaster {
                     ..ww.clone()
                 }]
             }
-            _ => vec![ww.clone()]
+            _ => vec![ww.clone()],
         }
     }
 }
