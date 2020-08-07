@@ -1,5 +1,6 @@
 use {
     crate::config::{Key, CONFIG},
+    crate::layout::LayoutTag,
     crate::models::{windowwrapper::*, WindowState},
     crate::state::*,
     crate::{
@@ -9,7 +10,6 @@ use {
     },
     reducer::*,
     std::rc::Rc,
-    crate::layout::LayoutTag
 };
 
 pub struct HdlReactor {
@@ -44,11 +44,11 @@ impl Reactor<State> for HdlReactor {
         let mon = state.monitors.get(&state.current_monitor).ok_or("oops")?;
         if self
             .prev_state
-                .monitors
-                .get(&self.prev_state.current_monitor)
-                .unwrap()
-                .current_ws
-                != mon.current_ws
+            .monitors
+            .get(&self.prev_state.current_monitor)
+            .unwrap()
+            .current_ws
+            != mon.current_ws
         {
             self.lib.update_desktops(mon.current_ws, None);
         }
@@ -125,11 +125,11 @@ impl Reactor<State> for HdlReactor {
                     }
                     if self
                         .prev_state
-                            .clients()
-                            .get(&window)
-                            .unwrap()
-                            .current_state
-                            != ww.current_state
+                        .clients()
+                        .get(&window)
+                        .unwrap()
+                        .current_state
+                        != ww.current_state
                     {
                         match (ww.previous_state, ww.current_state) {
                             (_, WindowState::Maximized) | (_, WindowState::Monocle) => {
@@ -140,10 +140,10 @@ impl Reactor<State> for HdlReactor {
                                 self.set_focus(window, ww);
                                 if state
                                     .monitors
-                                        .get(&state.current_monitor)
-                                        .unwrap()
-                                        .get_current_layout()
-                                        == LayoutTag::Floating
+                                    .get(&state.current_monitor)
+                                    .unwrap()
+                                    .get_current_layout()
+                                    == LayoutTag::Floating
                                 {
                                     self.lib.sync(true);
                                 }
@@ -151,28 +151,28 @@ impl Reactor<State> for HdlReactor {
                             (WindowState::Maximized, current) | (WindowState::Monocle, current)
                                 if current != WindowState::Maximized
                                     || current != WindowState::Monocle =>
-                                {
-                                    if num_of_clients > 1 {
-                                        self.lib
-                                            .set_border_width(window, CONFIG.border_width as u32);
-                                        self.lib.set_border_color(window, CONFIG.background_color);
-                                    }
-                                    if state
-                                        .monitors
-                                            .get(&state.current_monitor)
-                                            .unwrap()
-                                            .get_current_layout()
-                                            == LayoutTag::Floating
-                                    {
-                                        self.set_focus(window, ww);
-                                        self.lib.flush();
-                                        self.lib.center_cursor(window);
-                                        self.lib.sync(true);
-                                    }
-                                    if window == self.prev_state.focus_w && window == state.focus_w {
-                                        self.set_focus(window, ww);
-                                    }
+                            {
+                                if num_of_clients > 1 {
+                                    self.lib
+                                        .set_border_width(window, CONFIG.border_width as u32);
+                                    self.lib.set_border_color(window, CONFIG.background_color);
                                 }
+                                if state
+                                    .monitors
+                                    .get(&state.current_monitor)
+                                    .unwrap()
+                                    .get_current_layout()
+                                    == LayoutTag::Floating
+                                {
+                                    self.set_focus(window, ww);
+                                    self.lib.flush();
+                                    self.lib.center_cursor(window);
+                                    self.lib.sync(true);
+                                }
+                                if window == self.prev_state.focus_w && window == state.focus_w {
+                                    self.set_focus(window, ww);
+                                }
+                            }
                             (_, WindowState::Snapped(_)) => {
                                 self.set_focus(window, ww);
                                 self.lib.flush();
@@ -209,12 +209,12 @@ impl HdlReactor {
         self.lib.select_input(
             w,
             SubstructureNotifyMask
-            | SubstructureRedirectMask
-            | EnterWindowMask
-            | LeaveWindowMask
-            | FocusChangeMask
-            | PropertyChangeMask
-            | PointerMotionMask,
+                | SubstructureRedirectMask
+                | EnterWindowMask
+                | LeaveWindowMask
+                | FocusChangeMask
+                | PropertyChangeMask
+                | PointerMotionMask,
         );
         self.lib.flush();
     }
@@ -244,16 +244,16 @@ impl HdlReactor {
                 Key::Letter(_) => true,
                 _ => false,
             })
-        .cloned()
+            .cloned()
             .map(|binding| match binding.key {
                 Key::Letter(x) => x,
                 _ => "".to_string(),
             })
-        .filter(|key| !key.is_empty())
+            .filter(|key| !key.is_empty())
             .chain(
                 vec![1, 2, 3, 4, 5, 6, 7, 8, 9]
-                .iter()
-                .map(|x| x.to_string()),
+                    .iter()
+                    .map(|x| x.to_string()),
             )
             .collect::<Vec<String>>();
 
