@@ -137,7 +137,8 @@ impl Reactor<State> for HdlReactor {
                                 self.lib.set_border_width(window, 0);
                                 self.lib.sync(false);
                                 self.lib.raise_window(window);
-                                self.set_focus(window, ww);
+                                self.set_focus(state.focus_w, ww);
+                                self.lib.sync(false);
                                 if state
                                     .monitors
                                     .get(&state.current_monitor)
@@ -164,13 +165,13 @@ impl Reactor<State> for HdlReactor {
                                     .get_current_layout()
                                     == LayoutTag::Floating
                                 {
-                                    self.set_focus(window, ww);
+                                    self.set_focus(state.focus_w, ww);
                                     self.lib.flush();
                                     self.lib.center_cursor(window);
                                     self.lib.sync(true);
                                 }
                                 if window == self.prev_state.focus_w && window == state.focus_w {
-                                    self.set_focus(window, ww);
+                                    self.set_focus(state.focus_w, ww);
                                 }
                             }
                             (_, WindowState::Snapped(_)) => {
@@ -275,6 +276,7 @@ impl HdlReactor {
         self.grab_keys(focus);
         self.lib.sync(false);
         self.lib.take_focus(focus);
+        self.lib.sync(false);
 
         if !(ww.current_state == WindowState::Monocle || ww.current_state == WindowState::Maximized)
         {

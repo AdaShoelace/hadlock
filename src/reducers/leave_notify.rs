@@ -16,12 +16,12 @@ use {
 };
 
 impl Reducer<action::LeaveNotify> for State {
-    fn reduce(&mut self, _action: action::LeaveNotify) {
+    fn reduce(&mut self, action: action::LeaveNotify) {
         let _mon = self
             .monitors
             .get_mut(&self.current_monitor)
             .expect("LeaveNotify - monitor - get_mut");
 
-        debug!("LeaveNotify");
+        debug!("LeaveNotify for: 0x{:x}", action.win);
     }
 }
