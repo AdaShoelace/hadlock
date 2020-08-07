@@ -3,7 +3,7 @@ use {
     crate::{
         config::CONFIG,
         layout::LayoutTag,
-        models::{rect::*, window_type::WindowType, windowwrapper::*},
+        models::{rect::*, window_type::WindowType, windowwrapper::*, WindowState},
         state::State,
         wm,
         xlibwrapper::action,
@@ -33,22 +33,31 @@ impl Reducer<action::ButtonRelease> for State {
 
             let current_mon = self.monitors.get_mut(&self.current_monitor).expect("How!?");
             let windows = current_mon.place_window(action.win);
+            let current_state = if windows.len() == 1 {
+                WindowState::Maximized
+            } else {
+                WindowState::Free
+            };
             for (win, rect) in windows {
                 if win == action.win {
                     current_mon.add_window(
                         win,
                         WindowWrapper {
                             window_rect: rect,
+                            current_state,
                             ..action_ww
                         },
                     );
                 } else {
                     current_mon.swap_window(win, |_mon, ww| WindowWrapper {
                         window_rect: rect,
+                        current_state,
                         ..ww
                     });
                 }
             }
+            current_mon.get_current_ws_mut().unwrap().focus_w = action.win;
+            self.focus_w = action.win;
         }
     }
 }

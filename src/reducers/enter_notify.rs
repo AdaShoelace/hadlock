@@ -23,9 +23,6 @@ impl Reducer<action::EnterNotify> for State {
             .get_mut(&self.current_monitor)
             .expect("EnterNotify - monitor - get_mut");
 
-        if *self.ignore_enter_leave.borrow() && mon.get_current_layout() == LayoutTag::Floating {
-            return;
-        }
         debug!("EnterNotify");
         if action.win == self.lib.get_root() && mon.get_current_layout() != LayoutTag::Floating {
             return;

@@ -175,7 +175,6 @@ fn handle_key_effect(
                     shift_window(state, *direction);
                 }
             }
-            state.ignore_enter_leave.replace(true);
         }
         KeyEffect::ChangeCurrentWorkspace => {
             if ws_keys.contains(&keycode) {
