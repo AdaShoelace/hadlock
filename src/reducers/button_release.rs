@@ -33,11 +33,12 @@ impl Reducer<action::ButtonRelease> for State {
 
             let current_mon = self.monitors.get_mut(&self.current_monitor).expect("How!?");
             let windows = current_mon.place_window(action.win);
-            let current_state = if windows.len() == 1 && current_mon.get_current_layout() != LayoutTag::Floating {
-                WindowState::Maximized
-            } else {
-                WindowState::Free
-            };
+            let current_state =
+                if windows.len() == 1 && current_mon.get_current_layout() != LayoutTag::Floating {
+                    WindowState::Maximized
+                } else {
+                    WindowState::Free
+                };
             for (win, rect) in windows {
                 if win == action.win {
                     current_mon.add_window(
