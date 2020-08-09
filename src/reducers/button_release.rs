@@ -18,6 +18,19 @@ use {
 
 impl Reducer<action::ButtonRelease> for State {
     fn reduce(&mut self, action: action::ButtonRelease) {
+        if action.win == self.lib.get_root() {
+            return;
+        }
+        if (action.state & (Button1Mask | CONFIG.mod_key)) == Button1Mask | CONFIG.mod_key {
+            if let Some(dir) = self
+                .monitors
+                .get_mut(&self.current_monitor)
+                .expect("Should have a current mon...")
+                .inside_snapping_region(self.lib.pointer_pos(self.lib.get_root()))
+            {
+                wm::shift_window(self, dir);
+            }
+        }
         let old_mon_id =
             wm::get_mon_by_window(&self, action.win).expect("It has to come from some mon?");
 
@@ -26,11 +39,13 @@ impl Reducer<action::ButtonRelease> for State {
                 .monitors
                 .get_mut(&old_mon_id)
                 .expect("Apparently this monitor does not exist");
+            if old_mon.get_current_layout() != LayoutTag::Floating {
+                return;
+            }
 
             let action_ww = old_mon
                 .remove_window(action.win)
                 .expect("Window must be in this monitor");
-
             let current_mon = self.monitors.get_mut(&self.current_monitor).expect("How!?");
             let windows = current_mon.place_window(action.win);
             let current_state =
@@ -59,17 +74,6 @@ impl Reducer<action::ButtonRelease> for State {
             }
             current_mon.get_current_ws_mut().unwrap().focus_w = action.win;
             self.focus_w = action.win;
-        }
-
-        if (action.state & (Button1Mask | CONFIG.mod_key)) == Button1Mask | CONFIG.mod_key {
-            if let Some(dir) = self
-                .monitors
-                .get_mut(&self.current_monitor)
-                .expect("Should have a current mon...")
-                .inside_snapping_region(self.lib.pointer_pos(self.lib.get_root()))
-            {
-                wm::shift_window(self, dir);
-            }
         }
     }
 }
