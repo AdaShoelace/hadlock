@@ -41,6 +41,19 @@ impl State {
                     );
                 });
             let mon_count = monitors.iter().count();
+            if cfg!(debug_assertions) {
+                for region in monitors.get(&0).unwrap().snapping_regions.iter() {
+                    let window = lib.create_simple_window(
+                        lib.get_root(),
+                        region.region.get_position(),
+                        region.region.get_size(),
+                        6,
+                        crate::xlibwrapper::util::Color::Custom(0xff0000),
+                        crate::xlibwrapper::util::Color::Custom(0xffffff),
+                    );
+                    lib.map_window(window);
+                }
+            }
             debug!("Monitor on start: {}", mon_count);
             monitors
         };

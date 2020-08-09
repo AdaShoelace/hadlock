@@ -1,10 +1,10 @@
-use super::{
-    dockarea::DockArea, rect::Rect, screen::Screen, windowwrapper::WindowWrapper,
-    workspace::Workspace, Direction,
-};
 use crate::{
     config::Axis,
     layout::LayoutTag,
+    models::{
+        dockarea::DockArea, rect::Rect, screen::Screen, snapping_region::SnappingRegion,
+        windowwrapper::WindowWrapper, workspace::Workspace, Direction,
+    },
     xlibwrapper::{
         util::{Position, Size},
         xlibmodels::{MonitorId, Window},
@@ -14,11 +14,12 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct Monitor {
+    pub current_ws: u32,
+    pub dock_area: DockArea,
     pub id: MonitorId,
     pub screen: Screen,
+    pub snapping_regions: Vec<SnappingRegion>,
     pub workspaces: HashMap<u32, Workspace>,
-    pub dock_area: DockArea,
-    pub current_ws: u32,
 }
 
 impl Monitor {
@@ -29,13 +30,15 @@ impl Monitor {
             workspaces.insert(current_ws, ws);
             (current_ws, workspaces)
         };
-
+        let dock_area = Default::default();
+        let snapping_regions = SnappingRegion::from_screen(&screen, &dock_area);
         Self {
+            current_ws,
+            dock_area,
             id,
             screen,
+            snapping_regions,
             workspaces,
-            dock_area: Default::default(),
-            current_ws,
         }
     }
 
@@ -102,6 +105,15 @@ impl Monitor {
             Some(ww) => ws.get_next(ww),
             _ => None,
         }
+    }
+
+    pub fn inside_snapping_region(&self, pos: Position) -> Option<Direction> {
+        for region in self.snapping_regions.iter() {
+            if region.contains(pos) {
+                return Some(region.dir);
+            }
+        }
+        None
     }
 
     /* In current workspace */

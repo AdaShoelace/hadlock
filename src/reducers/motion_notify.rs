@@ -43,18 +43,28 @@ impl Reducer<action::MotionNotify> for State {
                 return;
             }
 
-            let ww = self
+            if let Some(dir) = self
                 .monitors
-                .get_mut(&old_mon)
-                .expect("MotionNotify - old_mon - get_mut")
-                .remove_window(action.win)
-                .expect("Trying to remove window in motion_notify");
+                .get_mut(&self.current_monitor)
+                .expect("Should have a current mon...")
+                //.inside_snapping_region(self.lib.pointer_pos(self.lib.get_root()))
+                .inside_snapping_region(Position::new(action.x_root, action.y_root))
+            {
+                debug!("inside snapping_region: {:?}", dir);
+            }
+            if actual_mon != old_mon {
+                let ww = self
+                    .monitors
+                    .get_mut(&old_mon)
+                    .expect("MotionNotify - old_mon - get_mut")
+                    .remove_window(action.win)
+                    .expect("Trying to remove window in motion_notify");
 
-            self.monitors
-                .get_mut(&actual_mon)
-                .expect("MotionNotify - old_mon - get_mut")
-                .add_window(action.win, ww);
-
+                self.monitors
+                    .get_mut(&actual_mon)
+                    .expect("MotionNotify - old_mon - get_mut")
+                    .add_window(action.win, ww);
+            }
             let (pos, _) = self
                 .monitors
                 .get_mut(&self.current_monitor)
@@ -71,7 +81,6 @@ impl Reducer<action::MotionNotify> for State {
                 w.set_position(pos);
                 w.set_window_state(WindowState::Free);
             }
-            return;
         }
     }
 }

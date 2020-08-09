@@ -60,5 +60,16 @@ impl Reducer<action::ButtonRelease> for State {
             current_mon.get_current_ws_mut().unwrap().focus_w = action.win;
             self.focus_w = action.win;
         }
+
+        if (action.state & (Button1Mask | CONFIG.mod_key)) == Button1Mask | CONFIG.mod_key {
+            if let Some(dir) = self
+                .monitors
+                .get_mut(&self.current_monitor)
+                .expect("Should have a current mon...")
+                .inside_snapping_region(self.lib.pointer_pos(self.lib.get_root()))
+            {
+                wm::shift_window(self, dir);
+            }
+        }
     }
 }

@@ -1,7 +1,10 @@
 use crate::{
     config::Axis,
     layout::LayoutTag,
-    models::{monitor::Monitor, rect::*, screen::*, windowwrapper::*, workspace::*, WindowState},
+    models::{
+        monitor::Monitor, rect::*, screen::*, windowwrapper::*, workspace::*, Direction,
+        WindowState,
+    },
     state::State,
     xlibwrapper::xlibmodels::*,
 };
@@ -354,6 +357,69 @@ pub fn get_monitor_by_point(state: &State, x: i32, y: i32) -> MonitorId {
         Some(mon_id) => *mon_id,
         None => state.current_monitor,
     }
+}
+
+pub fn shift_window(state: &mut State, direction: Direction) -> Option<()> {
+    debug!(
+        "state focus_w: 0x{:x}, root: 0x{:x}",
+        state.focus_w,
+        state.lib.get_root()
+    );
+    let mon = state.monitors.get_mut(&state.current_monitor)?;
+    let previous = mon.get_previous(state.focus_w).map(|ww| ww.window());
+    let next = mon.get_next(state.focus_w).map(|ww| ww.window());
+    let current_layout = mon.get_current_layout();
+    if current_layout != LayoutTag::Floating {
+        let newest = mon.get_newest().map(|(win, _)| *win)?;
+
+        let current_ws = mon.get_current_ws_mut()?;
+        let ws_focus = current_ws.focus_w;
+
+        if ws_focus != newest {
+            match direction {
+                Direction::North => {
+                    if let Some(win) = previous {
+                        current_ws.focus_w = win;
+                        state.focus_w = win;
+                    }
+                }
+                Direction::South => {
+                    if let Some(win) = next {
+                        current_ws.focus_w = win;
+                        state.focus_w = win;
+                    }
+                }
+                Direction::West => {
+                    current_ws.focus_w = newest;
+                    state.focus_w = newest;
+                }
+                _ => (),
+            }
+        }
+
+        if state.focus_w == newest && direction == Direction::East {
+            if let Some(win) = next {
+                current_ws.focus_w = win;
+                state.focus_w = win;
+            }
+        } else if state.focus_w == newest && direction != Direction::East {
+            debug!("window is newest but direction is: {:?}", direction);
+        }
+        return Some(());
+    }
+    if state.focus_w == state.lib.get_root() {
+        return Some(());
+    }
+    let windows = mon.shift_window(state.focus_w, direction);
+
+    for win in windows.into_iter() {
+        mon.swap_window(win.window(), |_, ww| WindowWrapper {
+            previous_state: ww.current_state,
+            current_state: WindowState::Snapped(direction),
+            ..win
+        });
+    }
+    Some(())
 }
 
 #[cfg(test)]
