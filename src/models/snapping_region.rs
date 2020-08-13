@@ -7,13 +7,13 @@ const REGION_SIZE: Size = Size {
 };
 
 const REGION_SIZE_HORIZONTAL: Size = Size {
-    width: 100,
-    height: 50,
+    width: 150,
+    height: 40,
 };
 
 const REGION_SIZE_VERTICAL: Size = Size {
-    width: 50,
-    height: 100,
+    width: 40,
+    height: 150,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -51,7 +51,7 @@ impl SnappingRegion {
             Direction::East => {
                 let pos = Position::new(
                     screen.width - REGION_SIZE_VERTICAL.width,
-                    (screen.height / 2) - REGION_SIZE.height / 2,
+                    (screen.height / 2) - REGION_SIZE_VERTICAL.height / 2,
                 );
                 Rect::new(pos, REGION_SIZE_VERTICAL)
             }
@@ -64,8 +64,8 @@ impl SnappingRegion {
             }
             Direction::South => {
                 let pos = Position::new(
-                    (screen.width / 2) - REGION_SIZE_VERTICAL.width / 2,
-                    screen.height - REGION_SIZE.height,
+                    (screen.width / 2) - REGION_SIZE_HORIZONTAL.width / 2,
+                    screen.height - REGION_SIZE_HORIZONTAL.height,
                 );
                 Rect::new(pos, REGION_SIZE_HORIZONTAL)
             }
@@ -79,7 +79,7 @@ impl SnappingRegion {
             Direction::West => {
                 let pos = Position::new(
                     screen.x,
-                    (screen.height / 2) - REGION_SIZE_HORIZONTAL.height / 2,
+                    (screen.height / 2) - REGION_SIZE_VERTICAL.height / 2,
                 );
                 Rect::new(pos, REGION_SIZE_VERTICAL)
             }
