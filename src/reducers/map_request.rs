@@ -51,6 +51,7 @@ impl Reducer<action::MapRequest> for State {
 
         if mon.contains_window(action.parent) {
             self.lib.map_window(action.win);
+            self.lib.raise_window(action.win);
             self.lib.take_focus(action.win);
             return;
         }
