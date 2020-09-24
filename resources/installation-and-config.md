@@ -1,4 +1,8 @@
 ## Installation
+
+### Arch
+Thanks to [orhun](https://github.com/orhun) Hadlock can now be installed via `aur` using for example `yay -S hadlock`
+### Build from scratch
 build with `cargo build --release` and put the binary in a directory in your `$PATH` eg `/usr/local/bin`  
 Create `/usr/share/xsessions/hadlock.desktop` containing:  
 
