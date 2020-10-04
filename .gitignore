@@ -13,4 +13,7 @@ scratch
 #already existing elements are commented out
 
 /target
+/resources/synthwave.jpg
+/resources/material.jpg
+/resources/triangles.jpg
 #**/*.rs.bk
